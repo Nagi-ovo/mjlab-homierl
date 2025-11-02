@@ -105,7 +105,7 @@ def create_scene_with_sensor(
   sensor_cfg: ContactSensorCfg,
   device: str,
   num_envs: int = 2,
-  njmax: int = 20,
+  njmax: int = 50,
 ) -> tuple[Scene, Simulation]:
   """Helper to create a complete test environment with contact sensor.
 
@@ -254,9 +254,7 @@ def test_multi_slot_pattern_matching(device):
     track_air_time=True,
   )
 
-  scene, sim = create_scene_with_sensor(
-    BIPED_XML, "biped", feet_sensor_cfg, device, njmax=40
-  )
+  scene, sim = create_scene_with_sensor(BIPED_XML, "biped", feet_sensor_cfg, device)
 
   sensor = scene["feet_contact"]
   biped_entity = scene["biped"]
@@ -298,9 +296,7 @@ def test_regex_pattern_matching(device):
     fields=("found", "force"),
   )
 
-  scene, sim = create_scene_with_sensor(
-    BIPED_XML, "biped", regex_sensor_cfg, device, njmax=40
-  )
+  scene, sim = create_scene_with_sensor(BIPED_XML, "biped", regex_sensor_cfg, device)
 
   sensor = scene["all_feet_contact"]
   biped_entity = scene["biped"]
@@ -373,9 +369,7 @@ def test_reduce_modes_multiple_contacts(device):
     num_slots=1,
   )
 
-  scene, sim = create_scene_with_sensor(
-    BIPED_XML, "biped", feet_sensor_cfg, device, njmax=40
-  )
+  scene, sim = create_scene_with_sensor(BIPED_XML, "biped", feet_sensor_cfg, device)
 
   sensor = scene["feet_contact"]
   biped_entity = scene["biped"]
@@ -420,7 +414,7 @@ def test_exclude_exact_names(device):
   )
 
   scene, _ = create_scene_with_sensor(
-    SIMPLE_ROBOT_XML, "robot", nonfoot_sensor_cfg, device, njmax=50
+    SIMPLE_ROBOT_XML, "robot", nonfoot_sensor_cfg, device
   )
 
   sensor = scene["nonfoot_contact"]
@@ -449,7 +443,7 @@ def test_exclude_regex_pattern(device):
   )
 
   scene, _ = create_scene_with_sensor(
-    SIMPLE_ROBOT_XML, "robot", no_thigh_sensor_cfg, device, njmax=50
+    SIMPLE_ROBOT_XML, "robot", no_thigh_sensor_cfg, device
   )
 
   sensor = scene["no_thigh_contact"]
@@ -480,7 +474,7 @@ def test_exclude_mixed_patterns(device):
   )
 
   scene, _ = create_scene_with_sensor(
-    SIMPLE_ROBOT_XML, "robot", mixed_exclude_cfg, device, njmax=50
+    SIMPLE_ROBOT_XML, "robot", mixed_exclude_cfg, device
   )
 
   sensor = scene["mixed_exclude"]
@@ -564,9 +558,7 @@ def test_air_time_tracking(device):
     track_air_time=True,
   )
 
-  scene, sim = create_scene_with_sensor(
-    BIPED_XML, "biped", feet_sensor_cfg, device, njmax=40
-  )
+  scene, sim = create_scene_with_sensor(BIPED_XML, "biped", feet_sensor_cfg, device)
 
   sensor = scene["feet_contact"]
   biped_entity = scene["biped"]
