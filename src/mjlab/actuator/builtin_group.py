@@ -77,5 +77,5 @@ class BuiltinActuatorGroup:
       BuiltinMotorActuator: data.joint_effort_target,
     }
     for actuator_type, index_group in self._index_groups.items():
-      ctrl_ids, joint_ids = index_group
+      joint_ids, ctrl_ids = index_group
       data.write_ctrl(target_tensor_map[actuator_type][:, joint_ids], ctrl_ids)
