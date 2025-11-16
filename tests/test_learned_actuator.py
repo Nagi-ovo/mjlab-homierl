@@ -359,7 +359,7 @@ def test_learned_mlp_inherits_dc_motor_limits(device, constant_network_file):
       history_length=1,
       saturation_effort=saturation_effort,
       velocity_limit=velocity_limit,
-      effort_limit=float("inf"),
+      effort_limit=saturation_effort,  # Set to saturation to not constrain.
     )
   )
 
@@ -399,7 +399,7 @@ def test_learned_mlp_dc_motor_zero_torque_at_max_velocity(
       history_length=1,
       saturation_effort=saturation_effort,
       velocity_limit=velocity_limit,
-      effort_limit=float("inf"),
+      effort_limit=saturation_effort,  # Set to saturation to not constrain.
     )
   )
 
