@@ -694,8 +694,19 @@ class Entity:
     joint_ids = torch.tensor([j.id for j in joints], dtype=torch.int, device=device)
 
     if self.is_actuated:
+      # Build mapping from joint name to actuator ctrl_id.
+      # Each spec actuator controls exactly one joint (via its target field).
+      joint_name_to_ctrl_id = {}
+      for actuator in self.spec.actuators:
+        joint_name = actuator.target.split("/")[-1]
+        joint_name_to_ctrl_id[joint_name] = actuator.id
+      # Get ctrl_ids in natural joint order (same order as self.joint_names).
+      ctrl_ids_list = []
+      for joint_name in self.joint_names:
+        if joint_name in joint_name_to_ctrl_id:
+          ctrl_ids_list.append(joint_name_to_ctrl_id[joint_name])
+      ctrl_ids = torch.tensor(ctrl_ids_list, dtype=torch.int, device=device)
       actuators = tuple(self.spec.actuators)
-      ctrl_ids = torch.tensor([a.id for a in actuators], dtype=torch.int, device=device)
     else:
       actuators = None
       ctrl_ids = torch.empty(0, dtype=torch.int, device=device)

@@ -501,6 +501,53 @@ def test_find_joints_by_actuator_names_preserves_natural_order(device):
   assert list(robot.actuator_names) == ["act_c", "act_b", "act_a"]
 
 
+def test_ctrl_ids_follow_natural_joint_order(device):
+  """Test that entity.indexing.ctrl_ids are in natural joint order.
+
+  This is a regression test for a bug where ctrl_ids were in actuator definition
+  order, causing mismatched stiffness/damping values in ONNX export and other
+  control issues.
+  """
+  robot_cfg = EntityCfg(
+    spec_fn=lambda: mujoco.MjSpec.from_string(ACTUATOR_ORDER_TEST_XML),
+    articulation=EntityArticulationInfoCfg(
+      actuators=(XmlMotorActuatorCfg(joint_names_expr=(".*",)),)
+    ),
+  )
+
+  robot = Entity(robot_cfg)
+  mj_model = robot.compile()
+
+  # Create simulation to initialize entity.
+  sim_cfg = SimulationCfg()
+  sim = Simulation(num_envs=1, cfg=sim_cfg, model=mj_model, device=device)
+  robot.initialize(sim.mj_model, sim.model, sim.data, device)
+
+  # Natural joint order: joint_a, joint_b, joint_c.
+  assert list(robot.joint_names) == ["joint_a", "joint_b", "joint_c"]
+
+  # Actuator definition order (from XML): act_c, act_b, act_a.
+  assert list(robot.actuator_names) == ["act_c", "act_b", "act_a"]
+
+  # ctrl_ids should be in natural joint order, not actuator definition order.
+  # The actuators in XML are defined in reverse order (c, b, a) but ctrl_ids
+  # should follow natural joint order (a, b, c).
+  ctrl_ids = robot.indexing.ctrl_ids.cpu().tolist()
+
+  # Map actuator names to their MuJoCo IDs in the compiled model.
+  actuator_name_to_id = {
+    mj_model.actuator(i).name.split("/")[-1]: i for i in range(mj_model.nu)
+  }
+
+  # ctrl_ids should be ordered as: act_a, act_b, act_c (natural joint order).
+  expected_ctrl_ids = [
+    actuator_name_to_id["act_a"],
+    actuator_name_to_id["act_b"],
+    actuator_name_to_id["act_c"],
+  ]
+  assert ctrl_ids == expected_ctrl_ids
+
+
 def test_find_joints_by_actuator_names_returns_entity_local_indices():
   """Test that find_joints_by_actuator_names returns entity-local indices."""
   robot_cfg = EntityCfg(
