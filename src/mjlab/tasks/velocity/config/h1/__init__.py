@@ -19,4 +19,3 @@ register_mjlab_task(
   rl_cfg=unitree_h1_ppo_runner_cfg(),
   runner_cls=VelocityOnPolicyRunner,
 )
-

@@ -147,4 +147,3 @@ def test_h1_actuators_configured_correctly(h1_model):
     assert h1_model.actuator_forcelimited[i] == 1, (
       f"Actuator '{actuator_name}' has forcelimited=False, expected True"
     )
-

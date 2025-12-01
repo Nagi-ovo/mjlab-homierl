@@ -88,9 +88,7 @@ GEARS_ARM = (
   1 + (46 / 18),
   1 + (56 / 16),
 )
-ARMATURE_ARM = reflected_inertia_from_two_stage_planetary(
-  ROTOR_INERTIAS_ARM, GEARS_ARM
-)
+ARMATURE_ARM = reflected_inertia_from_two_stage_planetary(ROTOR_INERTIAS_ARM, GEARS_ARM)
 
 # Actuator specifications
 ACTUATOR_HIP_KNEE = ElectricActuator(
@@ -274,6 +272,3 @@ if __name__ == "__main__":
   robot = Entity(get_h1_robot_cfg())
 
   viewer.launch(robot.spec.compile())
-
-
-
