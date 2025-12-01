@@ -92,9 +92,10 @@
                   diaginertia="0.00220848 0.00218961 0.000214202"/>
                 <joint name="left_ankle" axis="0 1 0" range="-0.87 0.52"/>
                 <geom class="visual" mesh="left_ankle_link"/>
-                <geom class="foot1"/>
-                <geom class="foot2"/>
-                <geom class="foot3"/>
+                <site name="left_foot" pos="0.04 0 -0.037"/>
+                <geom name="left_foot1" class="foot1"/>
+                <geom name="left_foot2" class="foot2"/>
+                <geom name="left_foot3" class="foot3"/>
               </body>
             </body>
           </body>
@@ -132,9 +133,10 @@
                   diaginertia="0.00220848 0.00218961 0.000214202"/>
                 <joint name="right_ankle" axis="0 1 0" range="-0.87 0.52"/>
                 <geom class="visual" mesh="right_ankle_link"/>
-                <geom class="foot1"/>
-                <geom class="foot2"/>
-                <geom class="foot3"/>
+                <site name="right_foot" pos="0.04 0 -0.037"/>
+                <geom name="right_foot1" class="foot1"/>
+                <geom name="right_foot2" class="foot2"/>
+                <geom name="right_foot3" class="foot3"/>
               </body>
             </body>
           </body>
@@ -215,4 +217,11 @@
     <exclude body1="torso_link" body2="left_shoulder_roll_link"/>
     <exclude body1="torso_link" body2="right_shoulder_roll_link"/>
   </contact>
+
+  <sensor>
+    <gyro name="imu_ang_vel" site="imu"/>
+    <velocimeter name="imu_lin_vel" site="imu"/>
+    <accelerometer name="imu_lin_acc" site="imu"/>
+    <subtreeangmom name="root_angmom" body="pelvis"/>
+  </sensor>
 </mujoco>
