@@ -192,8 +192,8 @@ KNEES_BENT_KEYFRAME = EntityCfg.InitialStateCfg(
 # Collision config.
 ##
 
-# Foot geom names (H1 uses simple foot geoms, not collision geoms)
-_foot_regex = r"^(left|right)_foot[1-3]$"
+# Foot geom names
+_foot_regex = r"^(left|right)_foot[1-3]_collision$"
 
 # This enables all collisions, including self collisions.
 # Self-collisions are given condim=1 while foot collisions

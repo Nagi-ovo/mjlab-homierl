@@ -20,9 +20,9 @@ def unitree_h1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.scene.entities = {"robot": get_h1_robot_cfg()}
 
   site_names = ("left_foot", "right_foot")
-  # H1 uses simple foot geoms (left_foot1/2/3, right_foot1/2/3)
+  # H1 foot collision geoms
   geom_names = tuple(
-    f"{side}_foot{i}" for side in ("left", "right") for i in range(1, 4)
+    f"{side}_foot{i}_collision" for side in ("left", "right") for i in range(1, 4)
   )
 
   feet_ground_cfg = ContactSensorCfg(
