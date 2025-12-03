@@ -1,4 +1,5 @@
 """Unitree H1 velocity environment configurations."""
+import torch
 
 from mjlab.asset_zoo.robots import (
   H1_ACTION_SCALE,
@@ -168,56 +169,74 @@ def _upper_body_random_disturbance_with_curriculum(
   asset_cfg: SceneEntityCfg,
   start_step: int = 0,
 ) -> None:
-  """Apply random external wrenches to H1 upper body after a curriculum warmup.
-
-  This wraps ``mdp.apply_external_force_torque`` but keeps the first
-  ``start_step`` environment steps disturbance–free so the policy can first
-  learn nominal walking, then adapt to upper–body motion.
-  """
-  # env.common_step_counter is a global training step counter incremented every
-  # environment step; it is shared across all env instances.
+  ...
   if env.common_step_counter < start_step:
     return
 
-  mdp.apply_external_force_torque(
-    env,
-    env_ids,
-    force_range=force_range,
-    torque_range=torque_range,
-    asset_cfg=asset_cfg,
+  asset = env.scene[asset_cfg.name]
+  if isinstance(asset_cfg.body_ids, list):
+    num_bodies = len(asset_cfg.body_ids)
+  else:
+    num_bodies = asset.num_bodies
+
+  if not hasattr(env, "_upper_body_wrench_forces"):
+    env._upper_body_wrench_forces = torch.zeros(
+      (env.num_envs, num_bodies, 3), device=env.device, dtype=torch.float32
+    )
+    env._upper_body_wrench_torques = torch.zeros(
+      (env.num_envs, num_bodies, 3), device=env.device, dtype=torch.float32
+    )
+
+  forces = env._upper_body_wrench_forces
+  torques = env._upper_body_wrench_torques
+
+  alpha = 0.2
+  low_f, high_f = force_range
+  low_t, high_t = torque_range
+
+  new_forces = torch.empty(
+    (len(env_ids), num_bodies, 3), device=env.device, dtype=torch.float32
+  ).uniform_(low_f, high_f)
+  new_torques = torch.empty(
+    (len(env_ids), num_bodies, 3), device=env.device, dtype=torch.float32
+  ).uniform_(low_t, high_t)
+
+  forces[env_ids] = (1.0 - alpha) * forces[env_ids] + alpha * new_forces
+  torques[env_ids] = (1.0 - alpha) * torques[env_ids] + alpha * new_torques
+
+  asset.write_external_wrench_to_sim(
+    forces[env_ids], torques[env_ids], env_ids=env_ids, body_ids=asset_cfg.body_ids
   )
 
 
 def unitree_h1_walk_env_cfg(
   play: bool = False,
-  curriculum_start_step: int = 1_000 * 24,
+  curriculum_start_step: int = 500 * 24,
 ) -> ManagerBasedRlEnvCfg:
   """Create Unitree H1 flat walk task with upper-body disturbance curriculum.
 
   The configuration is based on ``unitree_h1_flat_env_cfg`` (velocity tracking
-  on flat terrain) and adds an event that applies random external wrenches to
-  the torso and arm links. For training, the disturbance is disabled for the
-  first ``curriculum_start_step`` environment steps (default: ``1000 * 24``,
-  mirroring the velocity task curricula) so the robot can learn stable walking
-  before adapting to random upper–body motion. In play mode the disturbance is
+  on flat terrain) and adds smooth random external wrenches to the hands/forearms
+  to simulate realistic task execution (e.g., reaching, carrying, manipulating
+  objects) while walking. The robot must learn to maintain balance and continue
+  tracking velocity commands despite these disturbances.
+
+  For training, the disturbance is disabled for the first ``curriculum_start_step``
+  environment steps (default: ``500 * 24``) so the robot can first learn stable
+  walking before adapting to upper-body motion. In play mode the disturbance is
   enabled from the beginning.
   """
   # Start from the standard flat velocity configuration.
   cfg = unitree_h1_flat_env_cfg(play=play)
 
-  # Configure which bodies receive external disturbances (torso + arms).
+  # Configure which bodies receive external disturbances.
+  # Focus on elbow/hand links to simulate task execution (reaching, carrying, etc.)
+  # while the robot must maintain balance and continue walking.
   upper_body_asset_cfg = SceneEntityCfg(
     "robot",
     body_names=(
-      "torso_link",
-      "left_shoulder_pitch_link",
-      "left_shoulder_roll_link",
-      "left_shoulder_yaw_link",
-      "left_elbow_link",
-      "right_shoulder_pitch_link",
-      "right_shoulder_roll_link",
-      "right_shoulder_yaw_link",
-      "right_elbow_link",
+      "left_elbow_link",   # Left forearm/hand
+      "right_elbow_link",  # Right forearm/hand
     ),
   )
 
@@ -228,10 +247,10 @@ def unitree_h1_walk_env_cfg(
   cfg.events["upper_body_random_disturbance"] = EventTermCfg(
     func=_upper_body_random_disturbance_with_curriculum,
     mode="interval",
-    interval_range_s=(1.0, 3.0),
+    interval_range_s=(0.5, 1.0),  # Frequent updates for smooth continuous motion
     params={
       "force_range": (-60.0, 60.0),
-      "torque_range": (-30.0, 30.0),
+      "torque_range": (-75.0, 75.0),
       "asset_cfg": upper_body_asset_cfg,
       "start_step": step_threshold,
     },
