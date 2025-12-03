@@ -37,3 +37,14 @@ def unitree_h1_ppo_runner_cfg() -> RslRlOnPolicyRunnerCfg:
     num_steps_per_env=24,
     max_iterations=30_000,
   )
+
+
+def unitree_h1_walk_ppo_runner_cfg() -> RslRlOnPolicyRunnerCfg:
+  """Create RL runner configuration for Unitree H1 walk task.
+
+  This mirrors the velocity task configuration but uses a distinct
+  ``experiment_name`` so logs and checkpoints are separated.
+  """
+  cfg = unitree_h1_ppo_runner_cfg()
+  cfg.experiment_name = "h1_walk"
+  return cfg

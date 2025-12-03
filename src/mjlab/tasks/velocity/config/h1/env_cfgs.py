@@ -6,7 +6,8 @@ from mjlab.asset_zoo.robots import (
 )
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
-from mjlab.managers.manager_term_config import RewardTermCfg
+from mjlab.managers.manager_term_config import EventTermCfg, RewardTermCfg
+from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity import mdp
 from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
@@ -155,5 +156,85 @@ def unitree_h1_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     assert isinstance(twist_cmd, UniformVelocityCommandCfg)
     twist_cmd.ranges.lin_vel_x = (-1.5, 2.0)
     twist_cmd.ranges.ang_vel_z = (-0.7, 0.7)
+
+  return cfg
+
+
+def _upper_body_random_disturbance_with_curriculum(
+  env,
+  env_ids,
+  force_range: tuple[float, float],
+  torque_range: tuple[float, float],
+  asset_cfg: SceneEntityCfg,
+  start_step: int = 0,
+) -> None:
+  """Apply random external wrenches to H1 upper body after a curriculum warmup.
+
+  This wraps ``mdp.apply_external_force_torque`` but keeps the first
+  ``start_step`` environment steps disturbance–free so the policy can first
+  learn nominal walking, then adapt to upper–body motion.
+  """
+  # env.common_step_counter is a global training step counter incremented every
+  # environment step; it is shared across all env instances.
+  if env.common_step_counter < start_step:
+    return
+
+  mdp.apply_external_force_torque(
+    env,
+    env_ids,
+    force_range=force_range,
+    torque_range=torque_range,
+    asset_cfg=asset_cfg,
+  )
+
+
+def unitree_h1_walk_env_cfg(
+  play: bool = False,
+  curriculum_start_step: int = 1_000 * 24,
+) -> ManagerBasedRlEnvCfg:
+  """Create Unitree H1 flat walk task with upper-body disturbance curriculum.
+
+  The configuration is based on ``unitree_h1_flat_env_cfg`` (velocity tracking
+  on flat terrain) and adds an event that applies random external wrenches to
+  the torso and arm links. For training, the disturbance is disabled for the
+  first ``curriculum_start_step`` environment steps (default: ``1000 * 24``,
+  mirroring the velocity task curricula) so the robot can learn stable walking
+  before adapting to random upper–body motion. In play mode the disturbance is
+  enabled from the beginning.
+  """
+  # Start from the standard flat velocity configuration.
+  cfg = unitree_h1_flat_env_cfg(play=play)
+
+  # Configure which bodies receive external disturbances (torso + arms).
+  upper_body_asset_cfg = SceneEntityCfg(
+    "robot",
+    body_names=(
+      "torso_link",
+      "left_shoulder_pitch_link",
+      "left_shoulder_roll_link",
+      "left_shoulder_yaw_link",
+      "left_elbow_link",
+      "right_shoulder_pitch_link",
+      "right_shoulder_roll_link",
+      "right_shoulder_yaw_link",
+      "right_elbow_link",
+    ),
+  )
+
+  # Add an interval event that injects random forces/torques on the upper body.
+  # The strength is modest so that the task remains solvable but non-trivial.
+  step_threshold = 0 if play else curriculum_start_step
+
+  cfg.events["upper_body_random_disturbance"] = EventTermCfg(
+    func=_upper_body_random_disturbance_with_curriculum,
+    mode="interval",
+    interval_range_s=(1.0, 3.0),
+    params={
+      "force_range": (-60.0, 60.0),
+      "torque_range": (-30.0, 30.0),
+      "asset_cfg": upper_body_asset_cfg,
+      "start_step": step_threshold,
+    },
+  )
 
   return cfg
