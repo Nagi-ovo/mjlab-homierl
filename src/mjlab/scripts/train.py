@@ -18,6 +18,7 @@ from mjlab.tasks.tracking.mdp import MotionCommandCfg
 from mjlab.utils.gpu import select_gpus
 from mjlab.utils.os import dump_yaml, get_checkpoint_path, get_wandb_checkpoint_path
 from mjlab.utils.torch import configure_torch_backends
+from mjlab.utils.wandb import add_wandb_tags
 from mjlab.utils.wrappers import VideoRecorder
 
 
@@ -152,6 +153,7 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
 
   runner = runner_cls(env, agent_cfg, str(log_dir), device, **runner_kwargs)
 
+  add_wandb_tags(cfg.agent.wandb_tags)
   runner.add_git_repo_to_log(__file__)
   if resume_path is not None:
     print(f"[INFO]: Loading model checkpoint from: {resume_path}")

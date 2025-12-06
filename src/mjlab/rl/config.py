@@ -86,6 +86,8 @@ class RslRlBaseRunnerCfg:
   """The logger to use. Default is wandb."""
   wandb_project: str = "mjlab"
   """The wandb project name."""
+  wandb_tags: Tuple[str, ...] = ()
+  """Tags for the wandb run. Default is empty tuple."""
   resume: bool = False
   """Whether to resume the experiment. Default is False."""
   load_run: str = ".*"
