@@ -1,8 +1,11 @@
 """Unitree H1 constants."""
 
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Sequence
 
 import mujoco
+import numpy as np
 
 from mjlab import MJLAB_SRC_PATH
 from mjlab.actuator import BuiltinPositionActuatorCfg
@@ -23,6 +26,11 @@ H1_XML: Path = (
 )
 assert H1_XML.exists()
 
+# Default Robotiq 2F85 path.
+DEFAULT_2F85_XML = (
+  MJLAB_SRC_PATH / "asset_zoo" / "hands" / "robotiq_2f85" / "xmls" / "2f85.xml"
+)
+
 
 def get_assets(meshdir: str) -> dict[str, bytes]:
   assets: dict[str, bytes] = {}
@@ -30,9 +38,163 @@ def get_assets(meshdir: str) -> dict[str, bytes]:
   return assets
 
 
-def get_spec() -> mujoco.MjSpec:
+@dataclass(kw_only=True)
+class HandMountCfg:
+  """Configuration for mounting an external gripper onto the wrist."""
+
+  enable: bool = False
+  mount_site: str = ""
+  model: Path | None = None
+  offset_pos: tuple[float, float, float] = (0.0, 0.0, 0.0)
+  offset_euler: tuple[float, float, float] = (0.0, 0.0, 0.0)
+  add_wrist_joint: bool = False
+  wrist_joint_type: str = "hinge"
+  wrist_axis: tuple[float, float, float] = (0.0, 0.0, 1.0)
+  wrist_range: tuple[float, float] = (-1.0, 1.0)
+  wrist_ctrlrange: tuple[float, float] = (-1.0, 1.0)
+  actuator_whitelist: Sequence[str] = ("fingers_actuator",)
+  pinch_site: str | None = "pinch"
+
+
+@dataclass(kw_only=True)
+class HandsCfg:
+  left: HandMountCfg = field(
+    default_factory=lambda: HandMountCfg(
+      enable=False,
+      mount_site="left_hand_site",
+    )
+  )
+  right: HandMountCfg = field(
+    default_factory=lambda: HandMountCfg(
+      enable=False,
+      mount_site="right_hand_site",
+    )
+  )
+
+
+def _find_or_create_site(
+  model: mujoco.MjSpec, site_name: str, fallback_body: str
+) -> mujoco.MjsSite:
+  try:
+    site = model.site(site_name)
+    if site is not None:
+      return site
+  except KeyError:
+    # Will create below.
+    ...
+
+  body = model.body(fallback_body)
+  return body.add_site(name=site_name, pos=(0.0, 0.0, 0.0))
+
+
+def _maybe_add_wrist_and_joint(
+  model: mujoco.MjSpec, side: str, cfg: HandMountCfg
+) -> mujoco.MjsSite:
+  site_parent = None
+  site_pos = None
+  created_site = False
+
+  site = None
+  try:
+    site = model.site(cfg.mount_site)
+  except KeyError:
+    site = None
+
+  if site is not None:
+    site_parent = site.parent
+    site_pos = site.pos.copy()
+  else:
+    # Fallback: use hand collision geom pose as anchor.
+    hand_geom = None
+    try:
+      hand_geom = model.geom(f"{side}_hand_collision")
+    except KeyError:
+      hand_geom = None
+
+    if hand_geom is not None:
+      site_parent = hand_geom.parent
+      site_pos = hand_geom.pos.copy()
+    else:
+      # Last resort: create on elbow link origin.
+      site_parent = model.body(f"{side}_elbow_link")
+      site_pos = np.array((0.0, 0.0, 0.0))
+    site = site_parent.add_site(name=cfg.mount_site, pos=site_pos)
+    created_site = True
+
+  wrist_body = site_parent.add_body(name=f"{side}_wrist_link", pos=site_pos)
+  if created_site:
+    # Rename the temp site to avoid duplication, then create the wrist site with the desired name.
+    site.name = f"{cfg.mount_site}_legacy_wrist"
+    wrist_site = wrist_body.add_site(name=cfg.mount_site, pos=site.pos, quat=site.quat)
+  else:
+    # Avoid duplicate names: rename original, then create a new site with the original name under wrist.
+    original_site_name = site.name
+    site.name = f"{original_site_name}_legacy_wrist"
+    wrist_site = wrist_body.add_site(name=original_site_name, pos=site.pos, quat=site.quat)
+
+  if cfg.add_wrist_joint:
+    joint_type_map = {
+      "hinge": mujoco.mjtJoint.mjJNT_HINGE,
+      "slide": mujoco.mjtJoint.mjJNT_SLIDE,
+      "ball": mujoco.mjtJoint.mjJNT_BALL,
+      "free": mujoco.mjtJoint.mjJNT_FREE,
+    }
+    joint_type = joint_type_map.get(cfg.wrist_joint_type, mujoco.mjtJoint.mjJNT_HINGE)
+    joint = wrist_body.add_joint(
+      type=joint_type,
+      name=f"{side}_wrist",
+      axis=cfg.wrist_axis,
+      range=cfg.wrist_range,
+    )
+    actuator = model.add_actuator(name=f"{side}_wrist", target=joint.name)
+    actuator.trntype = mujoco.mjtTrn.mjTRN_JOINT
+    actuator.dyntype = mujoco.mjtDyn.mjDYN_NONE
+    actuator.gaintype = mujoco.mjtGain.mjGAIN_FIXED
+    actuator.biastype = mujoco.mjtBias.mjBIAS_NONE
+    actuator.ctrllimited = True
+    actuator.ctrlrange[:] = cfg.wrist_ctrlrange
+
+  return wrist_site
+
+
+def _attach_gripper(
+  model: mujoco.MjSpec, side: str, cfg: HandMountCfg
+) -> tuple[list[str], list[str]]:
+  """Attach external gripper MJCF under wrist site; returns (actuator_names, joint_names)."""
+  if not cfg.enable or cfg.model is None:
+    return [], []
+
+  wrist_site = _maybe_add_wrist_and_joint(model, side, cfg)
+
+  gripper_spec = mujoco.MjSpec.from_file(str(cfg.model))
+  gripper_frame = wrist_site.parent.add_frame(pos=cfg.offset_pos, euler=cfg.offset_euler)
+  prefix = f"{side}_gripper/"
+  model.attach(gripper_spec, frame=gripper_frame, prefix=prefix)
+
+  actuators: list[str] = []
+  joints: list[str] = []
+  for act in gripper_spec.actuators:
+    name = act.name or act.tendon or act.joint or ""
+    full_name = prefix + name if name else ""
+    if any(key in full_name for key in cfg.actuator_whitelist):
+      actuators.append(full_name)
+  for j in gripper_spec.joints:
+    joints.append(prefix + j.name)
+  return actuators, joints
+
+
+def get_spec(hands: HandsCfg | None = None) -> mujoco.MjSpec:
   spec = mujoco.MjSpec.from_file(str(H1_XML))
-  spec.assets = get_assets(spec.meshdir)
+  assets = get_assets(spec.meshdir)
+  if hands is not None:
+    for side, hand_cfg in (("left", hands.left), ("right", hands.right)):
+      _attach_gripper(spec, side, hand_cfg)
+    if hands.left.enable and hands.left.model is not None:
+      update_assets(assets, hands.left.model.parent / "assets", meshdir="assets")
+    if hands.right.enable and hands.right.model is not None:
+      update_assets(assets, hands.right.model.parent / "assets", meshdir="assets")
+
+  spec.assets = assets
   return spec
 
 
@@ -239,7 +401,7 @@ H1_ARTICULATION = EntityArticulationInfoCfg(
 )
 
 
-def get_h1_robot_cfg() -> EntityCfg:
+def get_h1_robot_cfg(hands: HandsCfg | None = None) -> EntityCfg:
   """Get a fresh H1 robot configuration instance.
 
   Returns a new EntityCfg instance each time to avoid mutation issues when
@@ -248,7 +410,7 @@ def get_h1_robot_cfg() -> EntityCfg:
   return EntityCfg(
     init_state=KNEES_BENT_KEYFRAME,
     collisions=(FULL_COLLISION,),
-    spec_fn=get_spec,
+    spec_fn=lambda: get_spec(hands=hands),
     articulation=H1_ARTICULATION,
   )
 

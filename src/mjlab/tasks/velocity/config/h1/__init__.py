@@ -31,3 +31,11 @@ register_mjlab_task(
   rl_cfg=unitree_h1_walk_ppo_runner_cfg(),
   runner_cls=VelocityOnPolicyRunner,
 )
+
+register_mjlab_task(
+  task_id="Mjlab-Walk-Unitree-H1-with_hands",
+  env_cfg=unitree_h1_walk_env_cfg(hands=True),
+  play_env_cfg=unitree_h1_walk_env_cfg(play=True, hands=True),
+  rl_cfg=unitree_h1_walk_ppo_runner_cfg(),
+  runner_cls=VelocityOnPolicyRunner,
+)
