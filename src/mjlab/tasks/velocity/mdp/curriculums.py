@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict, cast
+from typing import TYPE_CHECKING, Protocol, TypedDict, cast
 
 import torch
 
@@ -105,3 +105,58 @@ def reward_weight(
     if env.common_step_counter > stage["step"]:
       reward_term_cfg.weight = stage["weight"]
   return torch.tensor([reward_term_cfg.weight])
+
+
+class CurriculumScalableAction(Protocol):
+  curriculum_ratio: torch.Tensor
+
+  def set_curriculum_ratio(self, ratio: torch.Tensor | float) -> None: ...
+
+
+def upper_body_action_curriculum(
+  env: ManagerBasedRlEnv,
+  env_ids: torch.Tensor | slice,
+  action_name: str,
+  reward_name: str = "track_linear_velocity",
+  success_threshold: float = 0.8,
+  increment: float = 0.05,
+  max_ratio: float = 1.0,
+  start_step: int = 0,
+) -> torch.Tensor:
+  """Scale upper-body motion range based on velocity tracking success.
+
+  - Keeps ratio at 0 until ``start_step``.
+  - At episode end (called on resets), if the average raw reward across
+    ``env_ids`` for ``reward_name`` exceeds ``success_threshold``, increase
+    ratio by ``increment`` up to ``max_ratio``. Ratio is global (not per-env).
+  - Returns the ratio for logging (scalar tensor).
+  """
+  action_term = cast(CurriculumScalableAction, env.action_manager.get_term(action_name))
+  if not hasattr(action_term, "set_curriculum_ratio"):
+    raise ValueError(
+      f"Action term '{action_name}' does not support curriculum scaling."
+    )
+
+  # Before the start step, hold ratio at zero.
+  if env.common_step_counter < start_step:
+    action_term.set_curriculum_ratio(0.0)
+    return action_term.curriculum_ratio.unsqueeze(0)
+
+  # Episode-average raw reward = accumulated / (episode_len_s * weight)
+  reward_manager = env.reward_manager
+  if reward_name not in reward_manager._episode_sums:
+    return action_term.curriculum_ratio.unsqueeze(0)
+
+  reward_cfg = reward_manager.get_term_cfg(reward_name)
+  weight = reward_cfg.weight if reward_cfg.weight != 0 else 1.0
+  episode_sum = reward_manager._episode_sums[reward_name][env_ids].mean()
+  avg_raw_reward = episode_sum / (env.max_episode_length_s * weight)
+
+  if avg_raw_reward >= success_threshold:
+    updated = min(
+      (action_term.curriculum_ratio + increment).item(),
+      max_ratio,
+    )
+    action_term.set_curriculum_ratio(updated)
+
+  return action_term.curriculum_ratio.unsqueeze(0)

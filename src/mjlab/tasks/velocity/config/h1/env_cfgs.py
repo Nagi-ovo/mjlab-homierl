@@ -1,4 +1,8 @@
 """Unitree H1 velocity environment configurations."""
+
+from dataclasses import dataclass
+from typing import Sequence
+
 import torch
 
 from mjlab.asset_zoo.robots import (
@@ -7,12 +11,133 @@ from mjlab.asset_zoo.robots import (
 )
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
-from mjlab.managers.manager_term_config import EventTermCfg, RewardTermCfg
-from mjlab.managers.scene_entity_config import SceneEntityCfg
+from mjlab.managers.action_manager import ActionTerm
+from mjlab.managers.manager_term_config import (
+  ActionTermCfg,
+  CurriculumTermCfg,
+  EventTermCfg,
+  RewardTermCfg,
+)
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity import mdp
 from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
+
+
+class UpperBodyPoseAction(ActionTerm):
+  """Generate smooth, policy-free targets for upper-body joints.
+
+  The action has zero policy dimensions; it internally tracks a goal pose and
+  interpolates toward it every simulation step. New goals are sampled via an
+  event hook to mimic upper-body motion while keeping the lower-body action
+  space small.
+  """
+
+  def __init__(self, cfg: "UpperBodyPoseActionCfg", env):
+    super().__init__(cfg=cfg, env=env)
+
+    joint_ids, joint_names = self._asset.find_joints(
+      cfg.joint_names, preserve_order=cfg.preserve_order
+    )
+    if len(joint_ids) == 0:
+      raise ValueError(
+        f"No upper-body joints matched patterns: {cfg.joint_names}. "
+        "Ensure the expressions align with the H1 MJCF joint names."
+      )
+
+    self._joint_ids = torch.tensor(joint_ids, device=self.device, dtype=torch.long)
+    self._joint_names = joint_names
+    self._action_dim = 0
+    self._raw_actions = torch.zeros(self.num_envs, 0, device=self.device)
+
+    defaults = self._asset.data.default_joint_pos[:, self._joint_ids]
+    self._default_target = defaults.clone()
+    self._current_target = defaults.clone()
+    self._goal_target = defaults.clone()
+    self._joint_limits = self._asset.data.soft_joint_pos_limits[:, self._joint_ids]
+
+    self._interp_rate = cfg.interp_rate
+    self._target_range = cfg.target_range
+    self._start_step = cfg.start_step
+    # Curriculum-controlled global scale in [0, 1]; 0 => no upper-body motion.
+    self._curriculum_ratio = torch.tensor(0.0, device=self.device, dtype=torch.float32)
+
+  @property
+  def action_dim(self) -> int:
+    return self._action_dim
+
+  @property
+  def raw_action(self) -> torch.Tensor:
+    return self._raw_actions
+
+  def process_actions(self, actions: torch.Tensor) -> None:
+    # No policy-controlled upper-body actions; keep buffer shape consistent.
+    if actions.numel() != 0:
+      raise ValueError(
+        f"UpperBodyPoseAction expects zero-dim actions, got shape {actions.shape}."
+      )
+    self._raw_actions[:] = 0.0
+
+  def reset(self, env_ids: torch.Tensor | slice | None = None) -> None:
+    if env_ids is None:
+      env_ids = slice(None)
+    self._raw_actions[env_ids] = 0.0
+    self._current_target[env_ids] = self._default_target[env_ids]
+    self._goal_target[env_ids] = self._default_target[env_ids]
+    # Clamp curriculum ratio to valid bounds.
+    self._curriculum_ratio = self._curriculum_ratio.clamp(0.0, 1.0)
+
+  def sample_new_goals(
+    self,
+    env_ids: torch.Tensor | slice | None = None,
+    target_range: tuple[float, float] | None = None,
+  ) -> None:
+    if env_ids is None:
+      env_ids = slice(None)
+
+    defaults = self._default_target[env_ids]
+    low, high = target_range if target_range is not None else self._target_range
+    # Base noise from symmetric range, then scale by global curriculum ratio.
+    noise = torch.empty_like(defaults).uniform_(low, high)
+    noise = noise * self._curriculum_ratio
+    targets = defaults + noise
+
+    limits = self._joint_limits[env_ids]
+    targets = torch.max(torch.min(targets, limits[..., 1]), limits[..., 0])
+    self._goal_target[env_ids] = targets
+
+  def apply_actions(self) -> None:
+    # Hold default targets until curriculum start.
+    if self._env.common_step_counter < self._start_step:
+      self._goal_target[:] = self._default_target
+
+    self._current_target = torch.lerp(
+      self._current_target, self._goal_target, self._interp_rate
+    )
+    self._asset.set_joint_position_target(
+      self._current_target, joint_ids=self._joint_ids
+    )
+
+  def set_curriculum_ratio(self, ratio: torch.Tensor | float) -> None:
+    """Update the global curriculum ratio, clamped to [0, 1]."""
+    ratio_tensor = torch.as_tensor(ratio, device=self.device, dtype=torch.float32)
+    self._curriculum_ratio = ratio_tensor.clamp(0.0, 1.0)
+
+  @property
+  def curriculum_ratio(self) -> torch.Tensor:
+    return self._curriculum_ratio
+
+
+@dataclass(kw_only=True)
+class UpperBodyPoseActionCfg(ActionTermCfg):
+  """Configuration for the smooth upper-body target generator."""
+
+  joint_names: Sequence[str]
+  interp_rate: float = 0.05
+  target_range: tuple[float, float] = (-0.35, 0.35)
+  start_step: int = 0
+  preserve_order: bool = False
+  class_type: type[ActionTerm] = UpperBodyPoseAction
 
 
 def unitree_h1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
@@ -161,97 +286,104 @@ def unitree_h1_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   return cfg
 
 
-def _upper_body_random_disturbance_with_curriculum(
+def _sample_upper_body_targets_with_curriculum(
   env,
   env_ids,
-  force_range: tuple[float, float],
-  torque_range: tuple[float, float],
-  asset_cfg: SceneEntityCfg,
+  action_name: str,
+  target_range: tuple[float, float],
   start_step: int = 0,
 ) -> None:
-  ...
   if env.common_step_counter < start_step:
     return
 
-  asset = env.scene[asset_cfg.name]
-  if isinstance(asset_cfg.body_ids, list):
-    num_bodies = len(asset_cfg.body_ids)
-  else:
-    num_bodies = asset.num_bodies
-
-  if not hasattr(env, "_upper_body_wrench_forces"):
-    env._upper_body_wrench_forces = torch.zeros(
-      (env.num_envs, num_bodies, 3), device=env.device, dtype=torch.float32
-    )
-    env._upper_body_wrench_torques = torch.zeros(
-      (env.num_envs, num_bodies, 3), device=env.device, dtype=torch.float32
+  action_term = env.action_manager.get_term(action_name)
+  if not isinstance(action_term, UpperBodyPoseAction):
+    raise ValueError(
+      f"Action term '{action_name}' is expected to be UpperBodyPoseAction; "
+      f"received {type(action_term)}."
     )
 
-  forces = env._upper_body_wrench_forces
-  torques = env._upper_body_wrench_torques
-
-  alpha = 0.2
-  low_f, high_f = force_range
-  low_t, high_t = torque_range
-
-  new_forces = torch.empty(
-    (len(env_ids), num_bodies, 3), device=env.device, dtype=torch.float32
-  ).uniform_(low_f, high_f)
-  new_torques = torch.empty(
-    (len(env_ids), num_bodies, 3), device=env.device, dtype=torch.float32
-  ).uniform_(low_t, high_t)
-
-  forces[env_ids] = (1.0 - alpha) * forces[env_ids] + alpha * new_forces
-  torques[env_ids] = (1.0 - alpha) * torques[env_ids] + alpha * new_torques
-
-  asset.write_external_wrench_to_sim(
-    forces[env_ids], torques[env_ids], env_ids=env_ids, body_ids=asset_cfg.body_ids
-  )
+  action_term.sample_new_goals(env_ids=env_ids, target_range=target_range)
 
 
 def unitree_h1_walk_env_cfg(
   play: bool = False,
   curriculum_start_step: int = 500 * 24,
 ) -> ManagerBasedRlEnvCfg:
-  """Create Unitree H1 flat walk task with upper-body disturbance curriculum.
+  """Create Unitree H1 walk task with upper-body target curriculum.
 
-  The configuration is based on ``unitree_h1_flat_env_cfg`` (velocity tracking
-  on flat terrain) and adds smooth random external wrenches to the hands/forearms
-  to simulate realistic task execution (e.g., reaching, carrying, manipulating
-  objects) while walking. The robot must learn to maintain balance and continue
-  tracking velocity commands despite these disturbances.
-
-  For training, the disturbance is disabled for the first ``curriculum_start_step``
-  environment steps (default: ``500 * 24``) so the robot can first learn stable
-  walking before adapting to upper-body motion. In play mode the disturbance is
-  enabled from the beginning.
+  Based on ``unitree_h1_flat_env_cfg`` but reduces the policy action space to
+  the lower body. Upper-body joints (torso + arms) follow smooth, randomly
+  sampled pose targets that are updated via a curriculum. This mirrors the
+  HOMIE setup: legs are policy-controlled, while the upper body moves through
+  slow, interpolated targets to introduce realistic disturbances without
+  enlarging the action space.
   """
   # Start from the standard flat velocity configuration.
   cfg = unitree_h1_flat_env_cfg(play=play)
 
-  # Configure which bodies receive external disturbances.
-  # Focus on elbow/hand links to simulate task execution (reaching, carrying, etc.)
-  # while the robot must maintain balance and continue walking.
-  upper_body_asset_cfg = SceneEntityCfg(
-    "robot",
-    body_names=(
-      "left_elbow_link",   # Left forearm/hand
-      "right_elbow_link",  # Right forearm/hand
-    ),
-  )
-
-  # Add an interval event that injects random forces/torques on the upper body.
-  # The strength is modest so that the task remains solvable but non-trivial.
   step_threshold = 0 if play else curriculum_start_step
 
-  cfg.events["upper_body_random_disturbance"] = EventTermCfg(
-    func=_upper_body_random_disturbance_with_curriculum,
+  # Split actions: lower body is policy-controlled; upper body follows smooth targets.
+  lower_body_joint_expr: tuple[str, ...] = (
+    r"(left|right)_hip_yaw",
+    r"(left|right)_hip_roll",
+    r"(left|right)_hip_pitch",
+    r"(left|right)_knee",
+    r"(left|right)_ankle",
+  )
+  upper_body_joint_expr: tuple[str, ...] = (
+    "torso",
+    r"(left|right)_shoulder_pitch",
+    r"(left|right)_shoulder_roll",
+    r"(left|right)_shoulder_yaw",
+    r"(left|right)_elbow",
+  )
+
+  joint_pos_action = cfg.actions["joint_pos"]
+  assert isinstance(joint_pos_action, JointPositionActionCfg)
+  joint_pos_action.actuator_names = lower_body_joint_expr
+  # 限定缩放表只包含下肢关节，避免上肢模式缺失造成的正则匹配报错
+  lower_scale_keys = (
+    ".*_hip_yaw",
+    ".*_hip_roll",
+    ".*_hip_pitch",
+    ".*_knee",
+    ".*_ankle",
+  )
+  joint_pos_action.scale = {k: H1_ACTION_SCALE[k] for k in lower_scale_keys}
+
+  upper_action_name = "upper_body_pose"
+  cfg.actions[upper_action_name] = UpperBodyPoseActionCfg(
+    asset_name="robot",
+    joint_names=upper_body_joint_expr,
+    interp_rate=0.05,
+    target_range=(-0.6, 0.6),
+    start_step=step_threshold,
+  )
+
+  # Update upper-body targets on a slower schedule to simulate purposeful motion.
+  cfg.events["upper_body_random_targets"] = EventTermCfg(
+    func=_sample_upper_body_targets_with_curriculum,
     mode="interval",
-    interval_range_s=(0.5, 1.0),  # Frequent updates for smooth continuous motion
+    interval_range_s=(0.75, 1.25),
     params={
-      "force_range": (-60.0, 60.0),
-      "torque_range": (-75.0, 75.0),
-      "asset_cfg": upper_body_asset_cfg,
+      "action_name": upper_action_name,
+      "target_range": (-0.6, 0.6),
+      "start_step": step_threshold,
+    },
+  )
+
+  # Curriculum: expand upper-body motion as velocity tracking improves.
+  assert cfg.curriculum is not None
+  cfg.curriculum["upper_body_action"] = CurriculumTermCfg(
+    func=mdp.upper_body_action_curriculum,
+    params={
+      "action_name": upper_action_name,
+      "reward_name": "track_linear_velocity",
+      "success_threshold": 0.8,
+      "increment": 0.05,
+      "max_ratio": 1.0,
       "start_step": step_threshold,
     },
   )
