@@ -635,19 +635,16 @@ def generate_dashboard_html(runs: list[dict], throughput_data: list[dict]) -> st
                 let summaryHtml = `<div class="stat"><div class="stat-label">Total Runs</div><div class="stat-value">${{throughputData.length}}</div></div>`;
                 latestRun.results.forEach(r => {{
                     const taskShort = r.task.replace('Mjlab-', '').replace('-Unitree-', '-');
-                    // Support both old (env_fps) and new (env_sps) field names.
-                    const envSps = r.env_sps ?? r.env_fps;
                     summaryHtml += `
                         <div class="stat">
                             <div class="stat-label">${{taskShort}} Env SPS</div>
-                            <div class="stat-value">${{(envSps / 1000).toFixed(0)}}K</div>
+                            <div class="stat-value">${{(r.env_sps / 1000).toFixed(0)}}K</div>
                         </div>`;
                 }});
                 throughputSummary.innerHTML = summaryHtml;
             }}
 
             // Create charts for each metric type
-            // Support both old (fps) and new (sps) field names.
             const throughputMetrics = [
                 ['physics_sps', 'Physics SPS', true],
                 ['env_sps', 'Env SPS', true],
@@ -677,12 +674,7 @@ def generate_dashboard_html(runs: list[dict], throughput_data: list[dict]) -> st
                     const data = throughputData.map(run => {{
                         const result = run.results.find(r => r.task === task);
                         if (!result) return null;
-                        // Support both old (fps) and new (sps) field names.
-                        let value = result[key];
-                        if (value === undefined) {{
-                            const oldKey = key.replace('_sps', '_fps');
-                            value = result[oldKey];
-                        }}
+                        const value = result[key];
                         return {{
                             x: new Date(run.created_at),
                             y: key.includes('_sps') ? value / 1000 : value,
@@ -760,16 +752,13 @@ def generate_dashboard_html(runs: list[dict], throughput_data: list[dict]) -> st
                     const commitLink = run.commit && run.commit !== 'unknown'
                         ? `<a href="${{GITHUB_REPO}}/commit/${{run.commit}}" target="_blank"><code>${{run.commit}}</code></a>`
                         : `<code>${{run.commit}}</code>`;
-                    // Support both old (fps) and new (sps) field names.
-                    const physicsSps = r.physics_sps ?? r.physics_fps;
-                    const envSps = r.env_sps ?? r.env_fps;
                     throughputTbody.innerHTML += `
                         <tr>
                             <td>${{i === 0 ? new Date(run.created_at).toLocaleDateString() : ''}}</td>
                             <td>${{i === 0 ? commitLink : ''}}</td>
                             <td>${{taskShort}}</td>
-                            <td>${{(physicsSps / 1000).toFixed(0)}}K</td>
-                            <td>${{(envSps / 1000).toFixed(0)}}K</td>
+                            <td>${{(r.physics_sps / 1000).toFixed(0)}}K</td>
+                            <td>${{(r.env_sps / 1000).toFixed(0)}}K</td>
                             <td>${{r.overhead_pct.toFixed(1)}}%</td>
                         </tr>
                     `;

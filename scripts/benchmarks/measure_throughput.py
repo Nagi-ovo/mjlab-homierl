@@ -147,13 +147,11 @@ def benchmark_task(task: str, cfg: ThroughputConfig) -> BenchmarkResult:
   decimation = env.cfg.decimation
   physics_sps = measure_physics_sps(env, cfg.num_steps)
 
-  # Reset env state before measuring env SPS.
   env.reset()
   torch.cuda.synchronize()
 
   env_sps = measure_env_sps(env, cfg.num_steps)
 
-  # Both metrics are now in env steps/sec, so overhead is straightforward.
   overhead_pct = 100 * (1 - env_sps / physics_sps)
 
   env.close()
