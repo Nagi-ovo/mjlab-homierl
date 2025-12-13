@@ -240,6 +240,9 @@ def _default_hands_cfg(enable: bool) -> HandsCfg | None:
       enable=True,
       mount_site="left_hand_site",
       model=DEFAULT_2F85_XML,
+      # Rotate gripper so its +Z (pinch direction) aligns with H1 forearm (+X).
+      # Euler order is XYZ in MuJoCo.
+      offset_euler=(0.0, 1.5707963267948966, 0.0),
       add_wrist_joint=True,
       wrist_axis=(0.0, 0.0, 1.0),
       wrist_range=(-1.0, 1.0),
@@ -250,6 +253,7 @@ def _default_hands_cfg(enable: bool) -> HandsCfg | None:
       enable=True,
       mount_site="right_hand_site",
       model=DEFAULT_2F85_XML,
+      offset_euler=(0.0, 1.5707963267948966, 0.0),
       add_wrist_joint=True,
       wrist_axis=(0.0, 0.0, 1.0),
       wrist_range=(-1.0, 1.0),
