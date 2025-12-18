@@ -66,7 +66,7 @@ class CurriculumManager(ManagerBase):
           for _key, value in term_state.items():
             if isinstance(value, torch.Tensor):
               value = value.item()
-            terms[term_name].append(value)
+            data.append(value)
         else:
           if isinstance(term_state, torch.Tensor):
             term_state = term_state.item()
@@ -95,7 +95,12 @@ class CurriculumManager(ManagerBase):
     if env_ids is None:
       env_ids = slice(None)
     for name, term_cfg in zip(self._term_names, self._term_cfgs, strict=False):
-      state = term_cfg.func(self._env, env_ids, **term_cfg.params)
+      term_env_ids = env_ids
+      if term_cfg.env_group is not None:
+        term_env_ids = self._env.filter_env_ids_by_group(env_ids, term_cfg.env_group)
+        if isinstance(term_env_ids, torch.Tensor) and term_env_ids.numel() == 0:
+          continue
+      state = term_cfg.func(self._env, term_env_ids, **term_cfg.params)
       self._curriculum_state[name] = state
 
   def _prepare_terms(self):

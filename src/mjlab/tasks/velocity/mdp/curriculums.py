@@ -27,6 +27,72 @@ class RewardWeightStage(TypedDict):
   weight: float
 
 
+def assign_env_group_by_fraction(
+  env: ManagerBasedRlEnv,
+  env_ids: torch.Tensor | slice,
+  group_name: str,
+  fraction: float,
+  complement_group_name: str | None = None,
+  method: str = "random",
+  seed: int = 0,
+  overwrite: bool = False,
+) -> dict[str, torch.Tensor]:
+  """Assign a fixed subset of environments to a named group.
+
+  This is useful for mixing tasks/curricula across a vectorized environment without
+  hard-coding indices. The assignment is persistent across resets unless
+  `overwrite=True`.
+
+  Args:
+    env: The environment.
+    env_ids: Unused (assignment is over all envs). Kept to match curriculum signature.
+    group_name: Name of the group to create/update.
+    fraction: Fraction of envs to include in the group (0..1).
+    complement_group_name: If provided, also sets this group to the logical NOT
+      of `group_name`.
+    method: Selection method: "random" (seeded) or "first".
+    seed: RNG seed used when method="random".
+    overwrite: If False and the group already exists, do nothing.
+  """
+  del env_ids  # Unused; assignment spans all envs for stable partitions.
+
+  if (not overwrite) and hasattr(env, "env_group_masks") and group_name in env.env_group_masks:
+    mask = env.get_env_group_mask(group_name)
+    return {
+      f"{group_name}_fraction": mask.float().mean(),
+      f"{group_name}_count": mask.sum(),
+    }
+
+  num_envs = env.num_envs
+  frac = float(max(0.0, min(1.0, fraction)))
+  count = int(round(num_envs * frac))
+  count = max(0, min(num_envs, count))
+
+  if method not in ("random", "first"):
+    raise ValueError(f"Unknown method '{method}'. Use 'random' or 'first'.")
+
+  if method == "first":
+    selected = torch.arange(count, device=env.device, dtype=torch.long)
+  else:
+    gen = torch.Generator(device="cpu")
+    gen.manual_seed(int(seed))
+    perm = torch.randperm(num_envs, generator=gen)
+    selected = perm[:count].to(env.device, dtype=torch.long)
+
+  mask = torch.zeros(num_envs, device=env.device, dtype=torch.bool)
+  if count > 0:
+    mask[selected] = True
+
+  env.set_env_group_mask(group_name, mask)
+  if complement_group_name is not None:
+    env.set_env_group_mask(complement_group_name, ~mask)
+
+  return {
+    f"{group_name}_fraction": mask.float().mean(),
+    f"{group_name}_count": mask.sum(),
+  }
+
+
 def terrain_levels_vel(
   env: ManagerBasedRlEnv,
   env_ids: torch.Tensor,

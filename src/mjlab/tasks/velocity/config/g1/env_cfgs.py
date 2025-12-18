@@ -13,7 +13,7 @@ from mjlab.managers.manager_term_config import (
 )
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity import mdp
-from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
+from mjlab.tasks.velocity.mdp import RelativeHeightCommandCfg, UniformVelocityCommandCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
 
@@ -65,9 +65,17 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   assert isinstance(twist_cmd, UniformVelocityCommandCfg)
   twist_cmd.viz.z_offset = 1.15
 
+  height_cmd = cfg.commands["height"]
+  assert isinstance(height_cmd, RelativeHeightCommandCfg)
+  height_cmd.foot_site_names = site_names
+  height_cmd.ranges.height = (0.9, 1.3)
+
   cfg.observations["critic"].terms["foot_height"].params[
     "asset_cfg"
   ].site_names = site_names
+
+  cfg.rewards["track_height"].params["asset_cfg"].site_names = site_names
+  cfg.rewards["knee_deviation"].params["foot_asset_cfg"].site_names = site_names
 
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = geom_names
 

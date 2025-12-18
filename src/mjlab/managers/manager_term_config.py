@@ -51,7 +51,18 @@ class CommandTermCfg:
 
 @dataclass(kw_only=True)
 class CurriculumTermCfg(ManagerTermBaseCfg):
-  pass
+  """Configuration for a curriculum term.
+
+  Notes:
+    - The manager always passes `env_ids` as the second positional argument to the
+      curriculum callable: `func(env, env_ids, **params)`.
+    - If `env_group` is provided, the curriculum manager will filter the incoming
+      `env_ids` to those belonging to the named environment group before invoking
+      the term. This enables applying different curricula to different subsets of
+      environments without hard-coding indices.
+  """
+
+  env_group: str | None = None
 
 
 ##

@@ -112,6 +112,9 @@ class ManagerBasedRlEnv:
     self._sim_step_counter = 0
     self.extras = {}
     self.obs_buf = {}
+    # Optional grouping of vectorized environments (e.g., for task mixing / curricula).
+    # Maps group name -> boolean mask of shape (num_envs,).
+    self.env_group_masks: dict[str, torch.Tensor] = {}
 
     # Initialize scene and simulation.
     self.scene = Scene(self.cfg.scene, device=device)
@@ -344,6 +347,34 @@ class ManagerBasedRlEnv:
   def update_visualizers(self, visualizer: DebugVisualizer) -> None:
     for mod in self.manager_visualizers.values():
       mod.debug_vis(visualizer)
+
+  # Environment grouping helpers.
+
+  def set_env_group_mask(self, group_name: str, mask: torch.Tensor) -> None:
+    """Register or update a boolean mask identifying an environment group."""
+    if mask.shape != (self.num_envs,):
+      raise ValueError(
+        f"Group mask '{group_name}' must have shape (num_envs,), got {mask.shape}."
+      )
+    self.env_group_masks[group_name] = mask.to(self.device, dtype=torch.bool)
+
+  def get_env_group_mask(self, group_name: str) -> torch.Tensor:
+    """Return boolean mask (num_envs,) for the requested group."""
+    if group_name not in self.env_group_masks:
+      raise KeyError(
+        f"Environment group '{group_name}' not found. "
+        "Define it via a curriculum term or by calling set_env_group_mask()."
+      )
+    return self.env_group_masks[group_name]
+
+  def filter_env_ids_by_group(
+    self, env_ids: torch.Tensor | slice, group_name: str
+  ) -> torch.Tensor:
+    """Filter env_ids to those in the named environment group."""
+    mask = self.get_env_group_mask(group_name)
+    if isinstance(env_ids, slice):
+      return mask.nonzero(as_tuple=False).flatten()
+    return env_ids[mask[env_ids]]
 
   # Private methods.
 

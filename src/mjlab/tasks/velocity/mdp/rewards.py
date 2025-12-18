@@ -20,11 +20,26 @@ if TYPE_CHECKING:
 _DEFAULT_ASSET_CFG = SceneEntityCfg("robot")
 
 
+def _env_group_scale(env: ManagerBasedRlEnv, env_group: str | None) -> torch.Tensor:
+  """Return a float mask (num_envs,) scaling a term by env group membership."""
+  if env_group is None:
+    return torch.ones(env.num_envs, device=env.device, dtype=torch.float32)
+  try:
+    mask = env.get_env_group_mask(env_group)
+  except Exception as e:
+    raise ValueError(
+      f"env_group='{env_group}' was provided but the environment has no such group. "
+      "Define it via a curriculum term (e.g. assign_env_group_by_fraction)."
+    ) from e
+  return mask.float()
+
+
 def track_linear_velocity(
   env: ManagerBasedRlEnv,
   std: float,
   command_name: str,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
+  env_group: str | None = None,
 ) -> torch.Tensor:
   """Reward for tracking the commanded base linear velocity.
 
@@ -37,7 +52,8 @@ def track_linear_velocity(
   xy_error = torch.sum(torch.square(command[:, :2] - actual[:, :2]), dim=1)
   z_error = torch.square(actual[:, 2])
   lin_vel_error = xy_error + z_error
-  return torch.exp(-lin_vel_error / std**2)
+  reward = torch.exp(-lin_vel_error / std**2)
+  return reward * _env_group_scale(env, env_group)
 
 
 def track_angular_velocity(
@@ -45,6 +61,7 @@ def track_angular_velocity(
   std: float,
   command_name: str,
   asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
+  env_group: str | None = None,
 ) -> torch.Tensor:
   """Reward heading error for heading-controlled envs, angular velocity for others.
 
@@ -57,7 +74,97 @@ def track_angular_velocity(
   z_error = torch.square(command[:, 2] - actual[:, 2])
   xy_error = torch.sum(torch.square(actual[:, :2]), dim=1)
   ang_vel_error = z_error + xy_error
-  return torch.exp(-ang_vel_error / std**2)
+  reward = torch.exp(-ang_vel_error / std**2)
+  return reward * _env_group_scale(env, env_group)
+
+
+def track_relative_height(
+  env: ManagerBasedRlEnv,
+  std: float,
+  command_name: str,
+  asset_cfg: SceneEntityCfg,
+  env_group: str | None = None,
+) -> torch.Tensor:
+  """Reward for tracking commanded base height relative to the support foot.
+
+  The tracked quantity is:
+    h_rel = base_z - min_i(foot_site_z[i])
+  where the support foot is approximated as the lowest foot site.
+  """
+  asset: Entity = env.scene[asset_cfg.name]
+  command = env.command_manager.get_command(command_name)
+  assert command is not None, f"Command '{command_name}' not found."
+
+  foot_z = asset.data.site_pos_w[:, asset_cfg.site_ids, 2]
+  if foot_z.shape[1] == 0:
+    raise ValueError(
+      "track_relative_height requires at least one foot site in asset_cfg.site_names."
+    )
+  support_z = torch.min(foot_z, dim=1).values
+
+  base_z = asset.data.root_link_pos_w[:, 2]
+  actual_height = base_z - support_z
+  target_height = command[:, 0]
+
+  error = actual_height - target_height
+  env.extras["log"]["Metrics/relative_height_error_mean"] = torch.mean(torch.abs(error))
+  env.extras["log"]["Metrics/relative_height_mean"] = torch.mean(actual_height)
+  reward = torch.exp(-torch.square(error) / std**2)
+  return reward * _env_group_scale(env, env_group)
+
+
+def knee_deviation_reward(
+  env: ManagerBasedRlEnv,
+  command_name: str,
+  knee_asset_cfg: SceneEntityCfg,
+  foot_asset_cfg: SceneEntityCfg,
+  env_group: str | None = None,
+) -> torch.Tensor:
+  """Encourage using knees to control height by penalizing knee deviation when height error is present.
+
+  Implements:
+    height_err = h_r - h_t
+    u = (q_knee - q_min) / (q_max - q_min)
+    dev = u - 0.5
+    penalty = sum_i |height_err * dev_i|
+  Returns the unweighted penalty (positive). Use a negative weight in RewardTermCfg.
+  """
+  asset: Entity = env.scene[knee_asset_cfg.name]
+
+  command = env.command_manager.get_command(command_name)
+  assert command is not None, f"Command '{command_name}' not found."
+
+  foot_z = asset.data.site_pos_w[:, foot_asset_cfg.site_ids, 2]
+  if foot_z.shape[1] == 0:
+    raise ValueError(
+      "knee_deviation_reward requires at least one foot site in foot_asset_cfg.site_names."
+    )
+  support_z = torch.min(foot_z, dim=1).values
+
+  base_z = asset.data.root_link_pos_w[:, 2]
+  actual_height = base_z - support_z
+  target_height = command[:, 0]
+  height_err = actual_height - target_height  # signed
+
+  knee_ids = knee_asset_cfg.joint_ids
+  # Resolve to a sized tensor to validate we actually selected something.
+  knee_pos = asset.data.joint_pos[:, knee_ids]
+  if knee_pos.shape[1] == 0:
+    raise ValueError(
+      "knee_deviation_reward requires at least one knee joint in knee_asset_cfg.joint_names."
+    )
+
+  limits = asset.data.soft_joint_pos_limits[:, knee_ids, :]  # [B, K, 2]
+  qmin = limits[..., 0]
+  qmax = limits[..., 1]
+  denom = torch.clamp(qmax - qmin, min=1e-6)
+  u = (knee_pos - qmin) / denom
+  u = torch.clamp(u, 0.0, 1.0)
+  dev = u - 0.5
+
+  penalty = torch.sum(torch.abs(height_err.unsqueeze(1) * dev), dim=1)
+  env.extras["log"]["Metrics/knee_height_penalty_mean"] = torch.mean(penalty)
+  return penalty * _env_group_scale(env, env_group)
 
 
 def flat_orientation(
@@ -329,6 +436,7 @@ class variable_posture:
     command_name: str,
     walking_threshold: float = 0.5,
     running_threshold: float = 1.5,
+    env_group: str | None = None,
   ) -> torch.Tensor:
     del std_standing, std_walking, std_running  # Unused.
 
@@ -356,4 +464,5 @@ class variable_posture:
     desired_joint_pos = self.default_joint_pos[:, asset_cfg.joint_ids]
     error_squared = torch.square(current_joint_pos - desired_joint_pos)
 
-    return torch.exp(-torch.mean(error_squared / (std**2), dim=1))
+    reward = torch.exp(-torch.mean(error_squared / (std**2), dim=1))
+    return reward * _env_group_scale(env, env_group)

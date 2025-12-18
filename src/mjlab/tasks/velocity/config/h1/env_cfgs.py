@@ -22,7 +22,7 @@ from mjlab.managers.manager_term_config import (
 )
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity import mdp
-from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
+from mjlab.tasks.velocity.mdp import RelativeHeightCommandCfg, UniformVelocityCommandCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
 
@@ -314,9 +314,22 @@ def unitree_h1_rough_env_cfg(
   assert isinstance(twist_cmd, UniformVelocityCommandCfg)
   twist_cmd.viz.z_offset = 1.0  # H1 is taller than G1
 
+  height_cmd = cfg.commands["height"]
+  assert isinstance(height_cmd, RelativeHeightCommandCfg)
+  height_cmd.foot_site_names = site_names
+  # Squat range: target pelvis height relative to lowest foot (approx. "pelvis above ground").
+  # Note: for H1 the `left_foot/right_foot` sites sit ~1-2cm above the lowest foot collision,
+  # so `h_rel=0.33` roughly corresponds to pelvis ~0.34-0.35m above the actual contact plane.
+  height_cmd.ranges.height = (0.33, 0.98)
+  # For non-squat envs (velocity group), keep a stable standing target to avoid confusing the policy.
+  height_cmd.inactive_height = 0.98
+
   cfg.observations["critic"].terms["foot_height"].params[
     "asset_cfg"
   ].site_names = site_names
+
+  cfg.rewards["track_height"].params["asset_cfg"].site_names = site_names
+  cfg.rewards["knee_deviation"].params["foot_asset_cfg"].site_names = site_names
 
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = geom_names
 

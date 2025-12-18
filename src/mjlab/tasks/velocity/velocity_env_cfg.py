@@ -23,7 +23,10 @@ from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.scene import SceneCfg
 from mjlab.sim import MujocoCfg, SimulationCfg
 from mjlab.tasks.velocity import mdp
-from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
+from mjlab.tasks.velocity.mdp import (
+  RelativeHeightCommandCfg,
+  UniformVelocityCommandCfg,
+)
 from mjlab.terrains import TerrainImporterCfg
 from mjlab.terrains.config import ROUGH_TERRAINS_CFG
 from mjlab.utils.noise import UniformNoiseCfg as Unoise
@@ -64,6 +67,10 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
     "command": ObservationTermCfg(
       func=mdp.generated_commands,
       params={"command_name": "twist"},
+    ),
+    "height_command": ObservationTermCfg(
+      func=mdp.generated_commands,
+      params={"command_name": "height"},
     ),
   }
 
@@ -125,6 +132,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
       rel_heading_envs=0.3,
       heading_command=True,
       heading_control_stiffness=0.5,
+      active_env_group="velocity",
       debug_vis=True,
       ranges=UniformVelocityCommandCfg.Ranges(
         lin_vel_x=(-1.0, 1.0),
@@ -132,7 +140,15 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         ang_vel_z=(-0.5, 0.5),
         heading=(-math.pi, math.pi),
       ),
-    )
+    ),
+    "height": RelativeHeightCommandCfg(
+      asset_name="robot",
+      resampling_time_range=(3.0, 8.0),
+      debug_vis=True,
+      active_env_group="squat",
+      foot_site_names=(),  # Set per-robot.
+      ranges=RelativeHeightCommandCfg.Ranges(height=(0.6, 1.0)),
+    ),
   }
 
   ##
@@ -184,12 +200,36 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
     "track_linear_velocity": RewardTermCfg(
       func=mdp.track_linear_velocity,
       weight=2.0,
-      params={"command_name": "twist", "std": math.sqrt(0.25)},
+      params={"command_name": "twist", "std": math.sqrt(0.25), "env_group": "velocity"},
     ),
     "track_angular_velocity": RewardTermCfg(
       func=mdp.track_angular_velocity,
       weight=2.0,
-      params={"command_name": "twist", "std": math.sqrt(0.5)},
+      params={"command_name": "twist", "std": math.sqrt(0.5), "env_group": "velocity"},
+    ),
+    "track_height": RewardTermCfg(
+      func=mdp.track_relative_height,
+      weight=2.0,
+      params={
+        "command_name": "height",
+        "std": math.sqrt(0.02),
+        "env_group": "squat",
+        "asset_cfg": SceneEntityCfg("robot", site_names=()),  # Set per-robot.
+      },
+    ),
+    "knee_deviation": RewardTermCfg(
+      func=mdp.knee_deviation_reward,
+      weight=-0.75,
+      params={
+        "command_name": "height",
+        "env_group": "squat",
+        "knee_asset_cfg": SceneEntityCfg(
+          "robot",
+          # Default covers humanoids ("knee") and quadrupeds ("calf").
+          joint_names=(r".*(knee|calf).*",),
+        ),
+        "foot_asset_cfg": SceneEntityCfg("robot", site_names=()),  # Set per-robot.
+      },
     ),
     "upright": RewardTermCfg(
       func=mdp.flat_orientation,
@@ -210,6 +250,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         "std_running": {},  # Set per-robot.
         "walking_threshold": 0.05,
         "running_threshold": 1.5,
+        "env_group": "velocity",
       },
     ),
     "body_ang_vel": RewardTermCfg(
@@ -294,8 +335,19 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
   ##
 
   curriculum = {
+    "env_groups": CurriculumTermCfg(
+      func=mdp.assign_env_group_by_fraction,
+      params={
+        "group_name": "squat",
+        "fraction": 1.0 / 3.0,
+        "complement_group_name": "velocity",
+        "method": "random",
+        "seed": 0,
+      },
+    ),
     "terrain_levels": CurriculumTermCfg(
       func=mdp.terrain_levels_vel,
+      env_group="velocity",
       params={"command_name": "twist"},
     ),
     "command_vel": CurriculumTermCfg(

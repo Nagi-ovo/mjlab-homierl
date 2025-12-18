@@ -59,9 +59,19 @@ def unitree_go1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.viewer.distance = 1.5
   cfg.viewer.elevation = -10.0
 
+  # Height command uses foot sites.
+  assert cfg.commands is not None
+  height_cmd = cfg.commands["height"]
+  height_cmd.foot_site_names = site_names
+  # Go1 is a quadruped; base height relative to feet is much lower than humanoids.
+  height_cmd.ranges.height = (0.22, 0.42)
+
   cfg.observations["critic"].terms["foot_height"].params[
     "asset_cfg"
   ].site_names = site_names
+
+  cfg.rewards["track_height"].params["asset_cfg"].site_names = site_names
+  cfg.rewards["knee_deviation"].params["foot_asset_cfg"].site_names = site_names
 
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = geom_names
 
