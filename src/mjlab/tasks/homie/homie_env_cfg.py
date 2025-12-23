@@ -201,12 +201,12 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
     "track_linear_velocity": RewardTermCfg(
       func=mdp.track_linear_velocity,
       weight=2.0,
-      params={"command_name": "twist", "std": math.sqrt(0.25), "env_group": "velocity"},
+      params={"command_name": "twist", "std": math.sqrt(0.25), "env_group": ["velocity", "standing", "squat"]},
     ),
     "track_angular_velocity": RewardTermCfg(
       func=mdp.track_angular_velocity,
       weight=2.0,
-      params={"command_name": "twist", "std": math.sqrt(0.5), "env_group": "velocity"},
+      params={"command_name": "twist", "std": math.sqrt(0.5), "env_group": ["velocity", "standing", "squat"]},
     ),
     "track_height": RewardTermCfg(
       func=mdp.track_relative_height,
@@ -214,7 +214,7 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
       params={
         "command_name": "height",
         "std": math.sqrt(0.02),
-        "env_group": "squat",
+        "env_group": ["squat", "standing"],
         "asset_cfg": SceneEntityCfg("robot", site_names=()),  # Set per-robot.
       },
     ),
@@ -251,7 +251,7 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
         "std_running": {},  # Set per-robot.
         "walking_threshold": 0.05,
         "running_threshold": 1.5,
-        "env_group": "velocity",
+        "env_group": ["velocity", "standing"],
       },
     ),
     "body_ang_vel": RewardTermCfg(
@@ -317,6 +317,27 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
         "command_threshold": 0.05,
       },
     ),
+    "feet_ground_parallel": RewardTermCfg(
+      func=mdp.feet_ground_parallel,
+      weight=-2.0,
+      params={
+        "sensor_name": "feet_ground_contact",
+        "left_foot_sites": (),  # Set per-robot (e.g., left_toe, left_heel).
+        "right_foot_sites": (),  # Set per-robot (e.g., right_toe, right_heel).
+        "asset_cfg": SceneEntityCfg("robot"),
+      },
+    ),
+    "feet_parallel": RewardTermCfg(
+      func=mdp.feet_parallel,
+      weight=-3.0,
+      params={
+        "command_name": "height",
+        "height_threshold": 0.735,  # Set per-robot based on standing height.
+        "left_foot_sites": (),  # Set per-robot.
+        "right_foot_sites": (),  # Set per-robot.
+        "asset_cfg": SceneEntityCfg("robot"),
+      },
+    ),
   }
 
   ##
@@ -337,14 +358,8 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
 
   curriculum = {
     "env_groups": CurriculumTermCfg(
-      func=mdp.assign_env_group_by_fraction,
-      params={
-        "group_name": "squat",
-        "fraction": 1.0 / 3.0,
-        "complement_group_name": "velocity",
-        "method": "random",
-        "seed": 0,
-      },
+      func=mdp.assign_homie_env_groups,
+      params={"seed": 0},
     ),
     "terrain_levels": CurriculumTermCfg(
       func=mdp.terrain_levels_vel,

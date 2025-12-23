@@ -97,6 +97,39 @@ def assign_env_group_by_fraction(
   }
 
 
+def assign_homie_env_groups(
+  env: ManagerBasedRlEnv,
+  env_ids: torch.Tensor | slice,
+  seed: int = 0,
+) -> dict[str, torch.Tensor]:
+  """Assign environments to 'squat', 'velocity', and 'standing' groups.
+
+  Partition:
+    - [0, 1/3): 'squat' group (~33.3%)
+    - [1/3, 1/2]: 'standing' group (~16.7%)
+    - (1/2, 1]: 'velocity' group (50.0%)
+  """
+  del env_ids  # Unused.
+  num_envs = env.num_envs
+  gen = torch.Generator(device="cpu")
+  gen.manual_seed(int(seed))
+  set_x = torch.rand(num_envs, 1, generator=gen).to(env.device)
+
+  is_height = set_x < 1 / 3
+  is_vel = set_x > 1 / 2
+  is_standing = (~is_height) & (~is_vel)
+
+  env.set_env_group_mask("squat", is_height.squeeze(1))
+  env.set_env_group_mask("velocity", is_vel.squeeze(1))
+  env.set_env_group_mask("standing", is_standing.squeeze(1))
+
+  return {
+    "squat_count": is_height.sum(),
+    "velocity_count": is_vel.sum(),
+    "standing_count": is_standing.sum(),
+  }
+
+
 def terrain_levels_vel(
   env: ManagerBasedRlEnv,
   env_ids: torch.Tensor,

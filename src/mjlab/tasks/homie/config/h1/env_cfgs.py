@@ -297,7 +297,7 @@ def _sample_gripper_targets(env, env_ids, action_name: str, target_range: tuple[
 
 def unitree_h1_homie_env_cfg(
   play: bool = False,
-  curriculum_start_step: int = 500 * 24,
+  curriculum_start_step: int = 0,
   hands: bool = False,
 ) -> ManagerBasedRlEnvCfg:
   """Create Unitree H1 homie (humanoid walk) task configuration.
@@ -390,7 +390,7 @@ def unitree_h1_homie_env_cfg(
     interp_rate=0.05,
     target_range=(-0.6, 0.6),
     start_step=step_threshold,
-    initial_ratio=1.0 if play else 0.0,
+    initial_ratio=1.0,  # Always start with full upper-body motion.
   )
 
   # Optional gripper action (policy-free, random clamp).
@@ -514,6 +514,17 @@ def unitree_h1_homie_env_cfg(
     weight=-1.0,
     params={"sensor_name": self_collision_cfg.name},
   )
+
+  # Configure feet parallel rewards.
+  # Note: These require multiple sites per foot to be effective. If only single sites
+  # (left_foot, right_foot) exist, the variance will be zero and no penalty is applied.
+  # To enable these rewards, add multiple sites per foot in the H1 MJCF model
+  # (e.g., left_toe, left_heel, right_toe, right_heel).
+  cfg.rewards["feet_ground_parallel"].params["left_foot_sites"] = (site_names[0],)  # ("left_foot",)
+  cfg.rewards["feet_ground_parallel"].params["right_foot_sites"] = (site_names[1],)  # ("right_foot",)
+  cfg.rewards["feet_parallel"].params["left_foot_sites"] = (site_names[0],)
+  cfg.rewards["feet_parallel"].params["right_foot_sites"] = (site_names[1],)
+  cfg.rewards["feet_parallel"].params["height_threshold"] = 0.75  # H1 standing height ~0.98, threshold at 0.75
 
   # Curriculum: expand upper-body motion as velocity tracking improves.
   cfg.curriculum["upper_body_action"] = CurriculumTermCfg(

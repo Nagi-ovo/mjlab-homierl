@@ -43,3 +43,4 @@ def foot_contact_forces(env: ManagerBasedRlEnv, sensor_name: str) -> torch.Tenso
   forces_flat = sensor_data.force.flatten(start_dim=1)  # [B, N*3]
   return torch.sign(forces_flat) * torch.log1p(torch.abs(forces_flat))
 
+
