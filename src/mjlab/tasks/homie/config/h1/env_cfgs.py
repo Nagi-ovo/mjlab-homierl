@@ -150,7 +150,9 @@ class GripperActuatorAction(ActionTerm):
 
   def __init__(self, cfg: "GripperActuatorActionCfg", env):
     super().__init__(cfg=cfg, env=env)
-    act_ids, act_names = self._asset.find_actuators(cfg.actuator_names, preserve_order=True)
+    act_ids, act_names = self._asset.find_actuators(
+      cfg.actuator_names, preserve_order=True
+    )
     if len(act_ids) == 0:
       raise ValueError(
         f"No actuators matched for gripper action: {cfg.actuator_names}."
@@ -171,8 +173,12 @@ class GripperActuatorAction(ActionTerm):
       else:
         ctrl_mins.append(ctrlrange[0])
         ctrl_maxs.append(ctrlrange[1])
-    self._ctrl_min = torch.tensor(ctrl_mins, device=self.device, dtype=torch.float32).unsqueeze(0)
-    self._ctrl_max = torch.tensor(ctrl_maxs, device=self.device, dtype=torch.float32).unsqueeze(0)
+    self._ctrl_min = torch.tensor(
+      ctrl_mins, device=self.device, dtype=torch.float32
+    ).unsqueeze(0)
+    self._ctrl_max = torch.tensor(
+      ctrl_maxs, device=self.device, dtype=torch.float32
+    ).unsqueeze(0)
 
     self._start_step = cfg.start_step
     self._target_range = cfg.target_range
@@ -283,7 +289,9 @@ def _sample_upper_body_targets_with_curriculum(
   action_term.sample_new_goals(env_ids=env_ids, target_range=target_range)
 
 
-def _sample_gripper_targets(env, env_ids, action_name: str, target_range: tuple[float, float], start_step: int = 0):
+def _sample_gripper_targets(
+  env, env_ids, action_name: str, target_range: tuple[float, float], start_step: int = 0
+):
   if env.common_step_counter < start_step:
     return
   action_term = env.action_manager.get_term(action_name)
@@ -390,7 +398,7 @@ def unitree_h1_homie_env_cfg(
     interp_rate=0.05,
     target_range=(-0.6, 0.6),
     start_step=step_threshold,
-    initial_ratio=1.0,  # Always start with full upper-body motion.
+    initial_ratio=1.0 if play else 0.0,
   )
 
   # Optional gripper action (policy-free, random clamp).
@@ -436,7 +444,7 @@ def unitree_h1_homie_env_cfg(
     interval_range_s=(0.75, 1.25),
     params={
       "action_name": upper_action_name,
-      "target_range": (-1.2, 0.3),
+      "target_range": (-2, 1.0),
       "start_step": step_threshold,
     },
   )
@@ -520,11 +528,17 @@ def unitree_h1_homie_env_cfg(
   # (left_foot, right_foot) exist, the variance will be zero and no penalty is applied.
   # To enable these rewards, add multiple sites per foot in the H1 MJCF model
   # (e.g., left_toe, left_heel, right_toe, right_heel).
-  cfg.rewards["feet_ground_parallel"].params["left_foot_sites"] = (site_names[0],)  # ("left_foot",)
-  cfg.rewards["feet_ground_parallel"].params["right_foot_sites"] = (site_names[1],)  # ("right_foot",)
+  cfg.rewards["feet_ground_parallel"].params["left_foot_sites"] = (
+    site_names[0],
+  )  # ("left_foot",)
+  cfg.rewards["feet_ground_parallel"].params["right_foot_sites"] = (
+    site_names[1],
+  )  # ("right_foot",)
   cfg.rewards["feet_parallel"].params["left_foot_sites"] = (site_names[0],)
   cfg.rewards["feet_parallel"].params["right_foot_sites"] = (site_names[1],)
-  cfg.rewards["feet_parallel"].params["height_threshold"] = 0.75  # H1 standing height ~0.98, threshold at 0.75
+  cfg.rewards["feet_parallel"].params["height_threshold"] = (
+    0.75  # H1 standing height ~0.98, threshold at 0.75
+  )
 
   # Curriculum: expand upper-body motion as velocity tracking improves.
   cfg.curriculum["upper_body_action"] = CurriculumTermCfg(
@@ -538,6 +552,11 @@ def unitree_h1_homie_env_cfg(
       "start_step": step_threshold,
     },
   )
+
+  # Ensure total_reward_clipping is always the last term.
+  if "total_reward_clipping" in cfg.rewards:
+    clipping_term = cfg.rewards.pop("total_reward_clipping")
+    cfg.rewards["total_reward_clipping"] = clipping_term
 
   # Apply play mode overrides.
   if play:

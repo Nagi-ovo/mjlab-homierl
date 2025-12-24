@@ -20,7 +20,9 @@ if TYPE_CHECKING:
 _DEFAULT_ASSET_CFG = SceneEntityCfg("robot")
 
 
-def _env_group_scale(env: ManagerBasedRlEnv, env_group: str | list[str] | None) -> torch.Tensor:
+def _env_group_scale(
+  env: ManagerBasedRlEnv, env_group: str | list[str] | None
+) -> torch.Tensor:
   """Return a float mask (num_envs,) scaling a term by env group membership."""
   if env_group is None:
     return torch.ones(env.num_envs, device=env.device, dtype=torch.float32)
@@ -414,36 +416,48 @@ def feet_ground_parallel(
   """
   asset: Entity = env.scene[asset_cfg.name]
   contact_sensor: ContactSensor = env.scene[sensor_name]
-  
+
   # Get site IDs for left and right foot
   left_site_ids, _ = asset.find_sites(left_foot_sites, preserve_order=True)
   right_site_ids, _ = asset.find_sites(right_foot_sites, preserve_order=True)
-  
+
   if len(left_site_ids) == 0 or len(right_site_ids) == 0:
     # If no sites found, return zero penalty
     return torch.zeros(env.num_envs, device=env.device)
-  
-  left_site_ids_tensor = torch.tensor(left_site_ids, device=env.device, dtype=torch.long)
-  right_site_ids_tensor = torch.tensor(right_site_ids, device=env.device, dtype=torch.long)
-  
+
+  left_site_ids_tensor = torch.tensor(
+    left_site_ids, device=env.device, dtype=torch.long
+  )
+  right_site_ids_tensor = torch.tensor(
+    right_site_ids, device=env.device, dtype=torch.long
+  )
+
   # Get heights of all sites (z-coordinate)
   left_heights = asset.data.site_pos_w[:, left_site_ids_tensor, 2]  # [B, N_left]
   right_heights = asset.data.site_pos_w[:, right_site_ids_tensor, 2]  # [B, N_right]
-  
+
   # Compute variance for each foot
-  left_var = torch.var(left_heights, dim=1) if left_heights.shape[1] > 1 else torch.zeros(env.num_envs, device=env.device)
-  right_var = torch.var(right_heights, dim=1) if right_heights.shape[1] > 1 else torch.zeros(env.num_envs, device=env.device)
-  
+  left_var = (
+    torch.var(left_heights, dim=1)
+    if left_heights.shape[1] > 1
+    else torch.zeros(env.num_envs, device=env.device)
+  )
+  right_var = (
+    torch.var(right_heights, dim=1)
+    if right_heights.shape[1] > 1
+    else torch.zeros(env.num_envs, device=env.device)
+  )
+
   # Get continuous contact mask (feet that have been in contact for at least 3*dt)
   assert contact_sensor.data.current_air_time is not None
   assert contact_sensor.data.found is not None
   air_time = contact_sensor.data.current_air_time  # [B, 2] (left, right)
   in_contact = (contact_sensor.data.found > 0).float()  # [B, 2]
-  continuous_contact = ((air_time >= 3 * env.step_dt).float() * in_contact)  # [B, 2]
-  
+  continuous_contact = (air_time >= 3 * env.step_dt).float() * in_contact  # [B, 2]
+
   # Apply mask: only penalize variance when foot is in continuous contact
   cost = left_var * continuous_contact[:, 0] + right_var * continuous_contact[:, 1]
-  
+
   return cost
 
 
@@ -465,36 +479,44 @@ def feet_parallel(
   asset: Entity = env.scene[asset_cfg.name]
   command = env.command_manager.get_command(command_name)
   assert command is not None, f"Command '{command_name}' not found."
-  
+
   # Get site IDs for left and right foot
   left_site_ids, _ = asset.find_sites(left_foot_sites, preserve_order=True)
   right_site_ids, _ = asset.find_sites(right_foot_sites, preserve_order=True)
-  
+
   if len(left_site_ids) == 0 or len(right_site_ids) == 0:
     return torch.zeros(env.num_envs, device=env.device)
-  
+
   # Ensure both feet have same number of sites
   num_sites = min(len(left_site_ids), len(right_site_ids))
-  left_site_ids_tensor = torch.tensor(left_site_ids[:num_sites], device=env.device, dtype=torch.long)
-  right_site_ids_tensor = torch.tensor(right_site_ids[:num_sites], device=env.device, dtype=torch.long)
-  
+  left_site_ids_tensor = torch.tensor(
+    left_site_ids[:num_sites], device=env.device, dtype=torch.long
+  )
+  right_site_ids_tensor = torch.tensor(
+    right_site_ids[:num_sites], device=env.device, dtype=torch.long
+  )
+
   # Get 3D positions of all sites
   left_pos = asset.data.site_pos_w[:, left_site_ids_tensor, :]  # [B, N, 3]
   right_pos = asset.data.site_pos_w[:, right_site_ids_tensor, :]  # [B, N, 3]
-  
+
   # Compute pairwise distances between corresponding left/right sites
   feet_distances = torch.norm(left_pos - right_pos, dim=2)  # [B, N]
-  
+
   # Compute variance of these distances
-  feet_distances_var = torch.var(feet_distances, dim=1) if num_sites > 1 else torch.zeros(env.num_envs, device=env.device)
-  
+  feet_distances_var = (
+    torch.var(feet_distances, dim=1)
+    if num_sites > 1
+    else torch.zeros(env.num_envs, device=env.device)
+  )
+
   # Only activate when height command is above threshold (not squatting)
   # Height command is in dimension 0 of the height command
   height_cmd = command[:, 0]
   active = (height_cmd >= height_threshold).float()
-  
+
   cost = feet_distances_var * active
-  
+
   return cost
 
 

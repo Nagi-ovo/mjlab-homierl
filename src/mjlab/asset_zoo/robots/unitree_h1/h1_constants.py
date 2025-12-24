@@ -130,7 +130,9 @@ def _maybe_add_wrist_and_joint(
     # Avoid duplicate names: rename original, then create a new site with the original name under wrist.
     original_site_name = site.name
     site.name = f"{original_site_name}_legacy_wrist"
-    wrist_site = wrist_body.add_site(name=original_site_name, pos=site.pos, quat=site.quat)
+    wrist_site = wrist_body.add_site(
+      name=original_site_name, pos=site.pos, quat=site.quat
+    )
 
   if cfg.add_wrist_joint:
     joint_type_map = {
@@ -167,7 +169,9 @@ def _attach_gripper(
   wrist_site = _maybe_add_wrist_and_joint(model, side, cfg)
 
   gripper_spec = mujoco.MjSpec.from_file(str(cfg.model))
-  gripper_frame = wrist_site.parent.add_frame(pos=cfg.offset_pos, euler=cfg.offset_euler)
+  gripper_frame = wrist_site.parent.add_frame(
+    pos=cfg.offset_pos, euler=cfg.offset_euler
+  )
   prefix = f"{side}_gripper/"
   model.attach(gripper_spec, frame=gripper_frame, prefix=prefix)
 

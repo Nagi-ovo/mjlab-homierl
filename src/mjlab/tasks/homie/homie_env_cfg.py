@@ -201,12 +201,20 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
     "track_linear_velocity": RewardTermCfg(
       func=mdp.track_linear_velocity,
       weight=2.0,
-      params={"command_name": "twist", "std": math.sqrt(0.25), "env_group": ["velocity", "standing", "squat"]},
+      params={
+        "command_name": "twist",
+        "std": math.sqrt(0.25),
+        "env_group": ["velocity", "standing", "squat"],
+      },
     ),
     "track_angular_velocity": RewardTermCfg(
       func=mdp.track_angular_velocity,
       weight=2.0,
-      params={"command_name": "twist", "std": math.sqrt(0.5), "env_group": ["velocity", "standing", "squat"]},
+      params={
+        "command_name": "twist",
+        "std": math.sqrt(0.5),
+        "env_group": ["velocity", "standing", "squat"],
+      },
     ),
     "track_height": RewardTermCfg(
       func=mdp.track_relative_height,

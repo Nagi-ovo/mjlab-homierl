@@ -14,5 +14,3 @@ def illegal_contact(env: ManagerBasedRlEnv, sensor_name: str) -> torch.Tensor:
   sensor: ContactSensor = env.scene[sensor_name]
   assert sensor.data.found is not None
   return torch.any(sensor.data.found, dim=-1)
-
-
