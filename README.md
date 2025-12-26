@@ -69,66 +69,18 @@ For full setup instructions, see the [Installation Guide](docs/installation_guid
 
 ---
 
-## Training Examples
-
-### 1. Velocity Tracking
-
-Train a Unitree G1 humanoid to follow velocity commands on flat terrain:
-
-```bash
-uv run train Mjlab-Velocity-Flat-Unitree-G1 --env.scene.num-envs 4096
-```
-
-**Multi-GPU Training:** Scale to multiple GPUs using `--gpu-ids`:
-
-```bash
-uv run train Mjlab-Velocity-Flat-Unitree-G1 \
-  --gpu-ids 0 1 \
-  --env.scene.num-envs 4096
-```
-
-See the [Distributed Training guide](docs/api/distributed_training.md) for details.
-
-Evaluate a policy while training (fetches latest checkpoint from Weights & Biases):
-
-```bash
-uv run play Mjlab-Velocity-Flat-Unitree-G1 --wandb-run-path your-org/mjlab/run-id
-```
-
----
-
-### 2. Motion Imitation
-
-Train a Unitree G1 to mimic reference motions. mjlab uses
-[WandB](https://wandb.ai) to manage reference motion datasets:
-
-1. **Create a registry collection** in your WandB workspace named `Motions`
-
-2. **Set your WandB entity**:
-   ```bash
-   export WANDB_ENTITY=your-organization-name
-   ```
-
-3. **Process and upload motion files**:
-   ```bash
-   MUJOCO_GL=egl uv run src/mjlab/scripts/csv_to_npz.py \
-     --input-file /path/to/motion.csv \
-     --output-name motion_name \
-     --input-fps 30 \
-     --output-fps 50 \
-     --render  # Optional: generates preview video
-   ```
-
-> [!NOTE]
-> For detailed motion preprocessing instructions, see the
-> [BeyondMimic documentation](https://github.com/HybridRobotics/whole_body_tracking/blob/main/README.md#motion-preprocessing--registry-setup).
+## Training HOMIE
 
 #### Train and Play
 
 ```bash
-uv run train Mjlab-Tracking-Flat-Unitree-G1 --registry-name your-org/motions/motion-name --env.scene.num-envs 4096
+uv run train Mjlab-Homie-Unitree-H1 --env.scene.num-envs 4096
 
-uv run play Mjlab-Tracking-Flat-Unitree-G1 --wandb-run-path your-org/mjlab/run-id
+uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
+
+uv run play Mjlab-Homie-Unitree-H1 --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
+
+uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
 ```
 
 ---
