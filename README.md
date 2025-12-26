@@ -72,6 +72,7 @@ and sim-to-real deployment.
 
 </details>
 
+
 - [ ] **Per-joint curriculum ratio**: Original computes random ratio per joint; mjlab uses global curriculum ratio
 
 <details>
@@ -85,6 +86,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **Continuous interpolation**: Original updates every simulation step; mjlab updates on interval schedule (0.75-1.25s)
 
 <details>
@@ -106,6 +108,7 @@ and sim-to-real deployment.
 
 </details>
 
+
 #### 2. Domain Randomization
 - [ ] **Hand payload mass randomization**: Original randomizes left/right hand masses separately
 
@@ -125,6 +128,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **Body COM displacement**: Original randomizes torso center-of-mass displacement
 
 <details>
@@ -141,6 +145,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **Joint injection noise**: Action-level noise injection at torque level
 
 <details>
@@ -158,6 +163,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **Actuation offset**: Per-DOF torque offset randomization
 
 <details>
@@ -174,6 +180,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **Delay simulation**: Action delay randomization for sim-to-real transfer
 
 <details>
@@ -189,6 +196,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 
 #### 3. Control Architecture
 - [ ] **Mixed control mode (M)**: Original uses **torque control** for lower-body (legs) and **position control** for upper-body (torso+arms) simultaneously
@@ -235,6 +243,7 @@ and sim-to-real deployment.
 **TODO**: For sim-to-real deployment, it is recommended to implement Mixed control mode or verify the performance of pure position control on the physical hardware.
 
 </details>
+
 - [ ] **Push interval tuning**: Original has separate `upper_interval` (1 step) vs `push_interval` (4s)
 
 <details>
@@ -256,6 +265,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **Action delay buffer**: Implements delayed action execution with random delay steps
 
 <details>
@@ -274,6 +284,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 
 #### 4. Observation/State Details
 - [ ] **IMU-based observations**: Original uses separate IMU link for ang_vel/gravity sensing
@@ -299,6 +310,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **Joint power tracking**: Tracks 100-step history of joint power consumption
 
 <details>
@@ -319,6 +331,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 - [ ] **History buffer management**: Original maintains 6-step actor history, 1-step critic history
 
 <details>
@@ -341,6 +354,7 @@ and sim-to-real deployment.
 > ```
 
 </details>
+
 ---
 
 ## Installation
