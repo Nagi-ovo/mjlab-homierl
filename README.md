@@ -19,67 +19,40 @@ and sim-to-real deployment.
 
 ---
 
-## Quick Start
-
-mjlab requires an **NVIDIA GPU** for training (via MuJoCo Warp).
-macOS is supported only for evaluation, which is significantly slower.
-
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Run the demo (no installation needed):
-
-```bash
-uvx --from mjlab --with "mujoco-warp @ git+https://github.com/google-deepmind/mujoco_warp@486642c3fa262a989b482e0e506716d5793d61a9" demo
-```
-
-This launches an interactive viewer with a pre-trained Unitree G1 agent tracking a reference dance motion in MuJoCo Warp.
-
-> ❓ Having issues? See the [FAQ](docs/faq.md).
-
-**Try in Google Colab (no local setup required):**
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mujocolab/mjlab/blob/main/notebooks/demo.ipynb)
-
-Launch the demo directly in your browser with an interactive Viser viewer.
-
----
-
 ## Installation
 
 **From source (recommended during beta):**
 
 ```bash
-git clone https://github.com/mujocolab/mjlab.git
-cd mjlab
-uv run demo
+git clone https://github.com/Nagi-ovo/mjlab-homierl.git
+cd mjlab-homierl
 ```
-
-**From PyPI (beta snapshot):**
-
-```bash
-uv add mjlab "mujoco-warp @ git+https://github.com/google-deepmind/mujoco_warp@486642c3fa262a989b482e0e506716d5793d61a9"
-```
-
-A Dockerfile is also provided.
-
-For full setup instructions, see the [Installation Guide](docs/installation_guide.md).
-
----
 
 ## Training HOMIE
 
-#### Train and Play
+### Train (w/o hands)
 
 ```bash
 uv run train Mjlab-Homie-Unitree-H1 --env.scene.num-envs 4096
+```
 
+### Train (with robotiq hands)
+
+You can also download the pre-trained w/ hands policy from [huggingface](https://huggingface.co/Nagi-ovo/HOMIERL-loco) to skip to play :)
+
+```bash
 uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
+```
 
+### Play (w/o hands)
+
+```bash
 uv run play Mjlab-Homie-Unitree-H1 --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
+```
 
+### Play (with robotiq hands)
+
+```bash
 uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
 ```
 
