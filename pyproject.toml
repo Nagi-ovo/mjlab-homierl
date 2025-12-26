@@ -3,15 +3,15 @@ requires = ["uv_build>=0.8.19,<0.9.0"]
 build-backend = "uv_build"
 
 [project]
-name = "mjlab"
+name = "mjlab-homierl"
 version = "0.1.0"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [
-  {name = "The MjLab Developers"},
+  {name = "Jesse Zhang"},
 ]
-keywords = ["mujoco", "mujoco-warp", "simulation", "reinforcement-learning", "robotics"]
+keywords = ["mujoco", "mujoco-warp", "simulation", "reinforcement-learning", "robotics", "unitree-H1"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -28,7 +28,7 @@ classifiers = [
   "Topic :: Scientific/Engineering",
   "Natural Language :: English",
 ]
-description = "Isaac Lab API, powered by MuJoCo-Warp, for RL and robotics research."
+description = "Fork of mjlab wich supports unitree H1 & robotiq_2f85, personal implementation of the locomotion policy training in 'HOMIE: Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit [RSS2025]'"
 requires-python = ">=3.10,<3.14"
 dependencies = [
   "prettytable",
