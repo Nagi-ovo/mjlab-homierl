@@ -6,7 +6,7 @@
 
 ## What is mjlab?
 
-mjlab ([Zakka, K., Yi, B., Liao, Q., & Le Lay, L. (2025). MJLab: Isaac Lab API, powered by MuJoCo-Warp, for RL and robotics research](https://github.com/mujocolab/mjlab) combines [Isaac Lab](https://github.com/isaac-sim/IsaacLab)'s proven API
+mjlab ([Zakka, K., Yi, B., Liao, Q., & Le Lay, L. (2025). MJLab: Isaac Lab API, powered by MuJoCo-Warp, for RL and robotics research](https://github.com/mujocolab/mjlab)) combines [Isaac Lab](https://github.com/isaac-sim/IsaacLab)'s proven API
 with best-in-class [MuJoCo](https://github.com/google-deepmind/mujoco_warp) physics to provide lightweight, modular abstractions for RL robotics research
 and sim-to-real deployment.
 
@@ -41,13 +41,13 @@ uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
 ### Play (w/o hands)
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1 --checkpoint_file logs/rsl_rl/h1_homie/2025-12-27_12-46-34/model_2600.pt --num-envs 30 --viewer viser
+uv run play Mjlab-Homie-Unitree-H1 --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
 ```
 
 ### Play (with robotiq hands)
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint_file logs/rsl_rl/h1_homie/2025-12-24_16-16-42_init0_hands_no_rw_clip/model_5100.pt --num-envs 30 --viewer viser
+uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
 ```
 
 ---
