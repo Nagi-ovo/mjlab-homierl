@@ -38,7 +38,7 @@ class UpperBodyPoseAction(ActionTerm):
   def __init__(self, cfg: "UpperBodyPoseActionCfg", env):
     super().__init__(cfg=cfg, env=env)
 
-    joint_ids, joint_names = self._asset.find_joints(
+    joint_ids, joint_names = self._entity.find_joints(
       cfg.joint_names, preserve_order=cfg.preserve_order
     )
     if len(joint_ids) == 0:
@@ -52,11 +52,11 @@ class UpperBodyPoseAction(ActionTerm):
     self._action_dim = 0
     self._raw_actions = torch.zeros(self.num_envs, 0, device=self.device)
 
-    defaults = self._asset.data.default_joint_pos[:, self._joint_ids]
+    defaults = self._entity.data.default_joint_pos[:, self._joint_ids]
     self._default_target = defaults.clone()
     self._current_target = defaults.clone()
     self._goal_target = defaults.clone()
-    self._joint_limits = self._asset.data.soft_joint_pos_limits[:, self._joint_ids]
+    self._joint_limits = self._entity.data.soft_joint_pos_limits[:, self._joint_ids]
 
     self._interp_rate = cfg.interp_rate
     self._target_range = cfg.target_range
@@ -118,7 +118,7 @@ class UpperBodyPoseAction(ActionTerm):
     self._current_target = torch.lerp(
       self._current_target, self._goal_target, self._interp_rate
     )
-    self._asset.set_joint_position_target(
+    self._entity.set_joint_position_target(
       self._current_target, joint_ids=self._joint_ids
     )
 
@@ -142,7 +142,9 @@ class UpperBodyPoseActionCfg(ActionTermCfg):
   start_step: int = 0
   initial_ratio: float = 0.0
   preserve_order: bool = False
-  class_type: type[ActionTerm] = UpperBodyPoseAction
+
+  def build(self, env) -> UpperBodyPoseAction:
+    return UpperBodyPoseAction(self, env)
 
 
 class GripperActuatorAction(ActionTerm):
@@ -150,7 +152,7 @@ class GripperActuatorAction(ActionTerm):
 
   def __init__(self, cfg: "GripperActuatorActionCfg", env):
     super().__init__(cfg=cfg, env=env)
-    act_ids, act_names = self._asset.find_actuators(
+    act_ids, act_names = self._entity.find_actuators(
       cfg.actuator_names, preserve_order=True
     )
     if len(act_ids) == 0:
@@ -166,7 +168,7 @@ class GripperActuatorAction(ActionTerm):
     ctrl_mins = []
     ctrl_maxs = []
     for idx in act_ids:
-      ctrlrange = self._asset.spec.actuators[idx].ctrlrange
+      ctrlrange = self._entity.spec.actuators[idx].ctrlrange
       if ctrlrange is None:
         ctrl_mins.append(-1.0)
         ctrl_maxs.append(1.0)
@@ -226,7 +228,7 @@ class GripperActuatorAction(ActionTerm):
     self._current = torch.lerp(self._current, self._goal, self._interp_rate)
     # Map [0,1] to ctrl range.
     ctrl = self._ctrl_min + (self._ctrl_max - self._ctrl_min) * self._current
-    self._asset.write_ctrl_to_sim(ctrl, ctrl_ids=self._actuator_ids)
+    self._entity.write_ctrl_to_sim(ctrl, ctrl_ids=self._actuator_ids)
 
 
 @dataclass(kw_only=True)
@@ -235,7 +237,9 @@ class GripperActuatorActionCfg(ActionTermCfg):
   target_range: tuple[float, float] = (0.0, 1.0)
   interp_rate: float = 0.05
   start_step: int = 0
-  class_type: type[ActionTerm] = GripperActuatorAction
+
+  def build(self, env) -> GripperActuatorAction:
+    return GripperActuatorAction(self, env)
 
 
 def _default_hands_cfg(enable: bool) -> HandsCfg | None:
@@ -393,7 +397,7 @@ def unitree_h1_homie_env_cfg(
 
   upper_action_name = "upper_body_pose"
   cfg.actions[upper_action_name] = UpperBodyPoseActionCfg(
-    asset_name="robot",
+    entity_name="robot",
     joint_names=upper_body_joint_expr,
     interp_rate=0.05,
     target_range=(-0.6, 0.6),
@@ -405,7 +409,7 @@ def unitree_h1_homie_env_cfg(
   if hands:
     gripper_action_name = "gripper"
     cfg.actions[gripper_action_name] = GripperActuatorActionCfg(
-      asset_name="robot",
+      entity_name="robot",
       actuator_names=(r".*fingers_actuator.*",),
       target_range=(0.0, 1.0),
       interp_rate=0.05,

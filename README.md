@@ -1,12 +1,65 @@
-![Project banner](docs/static/homie-show.png)
+![Project banner](docs/source/_static/content/homie-show.png)
 
 # mjlab-homierl
+> [!NOTE]
+> Compatible with mjlab v1.0.0's API.
 
 ## What is mjlab?
 
 mjlab ([Zakka, K., Yi, B., Liao, Q., & Le Lay, L. (2025). MJLab: Isaac Lab API, powered by MuJoCo-Warp, for RL and robotics research](https://github.com/mujocolab/mjlab) combines [Isaac Lab](https://github.com/isaac-sim/IsaacLab)'s proven API
 with best-in-class [MuJoCo](https://github.com/google-deepmind/mujoco_warp) physics to provide lightweight, modular abstractions for RL robotics research
 and sim-to-real deployment.
+
+---
+
+## Installation
+
+**From source:**
+
+```bash
+git clone https://github.com/Nagi-ovo/mjlab-homierl.git
+cd mjlab-homierl
+```
+
+## Training HOMIE
+
+> [!NOTE]
+> You can also download both locomotion policies from [huggingface](https://huggingface.co/Nagi-ovo/HOMIERL-loco) to skip the training part and start playing :)
+
+### Train (w/o hands)
+
+```bash
+uv run train Mjlab-Homie-Unitree-H1 --env.scene.num-envs 4096
+```
+
+### Train (with robotiq hands)
+
+```bash
+uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
+```
+
+### Play (w/o hands)
+
+```bash
+uv run play Mjlab-Homie-Unitree-H1 --checkpoint_file logs/rsl_rl/h1_homie/2025-12-27_12-46-34/model_2600.pt --num-envs 30 --viewer viser
+```
+
+### Play (with robotiq hands)
+
+```bash
+uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint_file logs/rsl_rl/h1_homie/2025-12-24_16-16-42_init0_hands_no_rw_clip/model_5100.pt --num-envs 30 --viewer viser
+```
+
+---
+
+### Sanity-check with Dummy Agents
+
+Use built-in agents to sanity check your MDP **before** training.
+
+```bash
+uv run play Mjlab-Your-Task-Id --agent zero  # Sends zero actions.
+uv run play Mjlab-Your-Task-Id --agent random  # Sends uniform random actions.
+```
 
 ---
 
@@ -349,60 +402,6 @@ and sim-to-real deployment.
 > ```
 
 </details>
-
----
-
-## Installation
-
-**From source:**
-
-```bash
-git clone https://github.com/Nagi-ovo/mjlab-homierl.git
-cd mjlab-homierl
-```
-
-## Training HOMIE
-
-### Train (w/o hands)
-
-```bash
-uv run train Mjlab-Homie-Unitree-H1 --env.scene.num-envs 4096
-```
-
-### Train (with robotiq hands)
-
-You can also download the pre-trained w/ hands policy from [huggingface](https://huggingface.co/Nagi-ovo/HOMIERL-loco) to skip to play :)
-
-```bash
-uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
-```
-
-### Play (w/o hands)
-
-```bash
-uv run play Mjlab-Homie-Unitree-H1 --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
-```
-
-### Play (with robotiq hands)
-
-```bash
-uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
-```
-
----
-
-### 3. Sanity-check with Dummy Agents
-
-Use built-in agents to sanity check your MDP **before** training.
-
-```bash
-uv run play Mjlab-Your-Task-Id --agent zero  # Sends zero actions.
-uv run play Mjlab-Your-Task-Id --agent random  # Sends uniform random actions.
-```
-
-> [!NOTE]
-> When running motion-tracking tasks, add
-> `--registry-name your-org/motions/motion-name` to the command.
 
 ---
 

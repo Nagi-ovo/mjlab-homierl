@@ -3,12 +3,13 @@ requires = ["uv_build>=0.8.19,<0.9.0"]
 build-backend = "uv_build"
 
 [project]
-name = "mjlab-homierl"
-version = "0.1.0"
+name = "mjlab"
+version = "1.0.0"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [
+  {name = "The MjLab Developers"},
   {name = "Jesse Zhang"},
 ]
 keywords = ["mujoco", "mujoco-warp", "simulation", "reinforcement-learning", "robotics", "unitree-H1"]

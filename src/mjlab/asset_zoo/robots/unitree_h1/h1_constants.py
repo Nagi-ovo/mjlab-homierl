@@ -285,7 +285,7 @@ DAMPING_ANKLE_TORSO = 2.0 * DAMPING_RATIO * ARMATURE_ANKLE_TORSO * NATURAL_FREQ
 DAMPING_ARM = 2.0 * DAMPING_RATIO * ARMATURE_ARM * NATURAL_FREQ
 
 H1_ACTUATOR_HIP_KNEE = BuiltinPositionActuatorCfg(
-  joint_names_expr=(
+  target_names_expr=(
     ".*_hip_pitch",
     ".*_hip_roll",
     ".*_hip_yaw",
@@ -298,7 +298,7 @@ H1_ACTUATOR_HIP_KNEE = BuiltinPositionActuatorCfg(
 )
 
 H1_ACTUATOR_ANKLE_TORSO = BuiltinPositionActuatorCfg(
-  joint_names_expr=(
+  target_names_expr=(
     ".*_ankle",
     "torso",
   ),
@@ -309,7 +309,7 @@ H1_ACTUATOR_ANKLE_TORSO = BuiltinPositionActuatorCfg(
 )
 
 H1_ACTUATOR_ARM = BuiltinPositionActuatorCfg(
-  joint_names_expr=(
+  target_names_expr=(
     ".*_shoulder_pitch",
     ".*_shoulder_roll",
     ".*_shoulder_yaw",
@@ -424,7 +424,7 @@ for a in H1_ARTICULATION.actuators:
   assert isinstance(a, BuiltinPositionActuatorCfg)
   e = a.effort_limit
   s = a.stiffness
-  names = a.joint_names_expr
+  names = a.target_names_expr
   assert e is not None
   for n in names:
     H1_ACTION_SCALE[n] = 0.25 * e / s
