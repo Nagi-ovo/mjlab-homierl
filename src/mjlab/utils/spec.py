@@ -5,6 +5,14 @@ from typing import Callable
 import mujoco
 import numpy as np
 
+from mjlab.actuator.actuator import TransmissionType
+
+_TRANSMISSION_TYPE_MAP = {
+  TransmissionType.JOINT: mujoco.mjtTrn.mjTRN_JOINT,
+  TransmissionType.TENDON: mujoco.mjtTrn.mjTRN_TENDON,
+  TransmissionType.SITE: mujoco.mjtTrn.mjTRN_SITE,
+}
+
 
 def auto_wrap_fixed_base_mocap(
   spec_fn: Callable[[], mujoco.MjSpec],
@@ -96,11 +104,12 @@ def create_motor_actuator(
   gear: float = 1.0,
   armature: float = 0.0,
   frictionloss: float = 0.0,
+  transmission_type: TransmissionType = TransmissionType.JOINT,
 ) -> mujoco.MjsActuator:
   """Create a <motor> actuator."""
   actuator = spec.add_actuator(name=joint_name, target=joint_name)
 
-  actuator.trntype = mujoco.mjtTrn.mjTRN_JOINT
+  actuator.trntype = _TRANSMISSION_TYPE_MAP[transmission_type]
   actuator.dyntype = mujoco.mjtDyn.mjDYN_NONE
   actuator.gaintype = mujoco.mjtGain.mjGAIN_FIXED
   actuator.biastype = mujoco.mjtBias.mjBIAS_NONE
@@ -112,9 +121,13 @@ def create_motor_actuator(
   actuator.ctrllimited = True
   actuator.ctrlrange[:] = np.array([-effort_limit, effort_limit])
 
-  # Joint properties.
-  spec.joint(joint_name).armature = armature
-  spec.joint(joint_name).frictionloss = frictionloss
+  # Set armature and frictionloss.
+  if transmission_type == TransmissionType.JOINT:
+    spec.joint(joint_name).armature = armature
+    spec.joint(joint_name).frictionloss = frictionloss
+  elif transmission_type == TransmissionType.TENDON:
+    spec.tendon(joint_name).armature = armature
+    spec.tendon(joint_name).frictionloss = frictionloss
 
   return actuator
 
@@ -128,6 +141,7 @@ def create_position_actuator(
   effort_limit: float | None = None,
   armature: float = 0.0,
   frictionloss: float = 0.0,
+  transmission_type: TransmissionType = TransmissionType.JOINT,
 ) -> mujoco.MjsActuator:
   """Creates a <position> actuator.
 
@@ -137,8 +151,7 @@ def create_position_actuator(
   """
   actuator = spec.add_actuator(name=joint_name, target=joint_name)
 
-  # Use <position> settings.
-  actuator.trntype = mujoco.mjtTrn.mjTRN_JOINT
+  actuator.trntype = _TRANSMISSION_TYPE_MAP[transmission_type]
   actuator.dyntype = mujoco.mjtDyn.mjDYN_NONE
   actuator.gaintype = mujoco.mjtGain.mjGAIN_FIXED
   actuator.biastype = mujoco.mjtBias.mjBIAS_AFFINE
@@ -158,9 +171,13 @@ def create_position_actuator(
     actuator.forcelimited = False
     # No forcerange needed.
 
-  # Joint properties.
-  spec.joint(joint_name).armature = armature
-  spec.joint(joint_name).frictionloss = frictionloss
+  # Set armature and frictionloss.
+  if transmission_type == TransmissionType.JOINT:
+    spec.joint(joint_name).armature = armature
+    spec.joint(joint_name).frictionloss = frictionloss
+  elif transmission_type == TransmissionType.TENDON:
+    spec.tendon(joint_name).armature = armature
+    spec.tendon(joint_name).frictionloss = frictionloss
 
   return actuator
 
@@ -174,11 +191,12 @@ def create_velocity_actuator(
   armature: float = 0.0,
   frictionloss: float = 0.0,
   inheritrange: float = 1.0,
+  transmission_type: TransmissionType = TransmissionType.JOINT,
 ) -> mujoco.MjsActuator:
   """Creates a <velocity> actuator."""
   actuator = spec.add_actuator(name=joint_name, target=joint_name)
 
-  actuator.trntype = mujoco.mjtTrn.mjTRN_JOINT
+  actuator.trntype = _TRANSMISSION_TYPE_MAP[transmission_type]
   actuator.dyntype = mujoco.mjtDyn.mjDYN_NONE
   actuator.gaintype = mujoco.mjtGain.mjGAIN_FIXED
   actuator.biastype = mujoco.mjtBias.mjBIAS_AFFINE
@@ -195,8 +213,58 @@ def create_velocity_actuator(
   else:
     actuator.forcelimited = False
 
-  # Joint properties.
-  spec.joint(joint_name).armature = armature
-  spec.joint(joint_name).frictionloss = frictionloss
+  if transmission_type == TransmissionType.JOINT:
+    spec.joint(joint_name).armature = armature
+    spec.joint(joint_name).frictionloss = frictionloss
+  elif transmission_type == TransmissionType.TENDON:
+    spec.tendon(joint_name).armature = armature
+    spec.tendon(joint_name).frictionloss = frictionloss
+
+  return actuator
+
+
+def create_muscle_actuator(
+  spec: mujoco.MjSpec,
+  target_name: str,
+  *,
+  length_range: tuple[float, float] = (0.0, 0.0),
+  gear: float = 1.0,
+  timeconst: tuple[float, float] = (0.01, 0.04),
+  tausmooth: float = 0.0,
+  range: tuple[float, float] = (0.75, 1.05),
+  force: float = -1.0,
+  scale: float = 200.0,
+  lmin: float = 0.5,
+  lmax: float = 1.6,
+  vmax: float = 1.5,
+  fpmax: float = 1.3,
+  fvmax: float = 1.2,
+  transmission_type: TransmissionType = TransmissionType.TENDON,
+) -> mujoco.MjsActuator:
+  """Create a MuJoCo <muscle> actuator with muscle dynamics.
+
+  Muscles use special activation dynamics and force-length-velocity curves.
+  They can actuate tendons or joints.
+  """
+  actuator = spec.add_actuator(name=target_name, target=target_name)
+
+  if transmission_type not in [TransmissionType.JOINT, TransmissionType.TENDON]:
+    raise ValueError("Muscle actuators only support JOINT and TENDON transmissions.")
+  actuator.trntype = _TRANSMISSION_TYPE_MAP[transmission_type]
+  actuator.dyntype = mujoco.mjtDyn.mjDYN_MUSCLE
+  actuator.gaintype = mujoco.mjtGain.mjGAIN_MUSCLE
+  actuator.biastype = mujoco.mjtBias.mjBIAS_MUSCLE
+
+  actuator.gear[0] = gear
+  actuator.dynprm[0:3] = np.array([*timeconst, tausmooth])
+  actuator.gainprm[0:9] = np.array(
+    [*range, force, scale, lmin, lmax, vmax, fpmax, fvmax]
+  )
+  actuator.biasprm[:] = actuator.gainprm[:]
+  actuator.lengthrange[0:2] = length_range
+
+  # TODO(kevin): Double check this.
+  actuator.ctrllimited = True
+  actuator.ctrlrange[:] = np.array([0.0, 1.0])
 
   return actuator

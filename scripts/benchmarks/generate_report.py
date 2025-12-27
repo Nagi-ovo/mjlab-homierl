@@ -790,7 +790,7 @@ def main(
   entity: str = "gcbc_researchers",
   project: str = "mjlab",
   tag: str = "nightly",
-  eval_limit: int = 10,
+  eval_limit: int = 0,
   num_envs: int = 1024,
   output_dir: Path = Path("benchmark_results"),
 ) -> None:

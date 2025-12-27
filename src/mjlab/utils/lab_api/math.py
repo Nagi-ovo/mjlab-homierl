@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# Modified by MjLab developers:
+# Modified by mjlab developers:
 #   - 2025-10-05: Replaced quat_rotate_inverse with quat_apply_inverse in
 #     rigid_body_twist_transform() (lines 820-821). The quat_rotate_inverse function was
 #     deprecated/removed in newer PyTorch versions, replaced by quat_apply_inverse with

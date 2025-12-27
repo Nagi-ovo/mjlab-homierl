@@ -41,6 +41,10 @@ build:
 	uv run --isolated --no-project --with dist/*.tar.gz --with git+https://github.com/google-deepmind/mujoco_warp tests/smoke_test.py
 	@echo "Build and import test successful"
 
+.PHONY: docs
+docs:
+	uv run --extra docs sphinx-build docs docs/_build
+
 .PHONY: docker-build
 docker-build:
 	docker build -t mjlab:latest .

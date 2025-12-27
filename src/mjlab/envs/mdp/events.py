@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Literal, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Literal, Tuple
 
 import torch
 
@@ -293,7 +293,7 @@ def randomize_field(
   env: ManagerBasedRlEnv,
   env_ids: torch.Tensor | None,
   field: str,
-  ranges: Union[Tuple[float, float], Dict[int, Tuple[float, float]]],
+  ranges: Tuple[float, float] | Dict[int, Tuple[float, float]],
   distribution: Literal["uniform", "log_uniform", "gaussian"] = "uniform",
   operation: Literal["add", "scale", "abs"] = "abs",
   asset_cfg=None,
@@ -381,7 +381,7 @@ def _determine_target_axes(
   model_field,
   spec: FieldSpec,
   axes: list[int] | None,
-  ranges: Union[Tuple[float, float], Dict[int, Tuple[float, float]]],
+  ranges: Tuple[float, float] | Dict[int, Tuple[float, float]],
 ) -> list[int]:
   """Determine which axes to randomize."""
   field_ndim = len(model_field.shape) - 1  # Subtract env dimension
@@ -414,7 +414,7 @@ def _determine_target_axes(
 
 
 def _prepare_axis_ranges(
-  ranges: Union[Tuple[float, float], Dict[int, Tuple[float, float]]],
+  ranges: Tuple[float, float] | Dict[int, Tuple[float, float]],
   target_axes: list[int],
   field: str,
 ) -> Dict[int, Tuple[float, float]]:

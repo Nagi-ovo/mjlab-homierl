@@ -89,14 +89,14 @@ def assert_has_diversity(values, min_unique=2):
 
 
 @pytest.mark.parametrize(
-  "field,ranges,operation,asset_names,axes,seed",
+  "field,ranges,operation,entity_names,axes,seed",
   [
     ("geom_friction", FRICTION_RANGE, "abs", {"geom_names": [".*"]}, [0], 123),
     ("body_mass", MASS_SCALE_RANGE, "scale", {"body_names": [".*"]}, None, 456),
     ("dof_damping", DAMPING_RANGE, "abs", {"joint_names": [".*"]}, None, 789),
   ],
 )
-def test_randomize_field(device, field, ranges, operation, asset_names, axes, seed):
+def test_randomize_field(device, field, ranges, operation, entity_names, axes, seed):
   """Test that randomization changes values, respects ranges, and creates diversity."""
   torch.manual_seed(seed)
   env = create_test_env(device)
@@ -126,7 +126,7 @@ def test_randomize_field(device, field, ranges, operation, asset_names, axes, se
     field=field,
     ranges=ranges,
     operation=operation,
-    asset_cfg=SceneEntityCfg("robot", **asset_names),
+    asset_cfg=SceneEntityCfg("robot", **entity_names),
     axes=axes,
   )
 

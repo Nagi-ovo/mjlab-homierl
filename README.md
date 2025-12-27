@@ -8,12 +8,7 @@ mjlab ([Zakka, K., Yi, B., Liao, Q., & Le Lay, L. (2025). MJLab: Isaac Lab API, 
 with best-in-class [MuJoCo](https://github.com/google-deepmind/mujoco_warp) physics to provide lightweight, modular abstractions for RL robotics research
 and sim-to-real deployment.
 
-> ⚠️ **BETA PREVIEW** mjlab is in active development. Expect **breaking
-> changes** and **missing features** during the beta phase. There is **no stable
-> release yet**. The PyPI package is only a snapshot — for the latest fixes and
-> improvements, install from source or Git.
-
-## HOMIE-RL Implementation Status
+---
 
 ### ✅ **Implemented Key Contributions**
 
@@ -359,7 +354,7 @@ and sim-to-real deployment.
 
 ## Installation
 
-**From source (recommended during beta):**
+**From source:**
 
 ```bash
 git clone https://github.com/Nagi-ovo/mjlab-homierl.git
@@ -413,10 +408,7 @@ uv run play Mjlab-Your-Task-Id --agent random  # Sends uniform random actions.
 
 ## Documentation
 
-- **[Installation Guide](docs/installation_guide.md)**
-- **[Why mjlab?](docs/motivation.md)**
-- **[Migration Guide](docs/migration_guide.md)**
-- **[FAQ & Troubleshooting](docs/faq.md)**
+Full documentation is available at **[mujocolab.github.io/mjlab](https://mujocolab.github.io/mjlab/)**.
 
 ---
 
@@ -434,6 +426,13 @@ Format code:
 ```bash
 uvx pre-commit install
 make format
+```
+
+Compile documentation locally:
+
+```bash
+uv pip install -r docs/requirements.txt
+make docs
 ```
 
 ---

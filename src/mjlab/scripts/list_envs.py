@@ -1,4 +1,4 @@
-"""Script to list MJLab environments."""
+"""Script to list mjlab environments."""
 
 import tyro
 from prettytable import PrettyTable
@@ -14,7 +14,7 @@ def list_environments(keyword: str | None = None):
     keyword: Optional filter to only show environments containing this keyword.
   """
   table = PrettyTable(["#", "Task ID"])
-  table.title = "Available Environments in Mjlab"
+  table.title = "Available Environments in mjlab"
   table.align["Task ID"] = "l"
 
   all_tasks = list_tasks()

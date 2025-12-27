@@ -1,4 +1,4 @@
-"""Mjlab play viewer based on Viser with simulation controls.
+"""mjlab play viewer based on Viser with simulation controls.
 
 Adapted from an MJX visualizer by Chung Min Kim: https://github.com/chungmin99/
 """

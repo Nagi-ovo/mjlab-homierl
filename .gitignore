@@ -14,3 +14,8 @@ artifacts/
 .venv/
 render_robots.py
 benchmark_results/
+
+# Documentation outputs.
+**/_build/*
+**/generated/*
+

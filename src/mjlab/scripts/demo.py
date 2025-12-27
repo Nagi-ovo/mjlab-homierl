@@ -12,7 +12,7 @@ from mjlab.scripts.play import PlayConfig, run_play
 
 def main() -> None:
   """Run demo with pretrained tracking policy."""
-  print("🎮 Setting up MJLab demo with pretrained tracking policy...")
+  print("🎮 Setting up mjlab demo with pretrained tracking policy...")
 
   try:
     checkpoint_path = ensure_default_checkpoint()

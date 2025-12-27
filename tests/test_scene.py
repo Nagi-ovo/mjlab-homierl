@@ -6,7 +6,7 @@ import mujoco
 import mujoco_warp as mjwarp
 import pytest
 import torch
-from conftest import get_test_device
+from conftest import get_test_device, load_fixture_xml
 
 from mjlab.entity import Entity, EntityCfg
 from mjlab.scene import Scene, SceneCfg
@@ -26,15 +26,7 @@ def device():
 @pytest.fixture
 def simple_entity_xml():
   """Simple entity XML for testing."""
-  return """
-    <mujoco>
-      <worldbody>
-        <body name="box" pos="0 0 0.5">
-          <geom name="box_geom" type="box" size="0.1 0.1 0.1" mass="1.0"/>
-        </body>
-      </worldbody>
-    </mujoco>
-    """
+  return load_fixture_xml("fixed_base_box")
 
 
 @pytest.fixture

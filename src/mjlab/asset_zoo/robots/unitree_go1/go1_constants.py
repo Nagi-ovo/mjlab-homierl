@@ -67,14 +67,14 @@ STIFFNESS_KNEE = KNEE_ACTUATOR.reflected_inertia * NATURAL_FREQ**2
 DAMPING_KNEE = 2 * DAMPING_RATIO * KNEE_ACTUATOR.reflected_inertia * NATURAL_FREQ
 
 GO1_HIP_ACTUATOR_CFG = BuiltinPositionActuatorCfg(
-  joint_names_expr=(".*_hip_joint", ".*_thigh_joint"),
+  target_names_expr=(".*_hip_joint", ".*_thigh_joint"),
   stiffness=STIFFNESS_HIP,
   damping=DAMPING_HIP,
   effort_limit=HIP_ACTUATOR.effort_limit,
   armature=HIP_ACTUATOR.reflected_inertia,
 )
 GO1_KNEE_ACTUATOR_CFG = BuiltinPositionActuatorCfg(
-  joint_names_expr=(".*_calf_joint",),
+  target_names_expr=(".*_calf_joint",),
   stiffness=STIFFNESS_KNEE,
   damping=DAMPING_KNEE,
   effort_limit=KNEE_ACTUATOR.effort_limit,
@@ -159,7 +159,7 @@ for a in GO1_ARTICULATION.actuators:
   assert isinstance(a, BuiltinPositionActuatorCfg)
   e = a.effort_limit
   s = a.stiffness
-  names = a.joint_names_expr
+  names = a.target_names_expr
   assert e is not None
   for n in names:
     GO1_ACTION_SCALE[n] = 0.25 * e / s

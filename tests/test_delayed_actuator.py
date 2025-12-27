@@ -3,7 +3,7 @@
 import mujoco
 import pytest
 import torch
-from conftest import get_test_device
+from conftest import get_test_device, load_fixture_xml
 
 from mjlab.actuator import (
   BuiltinPositionActuatorCfg,
@@ -14,24 +14,7 @@ from mjlab.actuator import (
 from mjlab.entity import Entity, EntityArticulationInfoCfg, EntityCfg
 from mjlab.sim.sim import Simulation, SimulationCfg
 
-ROBOT_XML = """
-<mujoco>
-  <worldbody>
-    <body name="base" pos="0 0 1">
-      <freejoint name="free_joint"/>
-      <geom name="base_geom" type="box" size="0.2 0.2 0.1" mass="1.0"/>
-      <body name="link1" pos="0 0 0">
-        <joint name="joint1" type="hinge" axis="0 0 1" range="-1.57 1.57"/>
-        <geom name="link1_geom" type="box" size="0.1 0.1 0.1" mass="0.1"/>
-      </body>
-      <body name="link2" pos="0 0 0">
-        <joint name="joint2" type="hinge" axis="0 0 1" range="-1.57 1.57"/>
-        <geom name="link2_geom" type="box" size="0.1 0.1 0.1" mass="0.1"/>
-      </body>
-    </body>
-  </worldbody>
-</mujoco>
-"""
+ROBOT_XML = load_fixture_xml("floating_base_articulated")
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +29,7 @@ def create_entity_with_delayed_builtin(delay_min_lag=0, delay_max_lag=3):
       actuators=(
         DelayedActuatorCfg(
           base_cfg=BuiltinPositionActuatorCfg(
-            joint_names_expr=("joint.*",),
+            target_names_expr=("joint.*",),
             effort_limit=100.0,
             stiffness=80.0,
             damping=10.0,
@@ -68,7 +51,7 @@ def create_entity_with_delayed_ideal(delay_min_lag=0, delay_max_lag=3):
       actuators=(
         DelayedActuatorCfg(
           base_cfg=IdealPdActuatorCfg(
-            joint_names_expr=("joint.*",),
+            target_names_expr=("joint.*",),
             effort_limit=100.0,
             stiffness=80.0,
             damping=10.0,
@@ -180,7 +163,7 @@ def test_delayed_actuator_multi_target(device):
       actuators=(
         DelayedActuatorCfg(
           base_cfg=IdealPdActuatorCfg(
-            joint_names_expr=("joint.*",),
+            target_names_expr=("joint.*",),
             effort_limit=100.0,
             stiffness=80.0,
             damping=10.0,
@@ -309,7 +292,7 @@ def test_delayed_actuator_set_lags_affects_delay(device):
       actuators=(
         DelayedActuatorCfg(
           base_cfg=BuiltinPositionActuatorCfg(
-            joint_names_expr=("joint.*",),
+            target_names_expr=("joint.*",),
             effort_limit=100.0,
             stiffness=80.0,
             damping=10.0,
@@ -358,7 +341,7 @@ def test_delayed_actuator_set_lags_overwritten_without_hold_prob(device):
       actuators=(
         DelayedActuatorCfg(
           base_cfg=BuiltinPositionActuatorCfg(
-            joint_names_expr=("joint.*",),
+            target_names_expr=("joint.*",),
             effort_limit=100.0,
             stiffness=80.0,
             damping=10.0,
@@ -405,7 +388,7 @@ def test_delayed_actuator_set_lags_multi_target(device):
       actuators=(
         DelayedActuatorCfg(
           base_cfg=IdealPdActuatorCfg(
-            joint_names_expr=("joint.*",),
+            target_names_expr=("joint.*",),
             stiffness=80.0,
             damping=10.0,
           ),

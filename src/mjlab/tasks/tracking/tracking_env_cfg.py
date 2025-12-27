@@ -127,7 +127,7 @@ def make_tracking_env_cfg() -> ManagerBasedRlEnvCfg:
 
   actions: dict[str, ActionTermCfg] = {
     "joint_pos": JointPositionActionCfg(
-      asset_name="robot",
+      entity_name="robot",
       actuator_names=(".*",),
       scale=0.5,
       use_default_offset=True,
@@ -140,7 +140,7 @@ def make_tracking_env_cfg() -> ManagerBasedRlEnvCfg:
 
   commands: dict[str, CommandTermCfg] = {
     "motion": MotionCommandCfg(
-      asset_name="robot",
+      entity_name="robot",
       resampling_time_range=(1.0e9, 1.0e9),
       debug_vis=True,
       pose_range={
@@ -297,7 +297,7 @@ def make_tracking_env_cfg() -> ManagerBasedRlEnvCfg:
     terminations=terminations,
     viewer=ViewerConfig(
       origin_type=ViewerConfig.OriginType.ASSET_BODY,
-      asset_name="robot",
+      entity_name="robot",
       body_name="",  # Set per-robot.
       distance=3.0,
       elevation=-5.0,
