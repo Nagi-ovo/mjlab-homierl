@@ -945,7 +945,8 @@ def apply_delta_pose(
     # interpret delta_pose[:, 3:6] as target rotation displacements
     rot_actions = delta_pose[:, 3:6]
     angle = torch.linalg.vector_norm(rot_actions, dim=1)
-    axis = rot_actions / angle.unsqueeze(-1)
+    safe_angle = torch.clamp_min(angle, eps)
+    axis = rot_actions / safe_angle.unsqueeze(-1)
     # change from axis-angle to quat convention
     identity_quat = torch.tensor([1.0, 0.0, 0.0, 0.0], device=device).repeat(num_poses, 1)
     rot_delta_quat = torch.where(
