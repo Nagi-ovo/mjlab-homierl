@@ -16,7 +16,7 @@
 
 base cfg 做两件事：
 
-1. 定义 velocity tracking 任务的 **MDP 结构**（obs/actions/commands/events/rewards/terminations/curriculum）
+1. 定义 velocity tracking 任务的 **MDP 结构** （obs/actions/commands/events/rewards/terminations/curriculum）
 2. 留出“每个机器人都不同”的占位符（例如 foot site names、geom friction 的 geoms、viewer body name、部分 reward 权重）
 
 例如 policy observations（注意：命令 command 也是 observation 的一部分）：
@@ -64,18 +64,27 @@ base cfg 做两件事：
 它提供三个关键特性：
 
 - **resample**：每个 env 独立按时间窗重采样速度命令
-- **heading 控制**：一部分 env 用 heading error 转成 yaw rate（更像“面朝某方向走”）
+- **heading 控制** ：一部分 env 用 heading error 转成 yaw rate（更像"面朝某方向走"）
 - **standing env**：按比例采样“站立不动”的环境（让策略学会停止）
 
-2) Reward terms：track_* + posture + feet 系列
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2) Rewards & Terminations：移动任务的“胡萝卜与大棒”
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-路径：``src/mjlab/tasks/velocity/mdp/rewards.py``（以及通用的 ``src/mjlab/envs/mdp/rewards.py``）
+在 Velocity 任务中，奖励函数的设计遵循“生存 -> 任务完成 -> 运动质量”的层级。
 
-你会看到两种写法：
+*   **核心奖励（任务完成）** ：
 
-- 函数式（例如 ``track_linear_velocity``）
-- 类式（例如 ``variable_posture``、``feet_swing_height``），用于缓存默认姿态/peak height 等跨步信息
+    *   ``track_linear_velocity`` : 鼓励机器人的实际速度匹配 ``twist`` 命令。
+    *   ``track_angular_velocity`` : 鼓励角速度匹配。
+*   **正则化奖励（运动质量）** ：
+
+    *   ``joint_pos_limits`` / ``joint_vel_limits`` : 惩罚关节接近死区或速度过快。
+    *   ``action_rate_l2`` : 惩罚动作突变，产生平滑的关节运动。
+    *   ``feet_air_time`` / ``feet_clearance`` : 引导产生自然的步态（如抬腿高度）。
+*   **终止条件（安全边界）** ：
+
+    *   ``fell_over`` (``bad_orientation``): 只要躯干倾斜超过 70 度，立即重置，防止学到“贴地爬行”。
+    *   ``time_out``: 强制在固定步数后重置（truncated），确保持续探索。
 
 3) Curriculum：terrain_levels_vel + commands_vel
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -141,10 +150,10 @@ Task 注册：register_mjlab_task
 
 建议按“侵入性从小到大”的顺序改：
 
-1. **改 reward 权重 / 增减 reward term**：改 ``config/g1/env_cfgs.py`` 里对 ``cfg.rewards`` 的修改。
-2. **改 command 分布**：改 ``cfg.commands["twist"].ranges``（也可以加 curriculum stage）。
-3. **改 observation**：在 ``velocity_env_cfg.py`` 的 policy/critic group 里加 term，或在 g1 override 里删/换 term。
-4. **加新 event randomization**：在 ``events`` 增加 ``EventTermCfg``（startup/reset/interval），必要时打开 ``domain_randomization=True``。
+1. **改 reward 权重 / 增减 reward term** ：改 ``config/g1/env_cfgs.py`` 里对 ``cfg.rewards`` 的修改。
+2. **改 command 分布** ：改 ``cfg.commands["twist"].ranges`` （也可以加 curriculum stage）。
+3. **改 observation** ：在 ``velocity_env_cfg.py`` 的 policy/critic group 里加 term，或在 g1 override 里删/换 term。
+4. **加新 event randomization** ：在 ``events`` 增加 ``EventTermCfg``（startup/reset/interval），必要时打开 ``domain_randomization=True``。
 
 .. note::
 

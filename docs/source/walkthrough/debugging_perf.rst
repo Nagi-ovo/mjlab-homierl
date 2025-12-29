@@ -42,7 +42,7 @@ tracking 的 ``MotionCommand`` 支持 ghost robot 或 frames：
 1) NaN Guard（推荐在开发期打开）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-路径：``src/mjlab/sim/sim.py``（``NanGuard``） + ``src/mjlab/scripts/train.py``（开关）
+路径：``src/mjlab/sim/sim.py`` （``NanGuard``） + ``src/mjlab/scripts/train.py`` （开关）
 
 训练时可以用 flag 打开：
 
@@ -93,7 +93,7 @@ domain randomization 的核心不是“每次 reset 随机一下”，而是 **�
 3) CUDA graph 的坑：替换数组后必须重新 capture
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-路径：``src/mjlab/sim/sim.py``（类注释 + ``expand_model_fields``）
+路径：``src/mjlab/sim/sim.py`` （类注释 + ``expand_model_fields`` ）
 
 Simulation 在 CUDA 上会 capture graph（step/forward/reset）。graph 绑定的是“当时的 GPU 内存地址”。
 如果你后续替换了 model/data 数组，graph 会静默读取旧地址。
@@ -102,7 +102,7 @@ Simulation 在 CUDA 上会 capture graph（step/forward/reset）。graph 绑定�
 
 工程建议：
 
-- **尽量把所有需要扩展的字段**在 env 初始化时一次性确定（通过 EventManager 收集），避免中途替换数组。
+- **尽量把所有需要扩展的字段** 在 env 初始化时一次性确定（通过 EventManager 收集），避免中途替换数组。
 
 性能心法：让训练跑得快
 ----------------------
@@ -118,7 +118,7 @@ Simulation 在 CUDA 上会 capture graph（step/forward/reset）。graph 绑定�
 2) 多 GPU
 ^^^^^^^^^^
 
-路径：``src/mjlab/scripts/train.py``（``--gpu-ids`` + torchrunx）
+路径：``src/mjlab/scripts/train.py`` （ ``--gpu-ids`` + torchrunx）
 
 当选择多 GPU 时，会走 torchrunx 启动多进程，并设置 ``MUJOCO_EGL_DEVICE_ID`` 与 local_rank 对齐。
 

@@ -5,7 +5,7 @@
 
 tracking 任务与 velocity 的最大不同点在于：**command 不再是“采样一个目标速度”，而是“加载一段 reference motion”，并在每个 step 推进时间索引。**
 
-因此 tracking 的核心是 ``MotionCommand``（一个 ``CommandTerm`` 子类），而 rewards/terminations 主要度量“reference vs robot”的误差。
+因此 tracking 的核心是 ``MotionCommand`` （一个 ``CommandTerm`` 子类），而 rewards/terminations 主要度量“reference vs robot”的误差。
 
 任务骨架：make_tracking_env_cfg（base cfg）
 -----------------------------------------
@@ -41,33 +41,34 @@ MotionCommand：tracking 的“发动机”
 - 生成“相对 anchor 的 reference pose”（用于度量与观测）
 - 在 reset 时把 robot 状态初始化到参考附近（并加随机扰动，提高鲁棒性）
 
-例如（读取 motion + 推进 time_steps）：
+Rewards & Terminations：高精度的影子模仿
+--------------------------------------
 
-.. code-block:: python
+在 Tracking 任务中，奖励和终止条件都围绕着 **“如何让机器人成为参考运动的影子”** 展开。
 
-   # file: src/mjlab/tasks/tracking/mdp/commands.py
-   class MotionCommand(CommandTerm):
-       def __init__(self, cfg: MotionCommandCfg, env):
-           self.motion = MotionLoader(cfg.motion_file, body_indexes, device=env.device)
-           self.time_steps = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
+1) 奖励项：多维度的误差惩罚
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-       def _resample_command(self, env_ids):
-           if self.cfg.sampling_mode == "start":
-               self.time_steps[env_ids] = 0
-           elif self.cfg.sampling_mode == "uniform":
-               self.time_steps[env_ids] = torch.randint(0, self.motion.time_step_total, (len(env_ids),), device=self.device)
-           else:
-               self._adaptive_sampling(env_ids)
-           # 写入 root/joint state 到 sim（把机器人拉回参考附近）
-           self.robot.write_joint_state_to_sim(...)
-           self.robot.write_root_state_to_sim(...)
+*   **姿态误差 (Pose Reward)** ：
 
-       def _update_command(self):
-           self.time_steps += 1
-           if any(time_steps >= time_step_total): resample
-           # 计算 relative reference（anchor 对齐）
-           self.body_pos_relative_w = ...
-           self.body_quat_relative_w = ...
+    *   ``joint_pos_tracking`` : 每一个关节角度都要贴合 reference。
+    *   ``body_pos_tracking`` / ``body_quat_tracking`` : 手、脚、躯干在世界坐标系（相对 anchor）的位置和姿态。
+*   **速度误差 (Velocity Reward)** ：
+
+    *   ``joint_vel_tracking`` / ``body_lin_vel_tracking`` : 动态跟随的平滑度，防止只有姿态对、但运动生硬。
+
+2) 终止条件：严格的精度控制
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+与 Velocity 任务不同，Tracking 任务通常使用“自杀式”训练：
+
+*   **轨迹偏离 (Tracking Error Termination)** ：
+
+    *   如果躯干（torso）或脚部（feet）偏离参考位置超过阈值（如 0.3-0.5m），说明机器人已经由于失稳无法追随， **直接终止** 。
+    *   这能有效防止策略在已经搞砸的情况下浪费算力。
+*   **自碰撞 (Self Collision)** ：
+
+    *   为了模仿人类或高难度动作，自碰撞通常是严格禁止的（终止触发）。
 
 训练入口的关键逻辑：motion_file 如何注入？
 ----------------------------------------
@@ -75,7 +76,7 @@ MotionCommand：tracking 的“发动机”
 路径：``src/mjlab/scripts/train.py``
 
 train.py 通过检查 env_cfg 里是否存在 ``commands["motion"]`` 且类型为 ``MotionCommandCfg`` 来判断 tracking 任务，
-并要求你提供 ``--registry-name``（W&B artifact），然后把 artifact 下载路径写入 ``motion_cmd.motion_file``：
+并要求你提供 ``--registry-name`` （W&B artifact），然后把 artifact 下载路径写入 ``motion_cmd.motion_file``：
 
 .. code-block:: python
 
@@ -90,7 +91,7 @@ train.py 通过检查 env_cfg 里是否存在 ``commands["motion"]`` 且类型�
      motion_cmd = cfg.env.commands["motion"]
      motion_cmd.motion_file = str(Path(artifact.download()) / "motion.npz")
 
-这段逻辑的设计含义是：**motion 数据集管理与训练 run 解耦**（你不需要把 motion 文件硬编码在代码里）。
+这段逻辑的设计含义是： **motion 数据集管理与训练 run 解耦** （你不需要把 motion 文件硬编码在代码里）。
 
 g1 覆盖：unitree_g1_flat_tracking_env_cfg
 ----------------------------------------
@@ -101,7 +102,7 @@ g1 覆盖：unitree_g1_flat_tracking_env_cfg
 
 - 绑定 robot entity：``get_g1_robot_cfg()``
 - 配置 self-collision sensor
-- 设置 ``MotionCommandCfg.anchor_body_name`` 与 ``body_names``（决定哪些 body 参与 tracking）
+- 设置 ``MotionCommandCfg.anchor_body_name`` 与 ``body_names`` （决定哪些 body 参与 tracking）
 - 设置 termination 的 end-effector bodies
 - 提供 ``has_state_estimation=False`` 分支：删除部分观测项，模拟状态估计不可用的场景
 
@@ -138,13 +139,13 @@ Task 注册
 你要改 tracking：通常改哪里？
 ----------------------------
 
-1. **body list / anchor**：最关键（直接决定误差定义与训练难度）  
-   路径：``src/mjlab/tasks/tracking/config/g1/env_cfgs.py``（``motion_cmd.body_names`` / ``anchor_body_name``）
-2. **sampling_mode**：start/uniform/adaptive 的选择会显著影响学习曲线  
-   路径：``MotionCommandCfg.sampling_mode``（base cfg / play mode override）
-3. **reward 标准差 std**：控制 “exp(-err/std^2)” 的形状（学习信号强弱）  
-   路径：``src/mjlab/tasks/tracking/tracking_env_cfg.py``（rewards dict）
-4. **termination 阈值**：太严会学不起来；太松会姿态漂移  
+1. **body list / anchor** ：最关键（直接决定误差定义与训练难度）  
+   路径：``src/mjlab/tasks/tracking/config/g1/env_cfgs.py`` （``motion_cmd.body_names`` / ``anchor_body_name``）
+2. **sampling_mode** ：start/uniform/adaptive 的选择会显著影响学习曲线  
+   路径：``MotionCommandCfg.sampling_mode`` （base cfg / play mode override）
+3. **reward 标准差 std** ：控制 "exp(-err/std^2)" 的形状（学习信号强弱）  
+   路径：``src/mjlab/tasks/tracking/tracking_env_cfg.py`` （rewards dict）
+4. **termination 阈值** ：太严会学不起来；太松会姿态漂移  
    路径：``src/mjlab/tasks/tracking/tracking_env_cfg.py`` + g1 override 补 ``body_names``
 
 

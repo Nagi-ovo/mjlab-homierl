@@ -18,7 +18,7 @@
 路径：``src/mjlab/managers/manager_term_config.py``
 
 - ``RewardTermCfg`` / ``TerminationTermCfg`` / ``CurriculumTermCfg`` / ``EventTermCfg``：
-  继承 ``ManagerTermBaseCfg``，核心字段是 ``func`` 和 ``params``（以及 reward 的 ``weight`` 等）。
+  继承 ``ManagerTermBaseCfg``，核心字段是 ``func`` 和 ``params`` （以及 reward 的 ``weight`` 等）。
 - ``ObservationTermCfg``：额外定义 noise/clip/scale/delay/history 的处理管线。
 - ``ActionTermCfg``：是抽象类，要求实现 ``build(env) -> ActionTerm``。
 - ``CommandTermCfg``：持有 ``class_type``，由 ``CommandManager`` 直接实例化 term。
@@ -56,6 +56,7 @@ manager 调用 term 的方式基本统一：``term(env, **params)``。
 **类 term**：适合需要缓存/跨步统计/预处理的项（例如把 pattern->tensor 映射提前解析、维护 peak heights、维护 EMA 等）。
 
 > 你在 velocity 的 reward 里可以看到典型例子：
+
 > ``feet_swing_height``、``variable_posture`` 都是类 term（路径：``src/mjlab/tasks/velocity/mdp/rewards.py``）。
 
 3) Manager：负责装配 terms + 管生命周期
@@ -170,7 +171,7 @@ ObservationManager：obs 的“流水线”在这里（noise/clip/scale/delay/hi
 
 你在写 obs term 时要保证：
 
-- 返回 shape 是 ``(num_envs, ...)``（且在正确 device 上）。
+- 返回 shape 是 ``(num_envs, ...)`` （且在正确 device 上）。
 - 尽量不要在 term 内部做 Python 循环（会拖慢 4096 env 的训练）。
 
 RewardManager：所有 reward 都按 dt 乘权重（并对 NaN 做保护）

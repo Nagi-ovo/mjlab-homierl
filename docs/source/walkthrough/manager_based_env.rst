@@ -42,7 +42,7 @@
 
 ``ManagerBasedRlEnv.__init__`` 的结构非常“可读”，按层次搭积木：
 
-1. ``Scene(cfg.scene, device)``：构建 MuJoCo ``MjSpec``（terrain/entities/sensors），随后 compile 成 ``MjModel``。
+1. ``Scene(cfg.scene, device)``：构建 MuJoCo ``MjSpec`` （terrain/entities/sensors），随后 compile 成  ``MjModel``。
 2. ``Simulation(num_envs, cfg.sim, model, device)``：把 MuJoCo model/data 放到 MJWarp 里，准备 GPU step/forward/reset。
 3. ``scene.initialize(mj_model, model, data)``：把 entity/sensor 绑定到仿真数据。
 4. ``load_managers()``：把 cfg 里的 dict term_cfg 装配成各类 managers（ **顺序非常关键** ）。

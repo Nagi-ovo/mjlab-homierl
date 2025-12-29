@@ -30,7 +30,7 @@
      - 资产库（MJCF/XML）。G1 在 ``asset_zoo/robots/unitree_g1``，H1 在 ``asset_zoo/robots/unitree_h1``。
    * - ``src/mjlab/tasks/``
      - 任务包。每个任务通常包含：
-       ``<task>_env_cfg.py``（base cfg）、``config/<robot>/``（robot override + 注册）、``mdp/``（任务专用 terms）、``rl/``（runner/export）。
+       ``<task>_env_cfg.py`` （base cfg）、``config/<robot>/`` （robot override + 注册）、``mdp/`` （任务专用 terms）、``rl/`` （runner/export）。
    * - ``src/mjlab/rl/``
      - 与 RSL-RL 的接口：VecEnv wrapper、policy/algorithm cfg dataclass。
    * - ``src/mjlab/scripts/``
@@ -46,7 +46,7 @@
 - base task cfg：``src/mjlab/tasks/velocity/velocity_env_cfg.py``
 - robot override（例如 g1/go1）：``src/mjlab/tasks/velocity/config/g1/env_cfgs.py``
 - 注册 task id：``src/mjlab/tasks/velocity/config/g1/__init__.py``
-- MDP terms：``src/mjlab/tasks/velocity/mdp/*``（+ 复用 ``src/mjlab/envs/mdp/*``）
+- MDP terms：``src/mjlab/tasks/velocity/mdp/*`` （+ 复用 ``src/mjlab/envs/mdp/*``）
 
 同样，tracking：
 

@@ -63,20 +63,22 @@ tracking 的 dummy agent 仍然需要 motion registry（否则 command 无法加
 这两个任务都采用“ **base env cfg + robot-specific override** ”的模式：
 
 - base cfg（任务定义）：  
+
   - velocity：``src/mjlab/tasks/velocity/velocity_env_cfg.py::make_velocity_env_cfg``  
   - tracking：``src/mjlab/tasks/tracking/tracking_env_cfg.py::make_tracking_env_cfg``
 
 - g1 override（填空式覆盖）：  
+
   - velocity：``src/mjlab/tasks/velocity/config/g1/env_cfgs.py``  
   - tracking：``src/mjlab/tasks/tracking/config/g1/env_cfgs.py``
 
 建议你按下面顺序迭代（最快见效）：
 
-- **reward 权重**：改 ``RewardTermCfg(weight=...)``（优先）。  
+- **reward 权重**：改 ``RewardTermCfg(weight=...)`` （优先）。  
   例如：velocity 的 ``cfg.rewards["angular_momentum"].weight`` / ``cfg.rewards["self_collisions"]``。
 - **观测项**：在 ``observations["policy"].terms`` 增减 ``ObservationTermCfg``。  
   tracking 甚至提供了 ``has_state_estimation=False`` 的“去掉部分状态”版本。
-- **随机化**：改 ``events``（startup/reset/interval）。  
+- **随机化**：改 ``events`` （startup/reset/interval）。  
   domain randomization 用 ``EventTermCfg(domain_randomization=True, params={"field": ...})``。
 - **命令分布**：改 ``commands`` 的 ranges（velocity 的 twist ranges / tracking 的 sampling_mode）。
 
