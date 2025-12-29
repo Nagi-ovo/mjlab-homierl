@@ -127,7 +127,7 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
 
   commands: dict[str, CommandTermCfg] = {
     "twist": UniformVelocityCommandCfg(
-      asset_name="robot",
+      entity_name="robot",
       resampling_time_range=(3.0, 8.0),
       rel_standing_envs=0.1,
       rel_heading_envs=0.3,
@@ -143,7 +143,7 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
       ),
     ),
     "height": RelativeHeightCommandCfg(
-      asset_name="robot",
+      entity_name="robot",
       resampling_time_range=(3.0, 8.0),
       debug_vis=True,
       active_env_group="squat",
