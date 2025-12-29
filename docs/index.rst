@@ -82,6 +82,12 @@ Table of Contents
    source/api/index
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Developer Walkthrough（中文）
+
+   source/walkthrough/index
+
+.. toctree::
    :maxdepth: 1
    :caption: Core Concepts
 

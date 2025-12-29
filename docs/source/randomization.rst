@@ -24,7 +24,7 @@ apply the draw.
         func=mdp.randomize_field,
         domain_randomization=True,  # marks this as domain randomization
         params={
-            "asset_cfg": SceneEntityCfg("robot", geom_names=[".*_foot.*"]),
+            "entity_cfg": SceneEntityCfg("robot", geom_names=[".*_foot.*"]),
             "field": "geom_friction",
             "ranges": (0.3, 1.2),
             "operation": "abs",
@@ -111,7 +111,7 @@ Friction (reset)
         func=mdp.randomize_field,
         domain_randomization=True,
         params={
-            "asset_cfg": SceneEntityCfg("robot", geom_names=[".*_foot.*"]),
+            "entity_cfg": SceneEntityCfg("robot", geom_names=[".*_foot.*"]),
             "field": "geom_friction",
             "ranges": (0.3, 1.2),
             "operation": "abs",
@@ -149,7 +149,7 @@ Randomize default joint positions to simulate joint offset calibration errors:
         func=mdp.randomize_field,
         domain_randomization=True,
         params={
-            "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]),
+            "entity_cfg": SceneEntityCfg("robot", joint_names=[".*"]),
             "field": "qpos0",
             "ranges": (-0.01, 0.01),
             "operation": "add",
@@ -167,7 +167,7 @@ Center of Mass (COM) (startup)
         func=mdp.randomize_field,
         domain_randomization=True,
         params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=["torso"]),
+            "entity_cfg": SceneEntityCfg("robot", body_names=["torso"]),
             "field": "body_ipos",
             "ranges": {0: (-0.02, 0.02), 1: (-0.02, 0.02)},
             "operation": "add",
