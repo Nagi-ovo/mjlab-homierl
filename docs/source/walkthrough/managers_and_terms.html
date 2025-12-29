@@ -1,0 +1,857 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>重点类二：Managers + Terms（isaaclab-like 的核心抽象） &#8212; mjlab Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../_static/twemoji.css" />
+    <link rel="stylesheet" type="text/css" href="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/css/all.min.css?v=53359634" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js"></script>
+    <script src="../../_static/twemoji.js"></script>
+    <script src="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/js/all.min.js?v=ec35c6c9"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/walkthrough/managers_and_terms';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="实例一：Velocity Tracking（Unitree G1）" href="tasks_velocity_g1.html" />
+    <link rel="prev" title="重点类一：ManagerBasedRlEnv（环境生命周期与数据流）" href="manager_based_env.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Dec 29, 2025"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">The mjlab Documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Quick Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" title="Stars" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" class="icon-link-image" alt="Stars"/></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migration_isaac_lab.html">Migrating from Isaac Lab</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About the Project</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Why mjlab?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ &amp; Troubleshooting</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/index.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/envs.html">mjlab.envs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/scene.html">mjlab.scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/sim.html">mjlab.sim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/entity.html">mjlab.entity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/actuator.html">mjlab.actuator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/sensor.html">mjlab.sensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/managers.html">mjlab.managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/terrains.html">mjlab.terrains</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough（中文）</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Code Walkthrough（面向科研开发，上手 + 深入）</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">架构总览：一张图看懂 mjlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html">快速上手：最短开发闭环（训练 / Play / 改任务）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_layout.html">代码地图：你应该去哪里改东西？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manager_based_env.html">重点类一：ManagerBasedRlEnv（环境生命周期与数据流）</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">重点类二：Managers + Terms（isaaclab-like 的核心抽象）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_velocity_g1.html">实例一：Velocity Tracking（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_tracking_g1.html">实例二：Motion Tracking / Imitation（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_homie_h1.html">实例三：Homie —— 混合运动与干扰（Unitree H1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_add_g1_task.html">如何新增一个 G1 RL 任务（从 0 到可训练）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging_perf.html">调试与性能：让你“稳”且“快”</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../randomization.html">Domain Randomization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nan_guard.html">NaN Guard</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../observation.html">Observation History and Delay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../actuators.html">Actuators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributed_training.html">Distributed Training</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/edit/main/docs/source/walkthrough/managers_and_terms.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/issues/new?title=Issue%20on%20page%20%2Fsource/walkthrough/managers_and_terms.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/source/walkthrough/managers_and_terms.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>重点类二：Managers + Terms（isaaclab-like 的核心抽象）</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#termcfg-term-manager">三层抽象：TermCfg → Term → Manager</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#termcfg-dataclass">1) TermCfg：用 dataclass 描述“怎么构建/怎么调用”</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#term">2) Term：可以是函数，也可以是“有状态的类”</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#manager-terms">3) Manager：负责装配 terms + 管生命周期</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sceneentitycfg-term">核心机制：SceneEntityCfg 的“延迟绑定” + 类 term 自动实例化</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sceneentitycfg">SceneEntityCfg：为什么需要它？</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#managerbase-resolve-common-term-cfg">ManagerBase._resolve_common_term_cfg：两件关键事</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manager">各个 Manager 的“要点速记”</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#actionmanager-action-action-term">ActionManager：把 action 向量切片分发给每个 action term</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#observationmanager-obs-noise-clip-scale-delay-history">ObservationManager：obs 的“流水线”在这里（noise/clip/scale/delay/history）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rewardmanager-reward-dt-nan">RewardManager：所有 reward 都按 dt 乘权重（并对 NaN 做保护）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminationmanager-terminated-truncated-time-out">TerminationManager：区分 terminated / truncated（time_out）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#commandmanager-resample-metrics-debug-vis">CommandManager：命令生成器（resample + metrics + debug vis）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#eventmanager-startup-reset-interval-domain-randomization">EventManager：startup/reset/interval 三种时机 + domain randomization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#curriculummanager-reset">CurriculumManager：在 reset 前/时更新“训练日程”</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">写一个新 term 的“最小模板”</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="managers-terms-isaaclab-like">
+<span id="walkthrough-managers-and-terms"></span><h1>重点类二：Managers + Terms（isaaclab-like 的核心抽象）<a class="headerlink" href="#managers-terms-isaaclab-like" title="Link to this heading">#</a></h1>
+<p>如果你只想记住一个“可迁移”的思想，那就是：</p>
+<p><strong>任务 = 一组 manager dictionaries；每个 manager = 多个 terms；每个 term = (func/class, params) 的可调用对象。</strong></p>
+<p>本章会把这套机制拆到“你可以自己实现一个新 term / 新 manager term cfg”的程度。</p>
+<section id="termcfg-term-manager">
+<h2>三层抽象：TermCfg → Term → Manager<a class="headerlink" href="#termcfg-term-manager" title="Link to this heading">#</a></h2>
+<section id="termcfg-dataclass">
+<h3>1) TermCfg：用 dataclass 描述“怎么构建/怎么调用”<a class="headerlink" href="#termcfg-dataclass" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/manager_term_config.py</span></code></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">RewardTermCfg</span></code> / <code class="docutils literal notranslate"><span class="pre">TerminationTermCfg</span></code> / <code class="docutils literal notranslate"><span class="pre">CurriculumTermCfg</span></code> / <code class="docutils literal notranslate"><span class="pre">EventTermCfg</span></code>：
+继承 <code class="docutils literal notranslate"><span class="pre">ManagerTermBaseCfg</span></code>，核心字段是 <code class="docutils literal notranslate"><span class="pre">func</span></code> 和 <code class="docutils literal notranslate"><span class="pre">params``（以及</span> <span class="pre">reward</span> <span class="pre">的</span> <span class="pre">``weight</span></code> 等）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ObservationTermCfg</span></code>：额外定义 noise/clip/scale/delay/history 的处理管线。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ActionTermCfg</span></code>：是抽象类，要求实现 <code class="docutils literal notranslate"><span class="pre">build(env)</span> <span class="pre">-&gt;</span> <span class="pre">ActionTerm</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CommandTermCfg</span></code>：持有 <code class="docutils literal notranslate"><span class="pre">class_type</span></code>，由 <code class="docutils literal notranslate"><span class="pre">CommandManager</span></code> 直接实例化 term。</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/manager_term_config.py</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ManagerTermBaseCfg</span><span class="p">:</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{})</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RewardTermCfg</span><span class="p">(</span><span class="n">ManagerTermBaseCfg</span><span class="p">):</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ObservationTermCfg</span><span class="p">(</span><span class="n">ManagerTermBaseCfg</span><span class="p">):</span>
+    <span class="c1"># Processing pipeline: compute → noise → clip → scale → delay → history.</span>
+    <span class="n">noise</span><span class="p">:</span> <span class="n">NoiseCfg</span> <span class="o">|</span> <span class="n">NoiseModelCfg</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">clip</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">delay_min_lag</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">delay_max_lag</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">history_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="term">
+<h3>2) Term：可以是函数，也可以是“有状态的类”<a class="headerlink" href="#term" title="Link to this heading">#</a></h3>
+<p>manager 调用 term 的方式基本统一：<code class="docutils literal notranslate"><span class="pre">term(env,</span> <span class="pre">**params)</span></code>。</p>
+<p><strong>函数 term</strong>：适合纯计算、无内部状态的项（例如从 entity/sensor 读数、简单 reward）。</p>
+<p><strong>类 term</strong>：适合需要缓存/跨步统计/预处理的项（例如把 pattern-&gt;tensor 映射提前解析、维护 peak heights、维护 EMA 等）。</p>
+<p>&gt; 你在 velocity 的 reward 里可以看到典型例子：
+&gt; <code class="docutils literal notranslate"><span class="pre">feet_swing_height</span></code>、<code class="docutils literal notranslate"><span class="pre">variable_posture</span></code> 都是类 term（路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/velocity/mdp/rewards.py</span></code>）。</p>
+</section>
+<section id="manager-terms">
+<h3>3) Manager：负责装配 terms + 管生命周期<a class="headerlink" href="#manager-terms" title="Link to this heading">#</a></h3>
+<p>每个 manager 都做两件事：</p>
+<ul class="simple">
+<li><p>在 <code class="docutils literal notranslate"><span class="pre">_prepare_terms</span></code> 中把 cfg dict/list 装配成可调用 terms（并做必要的 resolution / buffer 构建）</p></li>
+<li><p>在 <code class="docutils literal notranslate"><span class="pre">compute/reset</span></code> 中调度这些 terms</p></li>
+</ul>
+</section>
+</section>
+<section id="sceneentitycfg-term">
+<h2>核心机制：SceneEntityCfg 的“延迟绑定” + 类 term 自动实例化<a class="headerlink" href="#sceneentitycfg-term" title="Link to this heading">#</a></h2>
+<section id="sceneentitycfg">
+<h3>SceneEntityCfg：为什么需要它？<a class="headerlink" href="#sceneentitycfg" title="Link to this heading">#</a></h3>
+<p>当你在 cfg 里写：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">SceneEntityCfg</span><span class="p">(</span><span class="s2">&quot;robot&quot;</span><span class="p">,</span> <span class="n">joint_names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;.*&quot;</span><span class="p">,))</span>
+</pre></div>
+</div>
+<p>你其实是在说：“我想用 scene 里名为 robot 的 entity 的 <strong>所有关节</strong>。”</p>
+<p>但在 <strong>cfg 构建阶段</strong> 还没有 scene/model，因此没法把名字解析成具体 indices。
+所以 mjlab 采用 <strong>延迟绑定</strong>：把解析推迟到 env 初始化、scene 可用之后。</p>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/scene_entity_config.py</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/scene_entity_config.py</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SceneEntityCfg</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">joint_names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">joint_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+    <span class="c1"># ... body/geom/site/actuator 同理 ...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scene</span><span class="p">:</span> <span class="n">Scene</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">entity</span> <span class="o">=</span> <span class="n">scene</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="c1"># 对每类字段：names &lt;-&gt; ids 一致化，并在“全选”时优化成 slice(None)</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="managerbase-resolve-common-term-cfg">
+<h3>ManagerBase._resolve_common_term_cfg：两件关键事<a class="headerlink" href="#managerbase-resolve-common-term-cfg" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/manager_base.py</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/manager_base.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_common_term_cfg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">term_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">term_cfg</span><span class="p">:</span> <span class="n">ManagerTermBaseCfg</span><span class="p">):</span>
+    <span class="c1"># 1) 自动 resolve params 里出现的 SceneEntityCfg</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">SceneEntityCfg</span><span class="p">):</span>
+            <span class="n">value</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">scene</span><span class="p">)</span>
+
+    <span class="c1"># 2) 如果 func 是 class，则自动实例化成“可调用对象”（cfg + env 注入）</span>
+    <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">term_cfg</span><span class="o">.</span><span class="n">func</span><span class="p">):</span>
+        <span class="n">term_cfg</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">cfg</span><span class="o">=</span><span class="n">term_cfg</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>这就是为什么你可以在 cfg 里直接写：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">RewardTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">variable_posture</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>即使 <code class="docutils literal notranslate"><span class="pre">variable_posture</span></code> 是一个类（而不是函数），也能在 runtime 正常工作。</p>
+</section>
+</section>
+<section id="manager">
+<h2>各个 Manager 的“要点速记”<a class="headerlink" href="#manager" title="Link to this heading">#</a></h2>
+<section id="actionmanager-action-action-term">
+<h3>ActionManager：把 action 向量切片分发给每个 action term<a class="headerlink" href="#actionmanager-action-action-term" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/action_manager.py</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/action_manager.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_prev_prev_action</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prev_action</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_prev_action</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_action</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">term_actions</span> <span class="o">=</span> <span class="n">action</span><span class="p">[:,</span> <span class="n">idx</span> <span class="p">:</span> <span class="n">idx</span> <span class="o">+</span> <span class="n">term</span><span class="o">.</span><span class="n">action_dim</span><span class="p">]</span>
+        <span class="n">term</span><span class="o">.</span><span class="n">process_actions</span><span class="p">(</span><span class="n">term_actions</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">+=</span> <span class="n">term</span><span class="o">.</span><span class="n">action_dim</span>
+</pre></div>
+</div>
+<p>关键点：</p>
+<ul class="simple">
+<li><p>action history（prev/prev_prev）是很多 reward（action_rate/action_acc）的输入。</p></li>
+<li><p>自定义 action：实现 <code class="docutils literal notranslate"><span class="pre">ActionTermCfg.build(env)</span></code> 返回一个 <code class="docutils literal notranslate"><span class="pre">ActionTerm</span></code> 子类即可。</p></li>
+</ul>
+</section>
+<section id="observationmanager-obs-noise-clip-scale-delay-history">
+<h3>ObservationManager：obs 的“流水线”在这里（noise/clip/scale/delay/history）<a class="headerlink" href="#observationmanager-obs-noise-clip-scale-delay-history" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/observation_manager.py</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/observation_manager.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">update_history</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">term_name</span><span class="p">,</span> <span class="n">term_cfg</span> <span class="ow">in</span> <span class="n">obs_terms</span><span class="p">:</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="o">**</span><span class="n">term_cfg</span><span class="o">.</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="c1"># noise -&gt; clip -&gt; scale</span>
+        <span class="c1"># delay buffer</span>
+        <span class="c1"># history buffer（可展平）</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">dict</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>你在写 obs term 时要保证：</p>
+<ul class="simple">
+<li><p>返回 shape 是 <a href="#id1"><span class="problematic" id="id2">``</span></a>(num_envs, …)``（且在正确 device 上）。</p></li>
+<li><p>尽量不要在 term 内部做 Python 循环（会拖慢 4096 env 的训练）。</p></li>
+</ul>
+</section>
+<section id="rewardmanager-reward-dt-nan">
+<h3>RewardManager：所有 reward 都按 dt 乘权重（并对 NaN 做保护）<a class="headerlink" href="#rewardmanager-reward-dt-nan" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/reward_manager.py</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/reward_manager.py</span>
+<span class="n">value</span> <span class="o">=</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">,</span> <span class="o">**</span><span class="n">term_cfg</span><span class="o">.</span><span class="n">params</span><span class="p">)</span> <span class="o">*</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">weight</span> <span class="o">*</span> <span class="n">dt</span>
+<span class="n">value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">neginf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="terminationmanager-terminated-truncated-time-out">
+<h3>TerminationManager：区分 terminated / truncated（time_out）<a class="headerlink" href="#terminationmanager-terminated-truncated-time-out" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/termination_manager.py</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">TerminationTermCfg(time_out=True)</span></code> 会进入 truncated 分支；其余进入 terminated。</p>
+</section>
+<section id="commandmanager-resample-metrics-debug-vis">
+<h3>CommandManager：命令生成器（resample + metrics + debug vis）<a class="headerlink" href="#commandmanager-resample-metrics-debug-vis" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/command_manager.py</span></code></p>
+<p>命令 term 继承 <code class="docutils literal notranslate"><span class="pre">CommandTerm</span></code>，实现：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">_resample_command(env_ids)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_update_command()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_update_metrics()</span></code></p></li>
+</ul>
+<p>velocity 的 <code class="docutils literal notranslate"><span class="pre">UniformVelocityCommand</span></code> 与 tracking 的 <code class="docutils literal notranslate"><span class="pre">MotionCommand</span></code> 都是很好的模板：</p>
+<ul class="simple">
+<li><p>velocity：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/velocity/mdp/velocity_command.py</span></code></p></li>
+<li><p>tracking：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/tracking/mdp/commands.py</span></code></p></li>
+</ul>
+</section>
+<section id="eventmanager-startup-reset-interval-domain-randomization">
+<h3>EventManager：startup/reset/interval 三种时机 + domain randomization<a class="headerlink" href="#eventmanager-startup-reset-interval-domain-randomization" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/event_manager.py</span></code></p>
+<p>当你在 cfg 里写：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">EventTermCfg</span><span class="p">(</span>
+  <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;startup&quot;</span><span class="p">,</span>
+  <span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">randomize_field</span><span class="p">,</span>
+  <span class="n">domain_randomization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+  <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;geom_friction&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">EventManager</span></code> 会把 <code class="docutils literal notranslate"><span class="pre">field</span></code> 收集进 <code class="docutils literal notranslate"><span class="pre">domain_randomization_fields</span></code>，随后 env 会调用
+<code class="docutils literal notranslate"><span class="pre">Simulation.expand_model_fields</span></code> 让该字段按 env 维度展开（实现每个环境独立随机化）。</p>
+</section>
+<section id="curriculummanager-reset">
+<h3>CurriculumManager：在 reset 前/时更新“训练日程”<a class="headerlink" href="#curriculummanager-reset" title="Link to this heading">#</a></h3>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/curriculum_manager.py</span></code>、velocity 的 curriculum：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/velocity/mdp/curriculums.py</span></code></p>
+<p>典型用法：</p>
+<ul class="simple">
+<li><p>随训练步数扩大 command ranges</p></li>
+<li><p>按策略表现调整 terrain level</p></li>
+</ul>
+</section>
+</section>
+<section id="id3">
+<h2>写一个新 term 的“最小模板”<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<p><strong>函数 term（reward/obs/termination）</strong>：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/tasks/&lt;your_task&gt;/mdp/rewards.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_reward</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">foo</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">entity_cfg</span><span class="o">=</span><span class="n">SceneEntityCfg</span><span class="p">(</span><span class="s2">&quot;robot&quot;</span><span class="p">)):</span>
+    <span class="n">entity</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">scene</span><span class="p">[</span><span class="n">entity_cfg</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">return</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p><strong>类 term（需要缓存/状态）</strong>：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyStatefulReward</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+        <span class="c1"># 这里可以把 pattern 解析成 tensor、分配 buffers 等</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">env_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">env_ids</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buf</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="c1"># 依然是 term(env, **params) 的调用方式</span>
+        <span class="k">return</span> <span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>只有当 term 对象提供 <code class="docutils literal notranslate"><span class="pre">reset</span></code> 方法时，manager 才会在 episode reset 时调用它（见各 manager 的 <code class="docutils literal notranslate"><span class="pre">_class_term_cfgs</span></code> 逻辑）。</p>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="manager_based_env.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">重点类一：ManagerBasedRlEnv（环境生命周期与数据流）</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="tasks_velocity_g1.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">实例一：Velocity Tracking（Unitree G1）</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#termcfg-term-manager">三层抽象：TermCfg → Term → Manager</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#termcfg-dataclass">1) TermCfg：用 dataclass 描述“怎么构建/怎么调用”</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#term">2) Term：可以是函数，也可以是“有状态的类”</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#manager-terms">3) Manager：负责装配 terms + 管生命周期</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sceneentitycfg-term">核心机制：SceneEntityCfg 的“延迟绑定” + 类 term 自动实例化</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sceneentitycfg">SceneEntityCfg：为什么需要它？</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#managerbase-resolve-common-term-cfg">ManagerBase._resolve_common_term_cfg：两件关键事</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#manager">各个 Manager 的“要点速记”</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#actionmanager-action-action-term">ActionManager：把 action 向量切片分发给每个 action term</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#observationmanager-obs-noise-clip-scale-delay-history">ObservationManager：obs 的“流水线”在这里（noise/clip/scale/delay/history）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rewardmanager-reward-dt-nan">RewardManager：所有 reward 都按 dt 乘权重（并对 NaN 做保护）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminationmanager-terminated-truncated-time-out">TerminationManager：区分 terminated / truncated（time_out）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#commandmanager-resample-metrics-debug-vis">CommandManager：命令生成器（resample + metrics + debug vis）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#eventmanager-startup-reset-interval-domain-randomization">EventManager：startup/reset/interval 三种时机 + domain randomization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#curriculummanager-reset">CurriculumManager：在 reset 前/时更新“训练日程”</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">写一个新 term 的“最小模板”</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The mjlab Developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, The mjlab Developers.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Dec 29, 2025.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,761 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>如何新增一个 G1 RL 任务（从 0 到可训练） &#8212; mjlab Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../_static/twemoji.css" />
+    <link rel="stylesheet" type="text/css" href="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/css/all.min.css?v=53359634" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js"></script>
+    <script src="../../_static/twemoji.js"></script>
+    <script src="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/js/all.min.js?v=ec35c6c9"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/walkthrough/how_to_add_g1_task';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="调试与性能：让你“稳”且“快”" href="debugging_perf.html" />
+    <link rel="prev" title="实例三：Homie —— 混合运动与干扰（Unitree H1）" href="tasks_homie_h1.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Dec 29, 2025"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">The mjlab Documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Quick Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" title="Stars" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" class="icon-link-image" alt="Stars"/></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migration_isaac_lab.html">Migrating from Isaac Lab</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About the Project</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Why mjlab?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ &amp; Troubleshooting</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/index.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/envs.html">mjlab.envs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/scene.html">mjlab.scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/sim.html">mjlab.sim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/entity.html">mjlab.entity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/actuator.html">mjlab.actuator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/sensor.html">mjlab.sensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/managers.html">mjlab.managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/terrains.html">mjlab.terrains</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough（中文）</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Code Walkthrough（面向科研开发，上手 + 深入）</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">架构总览：一张图看懂 mjlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html">快速上手：最短开发闭环（训练 / Play / 改任务）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_layout.html">代码地图：你应该去哪里改东西？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manager_based_env.html">重点类一：ManagerBasedRlEnv（环境生命周期与数据流）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="managers_and_terms.html">重点类二：Managers + Terms（isaaclab-like 的核心抽象）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_velocity_g1.html">实例一：Velocity Tracking（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_tracking_g1.html">实例二：Motion Tracking / Imitation（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_homie_h1.html">实例三：Homie —— 混合运动与干扰（Unitree H1）</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">如何新增一个 G1 RL 任务（从 0 到可训练）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging_perf.html">调试与性能：让你“稳”且“快”</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../randomization.html">Domain Randomization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nan_guard.html">NaN Guard</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../observation.html">Observation History and Delay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../actuators.html">Actuators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributed_training.html">Distributed Training</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/edit/main/docs/source/walkthrough/how_to_add_g1_task.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/issues/new?title=Issue%20on%20page%20%2Fsource/walkthrough/how_to_add_g1_task.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/source/walkthrough/how_to_add_g1_task.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>如何新增一个 G1 RL 任务（从 0 到可训练）</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tasks">关键设计：tasks 是“导入即注册”的</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">目录骨架（推荐）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-by-step-base-cfg">Step-by-step：从 base cfg 写到能跑</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-base-cfg">Step 1：写 base cfg（只定义任务逻辑，不绑特定机器人）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-mdp-terms-envs-mdp">Step 2：写 mdp terms（尽量复用 envs.mdp）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-g1-override">Step 3：写 g1 override（把“占位符”补齐）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-task-id-cfg-registry">Step 4：注册 task id（把 cfg 放进 registry）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-play-dummy-agent-train">Step 5：先 play（dummy agent）再 train</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">常见踩坑清单（按出现频率排序）</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="g1-rl-0">
+<span id="walkthrough-how-to-add-g1-task"></span><h1>如何新增一个 G1 RL 任务（从 0 到可训练）<a class="headerlink" href="#g1-rl-0" title="Link to this heading">#</a></h1>
+<p>这一章给你一条最短路径：<strong>复制一个现有任务骨架 → 替换 mdp terms → 注册 task id → 训练/验证。</strong></p>
+<p>最终你会得到一个新的 task id，可以直接：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </span>Mjlab-MyTask-Flat-Unitree-G1<span class="w"> </span>--env.scene.num-envs<span class="w"> </span><span class="m">4096</span>
+</pre></div>
+</div>
+<section id="tasks">
+<h2>关键设计：tasks 是“导入即注册”的<a class="headerlink" href="#tasks" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">train.py</span></code> / <code class="docutils literal notranslate"><span class="pre">play.py</span></code> 在解析 task id 前都会执行：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">mjlab.tasks</span>  <span class="c1"># noqa: F401</span>
+</pre></div>
+</div>
+<p>而 <code class="docutils literal notranslate"><span class="pre">mjlab.tasks</span></code> 的 <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> 会递归导入所有子包（跳过 <code class="docutils literal notranslate"><span class="pre">.mdp</span></code> 等黑名单），从而触发各任务的注册代码执行。</p>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/__init__.py</span></code>、<code class="docutils literal notranslate"><span class="pre">src/mjlab/utils/lab_api/tasks/importer.py</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/tasks/__init__.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.utils.lab_api.tasks.importer</span><span class="w"> </span><span class="kn">import</span> <span class="n">import_packages</span>
+<span class="n">_BLACKLIST_PKGS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;utils&quot;</span><span class="p">,</span> <span class="s2">&quot;.mdp&quot;</span><span class="p">]</span>
+<span class="n">import_packages</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">_BLACKLIST_PKGS</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>因此：<strong>只要你的新任务包放在 ``src/mjlab/tasks/&lt;your_task&gt;/`` 且包含注册代码，就会被自动发现。</strong></p>
+</section>
+<section id="id1">
+<h2>目录骨架（推荐）<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<p>以 <code class="docutils literal notranslate"><span class="pre">my_task</span></code> 为例：</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>src/mjlab/tasks/my_task/
+  __init__.py                  # 可为空（但建议有一句 docstring）
+  my_task_env_cfg.py           # base cfg（定义任务 MDP）
+  mdp/
+    __init__.py                # re-export envs.mdp + 自己的 terms（仿照 velocity/tracking）
+    observations.py
+    rewards.py
+    terminations.py
+    commands.py                # 如果需要 CommandManager
+    curriculums.py             # 如果需要 CurriculumManager
+  config/
+    __init__.py
+    g1/
+      __init__.py              # register_mjlab_task（注册 task_id）
+      env_cfgs.py              # g1 override（填空式覆盖）
+      rl_cfg.py                # PPO/runner 配置
+  rl/
+    __init__.py
+    runner.py                  # 可选：自定义 runner（如 velocity/tracking 用于导出 onnx）
+</pre></div>
+</div>
+</section>
+<section id="step-by-step-base-cfg">
+<h2>Step-by-step：从 base cfg 写到能跑<a class="headerlink" href="#step-by-step-base-cfg" title="Link to this heading">#</a></h2>
+<section id="step-1-base-cfg">
+<h3>Step 1：写 base cfg（只定义任务逻辑，不绑特定机器人）<a class="headerlink" href="#step-1-base-cfg" title="Link to this heading">#</a></h3>
+<p>路径建议：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/my_task/my_task_env_cfg.py</span></code></p>
+<p>你要返回一个 <code class="docutils literal notranslate"><span class="pre">ManagerBasedRlEnvCfg</span></code>，并把 MDP 拆成 dict：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/tasks/my_task/my_task_env_cfg.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.envs</span><span class="w"> </span><span class="kn">import</span> <span class="n">ManagerBasedRlEnvCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.manager_term_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationGroupCfg</span><span class="p">,</span> <span class="n">ObservationTermCfg</span><span class="p">,</span> <span class="n">RewardTermCfg</span><span class="p">,</span> <span class="n">TerminationTermCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.scene_entity_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SceneEntityCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.scene</span><span class="w"> </span><span class="kn">import</span> <span class="n">SceneCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.sim</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimulationCfg</span><span class="p">,</span> <span class="n">MujocoCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.terrains</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerrainImporterCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.tasks.my_task</span><span class="w"> </span><span class="kn">import</span> <span class="n">mdp</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_my_task_env_cfg</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ManagerBasedRlEnvCfg</span><span class="p">:</span>
+    <span class="n">observations</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;policy&quot;</span><span class="p">:</span> <span class="n">ObservationGroupCfg</span><span class="p">(</span>
+            <span class="n">terms</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;joint_pos&quot;</span><span class="p">:</span> <span class="n">ObservationTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">joint_pos_rel</span><span class="p">),</span>
+                <span class="s2">&quot;joint_vel&quot;</span><span class="p">:</span> <span class="n">ObservationTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">joint_vel_rel</span><span class="p">),</span>
+            <span class="p">},</span>
+            <span class="n">concatenate_terms</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">enable_corruption</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="n">rewards</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;alive&quot;</span><span class="p">:</span> <span class="n">RewardTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">terminations</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;time_out&quot;</span><span class="p">:</span> <span class="n">TerminationTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">time_out</span><span class="p">,</span> <span class="n">time_out</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">ManagerBasedRlEnvCfg</span><span class="p">(</span>
+        <span class="n">scene</span><span class="o">=</span><span class="n">SceneCfg</span><span class="p">(</span><span class="n">terrain</span><span class="o">=</span><span class="n">TerrainImporterCfg</span><span class="p">(</span><span class="n">terrain_type</span><span class="o">=</span><span class="s2">&quot;plane&quot;</span><span class="p">),</span> <span class="n">num_envs</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">observations</span><span class="o">=</span><span class="n">observations</span><span class="p">,</span>
+        <span class="n">actions</span><span class="o">=</span><span class="p">{</span><span class="o">...</span><span class="p">},</span>     <span class="c1"># 复用 JointPositionActionCfg 最方便（见 velocity/tracking）</span>
+        <span class="n">rewards</span><span class="o">=</span><span class="n">rewards</span><span class="p">,</span>
+        <span class="n">terminations</span><span class="o">=</span><span class="n">terminations</span><span class="p">,</span>
+        <span class="n">decimation</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">episode_length_s</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">sim</span><span class="o">=</span><span class="n">SimulationCfg</span><span class="p">(</span><span class="n">mujoco</span><span class="o">=</span><span class="n">MujocoCfg</span><span class="p">(</span><span class="n">timestep</span><span class="o">=</span><span class="mf">0.005</span><span class="p">)),</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>建议原则</strong>：</p>
+<ul class="simple">
+<li><p>base cfg 里尽量只写 “任务通用的结构”，把机器人差异（body/site/geom 名字、action scale、sensors）留给 override。</p></li>
+<li><p>需要引用 robot 的局部组件时，用 <code class="docutils literal notranslate"><span class="pre">SceneEntityCfg(&quot;robot&quot;,</span> <span class="pre">joint_names=...,</span> <span class="pre">body_names=...,</span> <span class="pre">site_names=...)</span></code> 作为 params。</p></li>
+</ul>
+</section>
+<section id="step-2-mdp-terms-envs-mdp">
+<h3>Step 2：写 mdp terms（尽量复用 envs.mdp）<a class="headerlink" href="#step-2-mdp-terms-envs-mdp" title="Link to this heading">#</a></h3>
+<p>像 velocity/tracking 一样，在 <code class="docutils literal notranslate"><span class="pre">mdp/__init__.py</span></code> 里 re-export：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/tasks/my_task/mdp/__init__.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.envs.mdp</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>  <span class="c1"># 通用：joint_pos_rel / time_out / randomize_field / ...</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.rewards</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.observations</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>这样你在 cfg 里可以直接 <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">mjlab.tasks.my_task</span> <span class="pre">import</span> <span class="pre">mdp</span></code>，并同时拿到通用 + 自定义 term。</p>
+</section>
+<section id="step-3-g1-override">
+<h3>Step 3：写 g1 override（把“占位符”补齐）<a class="headerlink" href="#step-3-g1-override" title="Link to this heading">#</a></h3>
+<p>路径建议：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/my_task/config/g1/env_cfgs.py</span></code></p>
+<p>这一层通常要做：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cfg.scene.entities</span> <span class="pre">=</span> <span class="pre">{&quot;robot&quot;:</span> <span class="pre">get_g1_robot_cfg()}</span></code></p></li>
+<li><p>加 sensors（如 contact sensor）</p></li>
+<li><p>设置 <code class="docutils literal notranslate"><span class="pre">JointPositionActionCfg.scale</span> <span class="pre">=</span> <span class="pre">G1_ACTION_SCALE</span></code></p></li>
+<li><p>补齐所有用到的 <code class="docutils literal notranslate"><span class="pre">SceneEntityCfg(...,</span> <span class="pre">body_names/site_names/geom_names=...)</span></code></p></li>
+<li><p>play mode：关 corruption、关某些 randomization、把 episode_length 设大</p></li>
+</ul>
+</section>
+<section id="step-4-task-id-cfg-registry">
+<h3>Step 4：注册 task id（把 cfg 放进 registry）<a class="headerlink" href="#step-4-task-id-cfg-registry" title="Link to this heading">#</a></h3>
+<p>路径建议：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/my_task/config/g1/__init__.py</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.tasks.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_mjlab_task</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.env_cfgs</span><span class="w"> </span><span class="kn">import</span> <span class="n">unitree_g1_my_task_env_cfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.rl_cfg</span><span class="w"> </span><span class="kn">import</span> <span class="n">unitree_g1_my_task_ppo_runner_cfg</span>
+
+<span class="n">register_mjlab_task</span><span class="p">(</span>
+  <span class="n">task_id</span><span class="o">=</span><span class="s2">&quot;Mjlab-MyTask-Flat-Unitree-G1&quot;</span><span class="p">,</span>
+  <span class="n">env_cfg</span><span class="o">=</span><span class="n">unitree_g1_my_task_env_cfg</span><span class="p">(),</span>
+  <span class="n">play_env_cfg</span><span class="o">=</span><span class="n">unitree_g1_my_task_env_cfg</span><span class="p">(</span><span class="n">play</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+  <span class="n">rl_cfg</span><span class="o">=</span><span class="n">unitree_g1_my_task_ppo_runner_cfg</span><span class="p">(),</span>
+  <span class="n">runner_cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># 或自定义 runner</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-5-play-dummy-agent-train">
+<h3>Step 5：先 play（dummy agent）再 train<a class="headerlink" href="#step-5-play-dummy-agent-train" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span>Mjlab-MyTask-Flat-Unitree-G1<span class="w"> </span>--agent<span class="w"> </span>random
+uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </span>Mjlab-MyTask-Flat-Unitree-G1<span class="w"> </span>--env.scene.num-envs<span class="w"> </span><span class="m">1024</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id2">
+<h2>常见踩坑清单（按出现频率排序）<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>shape 不一致</strong>：obs term 必须返回 <code class="docutils literal notranslate"><span class="pre">(num_envs,</span> <span class="pre">...)</span></code>；reward/termination 必须返回 <code class="docutils literal notranslate"><span class="pre">(num_envs,)</span></code>。</p></li>
+<li><p><strong>device 不一致</strong>：不要在 term 里创建默认在 CPU 的 tensor；用 <code class="docutils literal notranslate"><span class="pre">device=env.device</span></code>。</p></li>
+<li><p><strong>SceneEntityCfg 未补齐</strong>：base cfg 里留了 <code class="docutils literal notranslate"><span class="pre">geom_names=()</span></code> / <code class="docutils literal notranslate"><span class="pre">site_names=()</span></code>，robot override 忘记填会导致 ids 解析为空或不符合预期。</p></li>
+<li><p><strong>Python 循环太多</strong>：4096 env 下会直接变慢；优先用 torch 向量化。</p></li>
+<li><p><strong>tracking motion_file 没注入</strong>：tracking 类任务请按 train.py 的方式走（<code class="docutils literal notranslate"><span class="pre">--registry-name</span></code> 或 <code class="docutils literal notranslate"><span class="pre">--motion-file</span></code>）。</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="tasks_homie_h1.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">实例三：Homie —— 混合运动与干扰（Unitree H1）</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="debugging_perf.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">调试与性能：让你“稳”且“快”</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tasks">关键设计：tasks 是“导入即注册”的</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">目录骨架（推荐）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-by-step-base-cfg">Step-by-step：从 base cfg 写到能跑</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-base-cfg">Step 1：写 base cfg（只定义任务逻辑，不绑特定机器人）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-mdp-terms-envs-mdp">Step 2：写 mdp terms（尽量复用 envs.mdp）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-g1-override">Step 3：写 g1 override（把“占位符”补齐）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-task-id-cfg-registry">Step 4：注册 task id（把 cfg 放进 registry）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-play-dummy-agent-train">Step 5：先 play（dummy agent）再 train</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">常见踩坑清单（按出现频率排序）</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The mjlab Developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, The mjlab Developers.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Dec 29, 2025.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

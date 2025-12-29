@@ -1,0 +1,838 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>FAQ &amp; Troubleshooting &#8212; mjlab Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/twemoji.css" />
+    <link rel="stylesheet" type="text/css" href="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/css/all.min.css?v=53359634" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js"></script>
+    <script src="../_static/twemoji.js"></script>
+    <script src="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/js/all.min.js?v=ec35c6c9"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/faq';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="api/index.html" />
+    <link rel="prev" title="Why mjlab?" href="motivation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Dec 29, 2025"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">The mjlab Documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Quick Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" title="Stars" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" class="icon-link-image" alt="Stars"/></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migration_isaac_lab.html">Migrating from Isaac Lab</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About the Project</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="motivation.html">Why mjlab?</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">FAQ &amp; Troubleshooting</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/index.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/envs.html">mjlab.envs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/scene.html">mjlab.scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/sim.html">mjlab.sim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/entity.html">mjlab.entity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/actuator.html">mjlab.actuator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/sensor.html">mjlab.sensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/managers.html">mjlab.managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/terrains.html">mjlab.terrains</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough（中文）</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="walkthrough/index.html">Code Walkthrough（面向科研开发，上手 + 深入）</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/overview.html">架构总览：一张图看懂 mjlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/quickstart.html">快速上手：最短开发闭环（训练 / Play / 改任务）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/project_layout.html">代码地图：你应该去哪里改东西？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/manager_based_env.html">重点类一：ManagerBasedRlEnv（环境生命周期与数据流）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/managers_and_terms.html">重点类二：Managers + Terms（isaaclab-like 的核心抽象）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/tasks_velocity_g1.html">实例一：Velocity Tracking（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/tasks_tracking_g1.html">实例二：Motion Tracking / Imitation（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/tasks_homie_h1.html">实例三：Homie —— 混合运动与干扰（Unitree H1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/how_to_add_g1_task.html">如何新增一个 G1 RL 任务（从 0 到可训练）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/debugging_perf.html">调试与性能：让你“稳”且“快”</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="randomization.html">Domain Randomization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nan_guard.html">NaN Guard</a></li>
+<li class="toctree-l1"><a class="reference internal" href="observation.html">Observation History and Delay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="actuators.html">Actuators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributed_training.html">Distributed Training</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/edit/main/docs/source/faq.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/issues/new?title=Issue%20on%20page%20%2Fsource/faq.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/source/faq.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>FAQ & Troubleshooting</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#platform-support">Platform Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training-debugging">Training &amp; Debugging</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rendering-visualization">Rendering &amp; Visualization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-extensions">Development &amp; Extensions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#assets-compatibility">Assets &amp; Compatibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-help">Getting Help</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#github-issues">GitHub Issues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#discussions">Discussions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#known-limitations">Known Limitations</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="faq-troubleshooting">
+<span id="faq"></span><h1>FAQ &amp; Troubleshooting<a class="headerlink" href="#faq-troubleshooting" title="Link to this heading">#</a></h1>
+<p>This page collects common questions about <strong>platform support</strong>, <strong>performance</strong>,
+<strong>training stability</strong>, and <strong>visualization</strong>, along with practical debugging
+tips and links to further resources.</p>
+<section id="platform-support">
+<h2>Platform Support<a class="headerlink" href="#platform-support" title="Link to this heading">#</a></h2>
+<dl>
+<dt>Does it work on macOS?</dt><dd><p>Yes, but only with limited performance. mjlab runs on macOS
+using <strong>CPU-only</strong> execution through MuJoCo Warp.</p>
+<ul class="simple">
+<li><p><strong>Training is not recommended on macOS</strong>, as it lacks GPU acceleration.</p></li>
+<li><p><strong>Evaluation works</strong>, but is significantly slower than on Linux with CUDA.</p></li>
+</ul>
+<p>For serious training workloads, we strongly recommend <strong>Linux with an NVIDIA GPU</strong>.</p>
+</dd>
+<dt>Does it work on Windows?</dt><dd><p>We have performed preliminary testing on <strong>Windows</strong> and <strong>WSL</strong>, but some
+workflows are not guaranteed to be stable.</p>
+<ul class="simple">
+<li><p>Windows support may <strong>lag behind</strong> Linux.</p></li>
+<li><p>Windows will be <strong>tested less frequently</strong>, since Linux is the primary
+development and deployment platform.</p></li>
+<li><p>Community contributions that improve Windows support are very welcome.</p></li>
+</ul>
+</dd>
+<dt>CUDA Compatibility</dt><dd><p>Not all CUDA versions are supported by MuJoCo Warp.</p>
+<ul class="simple">
+<li><p>See <a class="reference external" href="https://github.com/google-deepmind/mujoco_warp/issues/101">mujoco_warp#101</a>
+for details on CUDA compatibility.</p></li>
+<li><p><strong>Recommended</strong>: CUDA <strong>12.4+</strong> (for conditional execution support in CUDA
+graphs).</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading">#</a></h2>
+<dl class="simple">
+<dt>Is it faster than Isaac Lab?</dt><dd><p>Based on our experience over the last few months, mjlab is <strong>on par or
+faster</strong> than Isaac Lab.</p>
+</dd>
+<dt>What GPU do you recommend?</dt><dd><ul class="simple">
+<li><p><strong>RTX 40-series GPUs</strong> (or newer)</p></li>
+<li><p><strong>L40s, H100</strong></p></li>
+</ul>
+</dd>
+<dt>Does mjlab support multi-GPU training?</dt><dd><p>Yes, mjlab supports <strong>multi-GPU distributed training</strong> using
+<a class="reference external" href="https://github.com/apoorvkh/torchrunx">torchrunx</a>.</p>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">--gpu-ids</span> <span class="pre">0</span> <span class="pre">1</span></code> (or <code class="docutils literal notranslate"><span class="pre">--gpu-ids</span> <span class="pre">all</span></code>) when running the <code class="docutils literal notranslate"><span class="pre">train</span></code>
+command.</p></li>
+<li><p>See the <a class="reference internal" href="distributed_training.html"><span class="doc">Distributed Training</span></a> for configuration details and examples.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="training-debugging">
+<h2>Training &amp; Debugging<a class="headerlink" href="#training-debugging" title="Link to this heading">#</a></h2>
+<dl>
+<dt>My training crashes with NaN errors</dt><dd><p>A typical error when using <code class="docutils literal notranslate"><span class="pre">rsl_rl</span></code> looks like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>RuntimeError:<span class="w"> </span>normal<span class="w"> </span>expects<span class="w"> </span>all<span class="w"> </span>elements<span class="w"> </span>of<span class="w"> </span>std<span class="w"> </span>&gt;<span class="o">=</span><span class="w"> </span><span class="m">0</span>.0
+</pre></div>
+</div>
+<p>This occurs when NaN/Inf values in the <strong>physics state</strong> propagate to the
+policy network, causing its output standard deviation to become negative or NaN.</p>
+<p>There are many possible causes, including potential bugs in <strong>MuJoCo Warp</strong>
+(which is still in beta). mjlab offers two complementary mechanisms to help
+you handle this:</p>
+<ol class="arabic simple">
+<li><p><strong>For training stability</strong> - NaN termination</p></li>
+</ol>
+<p>Add a <code class="docutils literal notranslate"><span class="pre">nan_detection</span></code> termination to reset environments that hit NaN:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.envs.mdp.terminations</span><span class="w"> </span><span class="kn">import</span> <span class="n">nan_detection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.manager_term_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerminationTermCfg</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TerminationCfg</span><span class="p">:</span>
+   <span class="c1"># Your other terminations...</span>
+   <span class="n">nan_term</span><span class="p">:</span> <span class="n">TerminationTermCfg</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+      <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">TerminationTermCfg</span><span class="p">(</span>
+            <span class="n">func</span><span class="o">=</span><span class="n">nan_detection</span><span class="p">,</span>
+            <span class="n">time_out</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+      <span class="p">)</span>
+   <span class="p">)</span>
+</pre></div>
+</div>
+<p>This marks NaN environments as terminated so they can reset while training
+continues. Terminations are logged as
+<code class="docutils literal notranslate"><span class="pre">Episode_Termination/nan_term</span></code> in your metrics.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a <strong>band-aid solution</strong>. If NaNs correlate with your task objective
+(for example, NaNs occur exactly when the agent tries to grasp an object),
+the policy will never learn to complete that part of the task. Always
+investigate the <strong>root cause</strong> using <code class="docutils literal notranslate"><span class="pre">nan_guard</span></code> in addition to this
+termination.</p>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>For debugging</strong> - NaN guard</p></li>
+</ol>
+<p>Enable <code class="docutils literal notranslate"><span class="pre">nan_guard</span></code> to capture the simulation state when NaNs occur:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>train.py<span class="w"> </span>--enable-nan-guard<span class="w"> </span>True
+</pre></div>
+</div>
+<p>See the <a class="reference internal" href="nan_guard.html"><span class="doc">NaN Guard documentation</span></a> for details.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">nan_guard</span></code> tool makes it easier to:</p>
+<ul class="simple">
+<li><p>Inspect the simulation state at the moment NaNs appear.</p></li>
+<li><p>Build a minimal reproducible example (MRE).</p></li>
+<li><p>Report potential framework bugs to the
+<a class="reference external" href="https://github.com/google-deepmind/mujoco_warp/issues">MuJoCo Warp team</a>.</p></li>
+</ul>
+<p>Reporting well-isolated issues helps improve the framework for everyone.</p>
+</dd>
+<dt>Why aren’t my training runs reproducible even with a fixed seed?</dt><dd><p>MuJoCo Warp does not yet guarantee determinism, so running the same
+simulation with identical inputs may produce slightly different outputs.
+This is a known limitation being tracked in
+<a class="reference external" href="https://github.com/google-deepmind/mujoco_warp/issues/562">mujoco_warp#562</a>.</p>
+<p>Until determinism is implemented upstream, mjlab training runs will not be
+perfectly reproducible even when setting a seed.</p>
+</dd>
+</dl>
+</section>
+<section id="rendering-visualization">
+<h2>Rendering &amp; Visualization<a class="headerlink" href="#rendering-visualization" title="Link to this heading">#</a></h2>
+<dl>
+<dt>What visualization options are available?</dt><dd><p>mjlab currently supports two visualizers for policy evaluation and
+debugging:</p>
+<ul class="simple">
+<li><p><strong>Native MuJoCo visualizer</strong> - the built-in visualizer that ships with MuJoCo.</p></li>
+<li><p><strong>Viser</strong> - <a class="reference external" href="https://github.com/nerfstudio-project/viser">Viser</a>,
+a web-based 3D visualization tool.</p></li>
+</ul>
+<p>We are exploring <strong>training-time visualization</strong> (e.g., live rollout viewers),
+but this is not yet available.</p>
+<p>As an alternative, mjlab supports <strong>video logging to Weights &amp; Biases
+(W&amp;B)</strong>, so you can monitor rollout videos directly in the experiment dashboard.</p>
+</dd>
+<dt>What about camera/pixel rendering for vision-based RL?</dt><dd><p>Camera rendering for <strong>pixel-based agents</strong> is not yet available.</p>
+<p>The MuJoCo Warp team is actively developing <strong>camera support</strong>. Once mature, it
+will be integrated into mjlab for vision-based RL workflows.</p>
+</dd>
+</dl>
+</section>
+<section id="development-extensions">
+<h2>Development &amp; Extensions<a class="headerlink" href="#development-extensions" title="Link to this heading">#</a></h2>
+<dl>
+<dt>Can I develop custom tasks in my own repository?</dt><dd><p>Yes, mjlab has a <strong>plugin system</strong> that lets you develop tasks in separate
+repositories while still integrating seamlessly with the core:</p>
+<ul class="simple">
+<li><p>Your tasks appear as regular entries for the <code class="docutils literal notranslate"><span class="pre">train</span></code> and <code class="docutils literal notranslate"><span class="pre">play</span></code> commands.</p></li>
+<li><p>You can version and maintain your task repositories independently.</p></li>
+</ul>
+<p>A complete guide will be available in a future release.</p>
+</dd>
+</dl>
+</section>
+<section id="assets-compatibility">
+<h2>Assets &amp; Compatibility<a class="headerlink" href="#assets-compatibility" title="Link to this heading">#</a></h2>
+<dl>
+<dt>What robots are included?</dt><dd><p>mjlab includes two <strong>reference robots</strong>:</p>
+<ul class="simple">
+<li><p><strong>Unitree Go1</strong> (quadruped).</p></li>
+<li><p><strong>Unitree G1</strong> (humanoid).</p></li>
+</ul>
+<p>These robots serve as:</p>
+<ul class="simple">
+<li><p>Minimal examples for <strong>robot integration</strong>.</p></li>
+<li><p>Stable, well-tested baselines for <strong>benchmark tasks</strong>.</p></li>
+</ul>
+<p>To keep the core library lean, we do <strong>not</strong> plan to aggressively expand the
+built-in robot library. Additional robots may be provided in separate
+repositories or community-maintained packages.</p>
+</dd>
+<dt>Can I use USD or URDF models?</dt><dd><p>No, mjlab expects <strong>MJCF (MuJoCo XML)</strong> models.</p>
+<ul class="simple">
+<li><p>You will need to <strong>convert</strong> USD or URDF assets to MJCF.</p></li>
+<li><p>For many common robots, you can directly use
+<a class="reference external" href="https://github.com/google-deepmind/mujoco_menagerie">MuJoCo Menagerie</a>,
+which ships high-quality MJCF models and assets.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">#</a></h2>
+<section id="github-issues">
+<h3>GitHub Issues<a class="headerlink" href="#github-issues" title="Link to this heading">#</a></h3>
+<p>Use GitHub issues for:</p>
+<ul class="simple">
+<li><p><strong>Bug reports</strong></p></li>
+<li><p><strong>Performance regressions</strong></p></li>
+<li><p><strong>Documentation gaps</strong></p></li>
+</ul>
+<p>When filing a bug, please include:</p>
+<ul class="simple">
+<li><p>CUDA driver and runtime versions</p></li>
+<li><p>GPU model</p></li>
+<li><p>A minimal reproduction script</p></li>
+<li><p>Complete error logs and stack traces</p></li>
+<li><p>Appropriate labels (for example: <code class="docutils literal notranslate"><span class="pre">bug</span></code>, <code class="docutils literal notranslate"><span class="pre">performance</span></code>, <code class="docutils literal notranslate"><span class="pre">docs</span></code>)</p></li>
+</ul>
+<p><a class="reference external" href="https://github.com/mujocolab/mjlab/issues">Open an issue</a></p>
+</section>
+<section id="discussions">
+<h3>Discussions<a class="headerlink" href="#discussions" title="Link to this heading">#</a></h3>
+<p>Use GitHub Discussions for:</p>
+<ul class="simple">
+<li><p>Usage questions (config, debugging, best practices)</p></li>
+<li><p>Performance tuning tips</p></li>
+<li><p>Asset conversion and modeling questions</p></li>
+<li><p>Design discussions and roadmap ideas</p></li>
+</ul>
+<p><a class="reference external" href="https://github.com/mujocolab/mjlab/discussions">Start a discussion</a></p>
+</section>
+</section>
+<section id="known-limitations">
+<h2>Known Limitations<a class="headerlink" href="#known-limitations" title="Link to this heading">#</a></h2>
+<p>We’re tracking missing features for the stable release in
+<a class="github reference external" href="https://github.com/mujocolab/mjlab/issues/100">mujocolab/mjlab#100</a>. Check our
+<a class="reference external" href="https://github.com/mujocolab/mjlab/issues">open issues</a> to see what’s actively
+being worked on.</p>
+<p>If something isn’t working or if we’ve missed something, please
+<a class="reference external" href="https://github.com/mujocolab/mjlab/issues/new">file a bug report</a>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>mjlab is in <strong>beta</strong>. Breaking changes, missing features, and rough edges
+are expected. Feedback and contributions are very welcome — they directly
+shape the stable release.</p>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="motivation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Why mjlab?</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="api/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#platform-support">Platform Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training-debugging">Training &amp; Debugging</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rendering-visualization">Rendering &amp; Visualization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-extensions">Development &amp; Extensions</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#assets-compatibility">Assets &amp; Compatibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-help">Getting Help</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#github-issues">GitHub Issues</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#discussions">Discussions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#known-limitations">Known Limitations</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The mjlab Developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, The mjlab Developers.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Dec 29, 2025.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

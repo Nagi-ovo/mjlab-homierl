@@ -1,0 +1,926 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Observation History and Delay &#8212; mjlab Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/twemoji.css" />
+    <link rel="stylesheet" type="text/css" href="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/css/all.min.css?v=53359634" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js"></script>
+    <script src="../_static/twemoji.js"></script>
+    <script src="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/js/all.min.js?v=ec35c6c9"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/observation';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Actuators" href="actuators.html" />
+    <link rel="prev" title="NaN Guard" href="nan_guard.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Dec 29, 2025"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">The mjlab Documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Quick Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" title="Stars" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" class="icon-link-image" alt="Stars"/></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migration_isaac_lab.html">Migrating from Isaac Lab</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About the Project</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="motivation.html">Why mjlab?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ &amp; Troubleshooting</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/index.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/envs.html">mjlab.envs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/scene.html">mjlab.scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/sim.html">mjlab.sim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/entity.html">mjlab.entity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/actuator.html">mjlab.actuator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/sensor.html">mjlab.sensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/managers.html">mjlab.managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/terrains.html">mjlab.terrains</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough（中文）</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="walkthrough/index.html">Code Walkthrough（面向科研开发，上手 + 深入）</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/overview.html">架构总览：一张图看懂 mjlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/quickstart.html">快速上手：最短开发闭环（训练 / Play / 改任务）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/project_layout.html">代码地图：你应该去哪里改东西？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/manager_based_env.html">重点类一：ManagerBasedRlEnv（环境生命周期与数据流）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/managers_and_terms.html">重点类二：Managers + Terms（isaaclab-like 的核心抽象）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/tasks_velocity_g1.html">实例一：Velocity Tracking（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/tasks_tracking_g1.html">实例二：Motion Tracking / Imitation（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/tasks_homie_h1.html">实例三：Homie —— 混合运动与干扰（Unitree H1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/how_to_add_g1_task.html">如何新增一个 G1 RL 任务（从 0 到可训练）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="walkthrough/debugging_perf.html">调试与性能：让你“稳”且“快”</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="randomization.html">Domain Randomization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nan_guard.html">NaN Guard</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Observation History and Delay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="actuators.html">Actuators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributed_training.html">Distributed Training</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/edit/main/docs/source/observation.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/issues/new?title=Issue%20on%20page%20%2Fsource/observation.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/source/observation.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Observation History and Delay</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tl-dr">TL;DR</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-history">Observation History</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-usage">Basic Usage</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#group-level-override">Group-Level Override</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reset-behavior">Reset Behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#history-flattening-order-term-major-vs-time-major">History Flattening Order (Term-Major vs Time-Major)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-delay">Observation Delay</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#delay-parameters">Delay Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-delay-vs-multi-rate">Understanding Delay vs Multi-Rate</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-delays-from-real-world-latency">Computing Delays from Real-World Latency</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-multi-rate-updates">Computing Multi-Rate Updates</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#processing-pipeline">Processing Pipeline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="observation-history-and-delay">
+<span id="observation"></span><h1>Observation History and Delay<a class="headerlink" href="#observation-history-and-delay" title="Link to this heading">#</a></h1>
+<p>Observations have two temporal features: history and delay. History stacks past
+frames for temporal context, while delay can be used to model sensor latency.</p>
+<section id="tl-dr">
+<h2>TL;DR<a class="headerlink" href="#tl-dr" title="Link to this heading">#</a></h2>
+<p><strong>Add history to stack frames:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.manager_term_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationTermCfg</span>
+
+<span class="n">joint_vel</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">joint_vel</span><span class="p">,</span>
+    <span class="n">history_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>        <span class="c1"># Keep last 5 frames</span>
+    <span class="n">flatten_history_dim</span><span class="o">=</span><span class="kc">True</span> <span class="c1"># Flatten for MLP: (12,) * 5 = (60,)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Add delay to model sensor latency:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># At 50Hz control (20ms/step): lag=2-3 → 40-60ms latency</span>
+<span class="n">camera</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">camera_obs</span><span class="p">,</span>
+    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Combine both:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joint_pos</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">joint_pos</span><span class="p">,</span>
+    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>      <span class="c1"># Delayed observations</span>
+    <span class="n">history_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>     <span class="c1"># Stack 5 delayed frames</span>
+    <span class="n">flatten_history_dim</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="c1"># Pipeline: compute → delay → stack → flatten</span>
+</pre></div>
+</div>
+</section>
+<section id="observation-history">
+<h2>Observation History<a class="headerlink" href="#observation-history" title="Link to this heading">#</a></h2>
+<p>History stacks past observations to provide temporal context.</p>
+<section id="basic-usage">
+<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">#</a></h3>
+<p><strong>Flattened history (for MLPs):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joint_vel</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">joint_vel</span><span class="p">,</span>           <span class="c1"># Returns (num_envs, 12)</span>
+    <span class="n">history_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">flatten_history_dim</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Output: (num_envs, 36)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Structured history (for RNNs):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joint_vel</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">joint_vel</span><span class="p">,</span>            <span class="c1"># Returns (num_envs, 12)</span>
+    <span class="n">history_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">flatten_history_dim</span><span class="o">=</span><span class="kc">False</span>  <span class="c1"># Output: (num_envs, 3, 12)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="group-level-override">
+<h3>Group-Level Override<a class="headerlink" href="#group-level-override" title="Link to this heading">#</a></h3>
+<p>Apply history to all terms in a group:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PolicyCfg</span><span class="p">(</span><span class="n">ObservationGroupCfg</span><span class="p">):</span>
+    <span class="n">concatenate_terms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">history_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>           <span class="c1"># Applied to all terms</span>
+    <span class="n">flatten_history_dim</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">joint_pos</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">joint_pos</span><span class="p">)</span>
+    <span class="n">joint_vel</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">joint_vel</span><span class="p">)</span>
+    <span class="c1"># Both terms get 5-frame history, flattened</span>
+</pre></div>
+</div>
+<p>Term-level settings override group settings:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PolicyCfg</span><span class="p">(</span><span class="n">ObservationGroupCfg</span><span class="p">):</span>
+    <span class="n">history_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># Default for group</span>
+
+    <span class="n">joint_pos</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">joint_pos</span><span class="p">,</span>
+        <span class="n">history_length</span><span class="o">=</span><span class="mi">5</span>  <span class="c1"># Override: use 5 instead of 3</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="reset-behavior">
+<h3>Reset Behavior<a class="headerlink" href="#reset-behavior" title="Link to this heading">#</a></h3>
+<p>History buffers are cleared on environment reset. The first observation after
+reset is backfilled across all history slots, ensuring valid data from step 0.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># At reset</span>
+<span class="n">buffer</span> <span class="o">=</span> <span class="p">[</span><span class="n">obs_0</span><span class="p">,</span> <span class="n">obs_0</span><span class="p">,</span> <span class="n">obs_0</span><span class="p">]</span>  <span class="c1"># Backfilled</span>
+
+<span class="c1"># After 2 steps</span>
+<span class="n">buffer</span> <span class="o">=</span> <span class="p">[</span><span class="n">obs_0</span><span class="p">,</span> <span class="n">obs_1</span><span class="p">,</span> <span class="n">obs_2</span><span class="p">]</span>  <span class="c1"># Normal accumulation</span>
+</pre></div>
+</div>
+</section>
+<section id="history-flattening-order-term-major-vs-time-major">
+<h3>History Flattening Order (Term-Major vs Time-Major)<a class="headerlink" href="#history-flattening-order-term-major-vs-time-major" title="Link to this heading">#</a></h3>
+<p>When <code class="docutils literal notranslate"><span class="pre">flatten_history_dim=True</span></code> and <code class="docutils literal notranslate"><span class="pre">concatenate_terms=True</span></code>, mjlab uses
+<strong>term-major</strong> ordering, where each term’s full history is flattened before
+concatenating terms:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Term<span class="w"> </span>A:<span class="w"> </span>shape<span class="w"> </span><span class="o">(</span>num_envs,<span class="w"> </span>obs_dim_A<span class="o">)</span><span class="w"> </span>with<span class="w"> </span><span class="nv">history_length</span><span class="o">=</span><span class="m">3</span>
+Term<span class="w"> </span>B:<span class="w"> </span>shape<span class="w"> </span><span class="o">(</span>num_envs,<span class="w"> </span>obs_dim_B<span class="o">)</span><span class="w"> </span>with<span class="w"> </span><span class="nv">history_length</span><span class="o">=</span><span class="m">3</span>
+
+mjlab<span class="w"> </span>output<span class="w"> </span><span class="o">(</span>TERM-MAJOR<span class="o">)</span>:
+<span class="o">[</span>A_t0,<span class="w"> </span>A_t1,<span class="w"> </span>A_t2,<span class="w"> </span>B_t0,<span class="w"> </span>B_t1,<span class="w"> </span>B_t2,<span class="w"> </span>...<span class="o">]</span>
+<span class="w"> </span>└─<span class="w"> </span>all<span class="w"> </span>A<span class="w"> </span><span class="nb">history</span><span class="w"> </span>─┘<span class="w">  </span>└─<span class="w"> </span>all<span class="w"> </span>B<span class="w"> </span><span class="nb">history</span><span class="w"> </span>─┘
+</pre></div>
+</div>
+<p>An alternative approach is <strong>time-major</strong> (or frame-major) ordering, where
+complete observation frames are built at each timestep before concatenating
+across time:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>TIME-MAJOR<span class="w"> </span><span class="o">(</span>alternative<span class="w"> </span>approach<span class="o">)</span>:
+<span class="o">[</span>A_t0,<span class="w"> </span>B_t0,<span class="w"> </span>...,<span class="w"> </span>A_t1,<span class="w"> </span>B_t1,<span class="w"> </span>...,<span class="w"> </span>A_t2,<span class="w"> </span>B_t2,<span class="w"> </span>...<span class="o">]</span>
+<span class="w"> </span>└─<span class="w"> </span>frame<span class="w"> </span>t0<span class="w"> </span>──┘<span class="w">     </span>└─<span class="w"> </span>frame<span class="w"> </span>t1<span class="w"> </span>──┘<span class="w">     </span>└─<span class="w"> </span>frame<span class="w"> </span>t2<span class="w"> </span>──┘
+</pre></div>
+</div>
+<p><strong>Sim2sim compatibility:</strong> If you need to transfer policies to/from frameworks
+that use time-major ordering, you will need to reorder observations. This
+affects policies trained with history but not those without.</p>
+</section>
+</section>
+<section id="observation-delay">
+<h2>Observation Delay<a class="headerlink" href="#observation-delay" title="Link to this heading">#</a></h2>
+<p>Real robots have sensors with communication delays (WiFi, USB) and varying refresh
+rates (30Hz camera, 100Hz encoders). The delay system models both sensor latency
+and slower-than-control refresh rates.</p>
+<section id="delay-parameters">
+<h3>Delay Parameters<a class="headerlink" href="#delay-parameters" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">delay_min_lag</span></code> / <code class="docutils literal notranslate"><span class="pre">delay_max_lag</span></code> (default: 0) Lag range in steps. Uniformly
+samples an integer lag from <code class="docutils literal notranslate"><span class="pre">[min_lag,</span> <span class="pre">max_lag]</span></code> (both inclusive) each update.
+<code class="docutils literal notranslate"><span class="pre">lag=0</span></code> means current observation, <code class="docutils literal notranslate"><span class="pre">lag=2</span></code> means 2 steps ago.</p>
+<p><code class="docutils literal notranslate"><span class="pre">delay_per_env</span></code> (default: True) If True, each environment gets a different
+lag. If False, all environments share the same lag.</p>
+<p><code class="docutils literal notranslate"><span class="pre">delay_hold_prob</span></code> (default: 0.0)
+Probability [0, 1] of keeping the previous lag instead of resampling.</p>
+<p><code class="docutils literal notranslate"><span class="pre">delay_update_period</span></code> (default: 0) How often (in steps) to resample the lag
+and potentially get a new observation. If 0, resample every step. If &gt; 0, the
+observation may repeat for N steps (models sensors that refresh slower than
+control rate).</p>
+<p><code class="docutils literal notranslate"><span class="pre">delay_per_env_phase</span></code> (default: True) If True, each environment has a
+different phase offset for update period (staggers refresh times).</p>
+</section>
+<section id="understanding-delay-vs-multi-rate">
+<h3>Understanding Delay vs Multi-Rate<a class="headerlink" href="#understanding-delay-vs-multi-rate" title="Link to this heading">#</a></h3>
+<p><strong>Delay and multi-rate are orthogonal concepts</strong> that model different real-world
+phenomena:</p>
+<ul class="simple">
+<li><p><strong>Delay</strong> (<code class="docutils literal notranslate"><span class="pre">delay_min_lag</span></code> / <code class="docutils literal notranslate"><span class="pre">delay_max_lag</span></code>): Models sensor latency / communication
+delay. Controls <em>how old</em> the observation is.</p></li>
+<li><p><strong>Multi-rate</strong> (<code class="docutils literal notranslate"><span class="pre">delay_update_period</span></code>): Models sensor refresh rate. Controls <em>how
+often</em> the sensor produces a new reading.</p></li>
+</ul>
+<p><strong>Visualizing the difference (50Hz control = 20ms/step):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Sensor<span class="w"> </span>captures:<span class="w">  </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F<span class="w">     </span>G<span class="w">     </span>H
+<span class="w">                  </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓
+Control<span class="w"> </span>steps:<span class="w">    </span><span class="m">0</span><span class="w">     </span><span class="m">1</span><span class="w">     </span><span class="m">2</span><span class="w">     </span><span class="m">3</span><span class="w">     </span><span class="m">4</span><span class="w">     </span><span class="m">5</span><span class="w">     </span><span class="m">6</span><span class="w">     </span><span class="m">7</span>
+<span class="w">                 </span>20ms<span class="w">  </span>40ms<span class="w">  </span>60ms<span class="w">  </span>80ms<span class="w">  </span>100ms<span class="w"> </span>120ms<span class="w"> </span>140ms<span class="w"> </span>160ms
+
+No<span class="w"> </span>delay,<span class="w"> </span>no<span class="w"> </span>multi-rate<span class="w"> </span><span class="o">(</span>baseline<span class="w"> </span>-<span class="w"> </span>perfect<span class="w"> </span>sensor<span class="o">)</span>:
+You<span class="w"> </span>receive:<span class="w">      </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F<span class="w">     </span>G<span class="w">     </span>H
+<span class="w">                  </span>↑<span class="w"> </span>current<span class="w"> </span>observation<span class="w"> </span>every<span class="w"> </span>step
+
+Delay<span class="w"> </span>only<span class="w"> </span><span class="o">(</span><span class="nv">lag</span><span class="o">=</span><span class="m">2</span>,<span class="w"> </span>no<span class="w"> </span>update_period<span class="o">)</span>:
+You<span class="w"> </span>receive:<span class="w">      </span>-<span class="w">     </span>-<span class="w">     </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F
+<span class="w">                              </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑
+<span class="w">                             </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w"> </span>delay
+<span class="w">                </span>Every<span class="w"> </span>step<span class="w"> </span>gets<span class="w"> </span>a<span class="w"> </span>NEW<span class="w"> </span>observation,<span class="w"> </span>just<span class="w"> </span>40ms<span class="w"> </span>old
+
+Multi-rate<span class="w"> </span>only<span class="w"> </span><span class="o">(</span><span class="nv">update_period</span><span class="o">=</span><span class="m">2</span>,<span class="w"> </span>no<span class="w"> </span>lag<span class="o">)</span>:
+You<span class="w"> </span>receive:<span class="w">      </span>A<span class="w">     </span>A<span class="w">     </span>C<span class="w">     </span>C<span class="w">     </span>E<span class="w">     </span>E<span class="w">     </span>G<span class="w">     </span>G
+<span class="w">                  </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑
+<span class="w">                </span>Observations<span class="w"> </span>update<span class="w"> </span>every<span class="w"> </span><span class="m">2</span><span class="w"> </span>steps<span class="w"> </span><span class="o">(</span>25Hz<span class="w"> </span>refresh<span class="o">)</span>
+<span class="w">                </span>Steps<span class="w"> </span><span class="m">1</span>,3,5,7<span class="w"> </span>repeat<span class="w"> </span>previous<span class="w"> </span>observation
+
+Both<span class="w"> </span>delay<span class="w"> </span>+<span class="w"> </span>multi-rate<span class="w"> </span><span class="o">(</span><span class="nv">lag</span><span class="o">=</span><span class="m">2</span>,<span class="w"> </span><span class="nv">update_period</span><span class="o">=</span><span class="m">2</span><span class="o">)</span>:
+Sensor<span class="w"> </span>captures:<span class="w">  </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F<span class="w">     </span>G<span class="w">     </span>H
+You<span class="w"> </span>receive:<span class="w">      </span>-<span class="w">     </span>-<span class="w">     </span>A<span class="w">     </span>A<span class="w">     </span>C<span class="w">     </span>C<span class="w">     </span>E<span class="w">     </span>E
+<span class="w">                              </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑
+<span class="w">                </span>40ms<span class="w"> </span>delayed<span class="w"> </span>+<span class="w"> </span>only<span class="w"> </span>refreshes<span class="w"> </span>every<span class="w"> </span><span class="m">2</span><span class="w"> </span>steps
+<span class="w">                </span>Models<span class="w"> </span>25Hz<span class="w"> </span>camera<span class="w"> </span>with<span class="w"> </span>40ms<span class="w"> </span>latency
+</pre></div>
+</div>
+<p><strong>Real-world example - 30Hz camera at 50Hz control with 40ms latency:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">camera</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">camera_obs</span><span class="p">,</span>
+    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>        <span class="c1"># 40ms latency</span>
+    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">delay_update_period</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># 25Hz refresh (approximates 30Hz)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Common mistake:</strong> Using only <code class="docutils literal notranslate"><span class="pre">delay_min_lag=2,</span> <span class="pre">delay_max_lag=2</span></code> gives you
+40ms latency but you still get 50 different camera frames per second. You need
+<code class="docutils literal notranslate"><span class="pre">delay_update_period=2</span></code> to model the slower refresh rate.</p>
+</section>
+<section id="computing-delays-from-real-world-latency">
+<h3>Computing Delays from Real-World Latency<a class="headerlink" href="#computing-delays-from-real-world-latency" title="Link to this heading">#</a></h3>
+<p>Convert real-world latency to simulation steps:</p>
+<p>delay_steps = latency_ms / (1000 / control_hz)</p>
+<p><strong>Example at 50Hz control (20ms per step):</strong>
+- 40ms latency = 40 / 20 = 2 steps
+- 60ms latency = 60 / 20 = 3 steps
+- 100ms latency = 100 / 20 = 5 steps</p>
+<p><strong>Example at 100Hz control (10ms per step):</strong>
+- 40ms latency = 40 / 10 = 4 steps
+- 60ms latency = 60 / 10 = 6 steps</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Delays are quantized to control timesteps. At 50Hz control (20ms/step),
+you can only represent 0ms, 20ms, 40ms, 60ms, etc. To approximate a 45ms sensor,
+use <code class="docutils literal notranslate"><span class="pre">delay_min_lag=2,</span> <span class="pre">delay_max_lag=3</span></code> which uniformly samples lag ∈ {2, 3}
+(both inclusive), giving either 40ms or 60ms delay.</p>
+</div>
+</section>
+<section id="computing-multi-rate-updates">
+<h3>Computing Multi-Rate Updates<a class="headerlink" href="#computing-multi-rate-updates" title="Link to this heading">#</a></h3>
+<p>Convert sensor refresh rate to update period:</p>
+<p>update_period = control_hz / sensor_hz</p>
+<p><strong>Example at 50Hz control:</strong></p>
+<ul class="simple">
+<li><p>30Hz camera: update_period = 50 / 30 ≈ 2 steps → <strong>actual 25Hz</strong> (error: -17%)</p></li>
+<li><p>25Hz LiDAR: update_period = 50 / 25 = 2 steps → <strong>actual 25Hz</strong> (exact)</p></li>
+<li><p>10Hz GPS: update_period = 50 / 10 = 5 steps → <strong>actual 10Hz</strong> (exact)</p></li>
+</ul>
+<p><strong>Example at 100Hz control:</strong></p>
+<ul class="simple">
+<li><p>30Hz camera: update_period = 100 / 30 ≈ 3 steps → <strong>actual 33.3Hz</strong> (error: +11%)</p></li>
+<li><p>50Hz IMU: update_period = 100 / 50 = 2 steps → <strong>actual 50Hz</strong> (exact)</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since <code class="docutils literal notranslate"><span class="pre">update_period</span></code> must be an integer, sensor rates that don’t evenly
+divide the control frequency can only be approximated. For example, 30Hz at 50Hz
+control needs update_period=1.67, so round to 2 → 25Hz (17% error). Higher control
+frequencies reduce quantization error (100Hz control approximates 30Hz as 33.3Hz
+with only 11% error).</p>
+</div>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h3>
+<p><strong>Joint encoders (100Hz, no delay) at 50Hz control:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joint_pos</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">joint_pos</span><span class="p">)</span>
+<span class="c1"># delay_min_lag=delay_max_lag=0 by default.</span>
+</pre></div>
+</div>
+<p><strong>Camera (30Hz, 40-60ms latency) at 50Hz control:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 30Hz camera: update_period = 50/30 ≈ 2 → actually 25Hz (17% error, acceptable)</span>
+<span class="c1"># 40-60ms latency = 2-3 steps at 50Hz (20ms/step)</span>
+<span class="n">camera</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">camera_obs</span><span class="p">,</span>
+    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>          <span class="c1"># 40ms</span>
+    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>          <span class="c1"># 60ms</span>
+    <span class="n">delay_update_period</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>    <span class="c1"># 25Hz (approximates 30Hz)</span>
+    <span class="n">delay_per_env_phase</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Staggered refresh across envs</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Mixed-rate system at 50Hz control:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PolicyCfg</span><span class="p">(</span><span class="n">ObservationGroupCfg</span><span class="p">):</span>
+    <span class="c1"># Fast encoders (no delay)</span>
+    <span class="n">joint_pos</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">joint_pos</span><span class="p">,</span>
+        <span class="c1"># delay_min_lag=0, delay_max_lag=0 (default)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 25Hz camera (40-80ms latency)</span>
+    <span class="n">camera</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">camera_obs</span><span class="p">,</span>
+        <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># 40ms</span>
+        <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>  <span class="c1"># 80ms</span>
+        <span class="n">delay_update_period</span><span class="o">=</span><span class="mi">2</span>  <span class="c1"># 25Hz (50Hz control / 2)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="processing-pipeline">
+<h2>Processing Pipeline<a class="headerlink" href="#processing-pipeline" title="Link to this heading">#</a></h2>
+<p>Observations flow through this pipeline:</p>
+<p>compute → noise → clip → scale → delay → history → flatten</p>
+<p><strong>Why delay before history?</strong> History stacks delayed observations. This models
+real systems where you buffer old sensor readings, not future ones.</p>
+<p>Example with both:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joint_vel</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">joint_vel</span><span class="p">,</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>             <span class="c1"># Scale raw values</span>
+    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>       <span class="c1"># 20ms delay at 50Hz</span>
+    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>       <span class="c1"># 40ms delay at 50Hz</span>
+    <span class="n">history_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>      <span class="c1"># Stack 3 delayed frames</span>
+    <span class="n">flatten_history_dim</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="c1"># Pipeline:</span>
+<span class="c1"># 1. compute() returns (num_envs, 12)</span>
+<span class="c1"># 2. scale: multiply by 0.1</span>
+<span class="c1"># 3. delay: return observation from 1-2 steps ago</span>
+<span class="c1"># 4. history: stack last 3 delayed frames → (num_envs, 3, 12)</span>
+<span class="c1"># 5. flatten: reshape → (num_envs, 36)</span>
+</pre></div>
+</div>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading">#</a></h2>
+<p>Delay buffers are only created when <code class="docutils literal notranslate"><span class="pre">delay_max_lag</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>. Terms with no delay
+(the default) have zero overhead. Similarly, history buffers are only created
+when <code class="docutils literal notranslate"><span class="pre">history_length</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>.</p>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="nan_guard.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">NaN Guard</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="actuators.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Actuators</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tl-dr">TL;DR</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-history">Observation History</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-usage">Basic Usage</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#group-level-override">Group-Level Override</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#reset-behavior">Reset Behavior</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#history-flattening-order-term-major-vs-time-major">History Flattening Order (Term-Major vs Time-Major)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-delay">Observation Delay</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#delay-parameters">Delay Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-delay-vs-multi-rate">Understanding Delay vs Multi-Rate</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-delays-from-real-world-latency">Computing Delays from Real-World Latency</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-multi-rate-updates">Computing Multi-Rate Updates</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#processing-pipeline">Processing Pipeline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance">Performance</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The mjlab Developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, The mjlab Developers.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Dec 29, 2025.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
