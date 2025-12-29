@@ -11,7 +11,7 @@ Code Walkthrough（面向科研开发，上手 + 深入）
 - **架构总览**：`ManagerBasedRlEnv = Scene + Simulation + Managers` 的数据流与控制流。
 - **Manager-base API 设计**：为什么用“manager + term + cfg”的结构，它如何做到可组合、可扩展、可复用。
 - **任务开发路径**：如何像写 Isaac Lab manager-based task 一样写 mjlab task（但用 dict cfg）。
-- **g1 任务解剖**：`tasks/velocity` 与 `tasks/tracking` 的 cfg/MDP/训练入口拆解与改造建议。
+- **g1/h1 任务解剖**：`tasks/velocity`、`tasks/tracking` 与 `tasks/homie` 的 cfg/MDP/训练入口拆解与改造建议。
 
 阅读顺序建议
 ------------
@@ -31,6 +31,7 @@ Code Walkthrough（面向科研开发，上手 + 深入）
    managers_and_terms
    tasks_velocity_g1
    tasks_tracking_g1
+   tasks_homie_h1
    how_to_add_g1_task
    debugging_perf
 

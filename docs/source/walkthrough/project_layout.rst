@@ -27,7 +27,7 @@
    * - ``src/mjlab/sensor/``
      - 传感器（内建 sensor、contact sensor 等）。任务里的很多观测/奖励会通过 ``env.scene[sensor_name]`` 取值。
    * - ``src/mjlab/asset_zoo/``
-     - 资产库（MJCF/XML）。G1 在 ``asset_zoo/robots/unitree_g1``。
+     - 资产库（MJCF/XML）。G1 在 ``asset_zoo/robots/unitree_g1``，H1 在 ``asset_zoo/robots/unitree_h1``。
    * - ``src/mjlab/tasks/``
      - 任务包。每个任务通常包含：
        ``<task>_env_cfg.py``（base cfg）、``config/<robot>/``（robot override + 注册）、``mdp/``（任务专用 terms）、``rl/``（runner/export）。
