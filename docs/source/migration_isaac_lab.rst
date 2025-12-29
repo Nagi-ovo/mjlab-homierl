@@ -206,6 +206,7 @@ Key changes:
   ``MjSpec``-modifier dataclasses.
 - See ``mjlab.utils.spec_config`` in the repository for helpers that apply
   these changes for you.
+- ``asset_name`` has been unified to ``entity_name`` across all configurations.
 
 Complete Example Comparison
 ---------------------------

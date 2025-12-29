@@ -44,7 +44,7 @@ TL;DR
         articulation=EntityArticulationInfoCfg(
             actuators=(
                 BuiltinPositionActuatorCfg(
-                    joint_names_expr=(".*_hip_.*", ".*_knee_.*"),
+                    target_names_expr=(".*_hip_.*", ".*_knee_.*"),
                     stiffness=80.0,
                     damping=10.0,
                     effort_limit=100.0,
@@ -61,7 +61,7 @@ TL;DR
 
     DelayedActuatorCfg(
         base_cfg=BuiltinPositionActuatorCfg(
-            joint_names_expr=(".*",),
+            target_names_expr=(".*",),
             stiffness=80.0,
             damping=10.0,
         ),
@@ -89,10 +89,10 @@ reset, and runtime updates.
 
         Args:
             cmd: Command containing position_target, velocity_target, effort_target
-                (each is a [num_envs, num_joints] tensor or None)
+                (each is a [num_envs, num_targets] tensor or None)
 
         Returns:
-            Control signals for this actuator ([num_envs, num_joints] tensor)
+            Control signals for this actuator ([num_envs, num_targets] tensor)
         """
 
 **Lifecycle hooks:**
@@ -105,8 +105,8 @@ reset, and runtime updates.
 
 **Properties:**
 
-- ``joint_ids``: Tensor of local joint indices controlled by this actuator
-- ``joint_names``: List of joint names controlled by this actuator
+- ``target_ids``: Tensor of local target indices controlled by this actuator
+- ``target_names``: List of target names controlled by this actuator
 - ``ctrl_ids``: Tensor of global control input indices for this actuator
 
 Actuator Types
@@ -132,13 +132,13 @@ implicitly, providing best numerical stability.
     # Mobile manipulator: PD for arm joints, velocity control for wheels.
     actuators = (
         BuiltinPositionActuatorCfg(
-            joint_names_expr=(".*_shoulder_.*", ".*_elbow_.*", ".*_wrist_.*"),
+            target_names_expr=(".*_shoulder_.*", ".*_elbow_.*", ".*_wrist_.*"),
             stiffness=100.0,
             damping=10.0,
             effort_limit=150.0,
         ),
         BuiltinVelocityActuatorCfg(
-            joint_names_expr=(".*_wheel_.*",),
+            target_names_expr=(".*_wheel_.*",),
             damping=20.0,
             effort_limit=50.0,
         ),
@@ -174,13 +174,13 @@ velocity.
     # Ideal PD for hips, DC motor model with torque-speed curve for knees.
     actuators = (
         IdealPdActuatorCfg(
-            joint_names_expr=(".*_hip_.*",),
+            target_names_expr=(".*_hip_.*",),
             stiffness=80.0,
             damping=10.0,
             effort_limit=100.0,
         ),
         DcMotorActuatorCfg(
-            joint_names_expr=(".*_knee_.*",),
+            target_names_expr=(".*_knee_.*",),
             stiffness=80.0,
             damping=10.0,
             effort_limit=25.0,       # Continuous torque limit
@@ -207,7 +207,7 @@ friction effects. Inherits DC motor velocity-based torque limits.
 
     actuators = (
         LearnedMlpActuatorCfg(
-            joint_names_expr=(".*_ankle_.*",),
+            target_names_expr=(".*_ankle_.*",),
             network_file="models/ankle_actuator.pt",  # TorchScript model
             pos_scale=1.0,        # Input scaling for position errors
             vel_scale=0.05,       # Input scaling for velocities
@@ -240,7 +240,7 @@ XML Actuators
 
 XML actuators wrap actuators already defined in your robot's XML file. The
 config finds existing actuators by matching their ``target`` joint name against
-the ``joint_names_expr`` patterns. Each joint must have exactly one matching
+the ``target_names_expr`` patterns. Each joint must have exactly one matching
 actuator.
 
 **XmlPositionActuator**: Wraps existing ``<position>`` actuators
@@ -260,7 +260,7 @@ actuator.
 
     # Wrap existing XML actuators.
     actuators = (
-        XmlPositionActuatorCfg(joint_names_expr=("hip_joint",)),
+        XmlPositionActuatorCfg(target_names_expr=("hip_joint",)),
     )
 
 Delayed Actuator
@@ -278,7 +278,7 @@ targets before they reach the actuator's control law.
     actuators = (
         DelayedActuatorCfg(
             base_cfg=IdealPdActuatorCfg(
-                joint_names_expr=(".*",),
+                target_names_expr=(".*",),
                 stiffness=80.0,
                 damping=10.0,
             ),
@@ -376,28 +376,28 @@ configs for joints that need different parameters:
     # G1 humanoid with different gains per joint group.
     G1_ACTUATORS = (
         BuiltinPositionActuatorCfg(
-            joint_names_expr=(".*_hip_.*", "waist_yaw_joint"),
+            target_names_expr=(".*_hip_.*", "waist_yaw_joint"),
             stiffness=180.0,
             damping=18.0,
             effort_limit=88.0,
             armature=0.0015,
         ),
         BuiltinPositionActuatorCfg(
-            joint_names_expr=("left_hip_pitch_joint", "right_hip_pitch_joint"),
+            target_names_expr=("left_hip_pitch_joint", "right_hip_pitch_joint"),
             stiffness=200.0,
             damping=20.0,
             effort_limit=88.0,
             armature=0.0015,
         ),
         BuiltinPositionActuatorCfg(
-            joint_names_expr=(".*_knee_joint",),
+            target_names_expr=(".*_knee_joint",),
             stiffness=150.0,
             damping=15.0,
             effort_limit=139.0,
             armature=0.0025,
         ),
         BuiltinPositionActuatorCfg(
-            joint_names_expr=(".*_ankle_.*",),
+            target_names_expr=(".*_ankle_.*",),
             stiffness=40.0,
             damping=5.0,
             effort_limit=25.0,
@@ -471,7 +471,7 @@ from hardware datasheets.
     from mjlab.actuator import BuiltinPositionActuatorCfg
 
     actuator = BuiltinPositionActuatorCfg(
-        joint_names_expr=(".*_hip_pitch_joint",),
+        target_names_expr=(".*_hip_pitch_joint",),
         stiffness=STIFFNESS,
         damping=DAMPING,
         effort_limit=ACTUATOR_7520_14.effort_limit,
@@ -498,7 +498,7 @@ sum of the individual motor armatures:
 
     # Two 5020 motors driving ankle through parallel linkage.
     G1_ACTUATOR_ANKLE = BuiltinPositionActuatorCfg(
-        joint_names_expr=(".*_ankle_pitch_joint", ".*_ankle_roll_joint"),
+        target_names_expr=(".*_ankle_pitch_joint", ".*_ankle_roll_joint"),
         stiffness=STIFFNESS_5020 * 2,
         damping=DAMPING_5020 * 2,
         effort_limit=ACTUATOR_5020.effort_limit * 2,
@@ -519,7 +519,7 @@ Actuators are typically controlled via action terms in the action manager:
     from mjlab.envs.mdp.actions import JointPositionActionCfg
 
     JointPositionActionCfg(
-        asset_name="robot",
+        entity_name="robot",
         actuator_names=(".*",),  # Regex patterns for joint selection
         scale=1.0,
         use_default_offset=True,  # Use robot's default joint positions as offset
@@ -548,7 +548,7 @@ Domain Randomization
         func=events.randomize_pd_gains,
         mode="reset",
         params={
-            "asset_cfg": SceneEntityCfg("robot", actuator_names=(".*",)),
+            "entity_cfg": SceneEntityCfg("robot", actuator_names=(".*",)),
             "kp_range": (0.8, 1.2),
             "kd_range": (0.8, 1.2),
             "distribution": "uniform",
@@ -560,7 +560,7 @@ Domain Randomization
         func=events.randomize_effort_limits,
         mode="reset",
         params={
-            "asset_cfg": SceneEntityCfg("robot", actuator_names=(".*_leg_.*",)),
+            "entity_cfg": SceneEntityCfg("robot", actuator_names=(".*_leg_.*",)),
             "effort_limit_range": (0.7, 1.0),  # Reduce effort by 0-30%
             "operation": "scale",
         },

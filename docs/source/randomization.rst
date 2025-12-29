@@ -15,13 +15,11 @@ apply the draw.
 
 .. code-block:: python
 
-    from mjlab.managers.manager_term_config import EventTermCfg as EventTerm
-    from mjlab.managers.manager_term_config import term
+    from mjlab.managers.manager_term_config import EventTermCfg
     from mjlab.managers.scene_entity_config import SceneEntityCfg
     from mjlab.envs import mdp
 
-    foot_friction: EventTerm = term(
-        EventTerm,
+    foot_friction: EventTermCfg = EventTermCfg(
         mode="reset",  # randomize each episode
         func=mdp.randomize_field,
         domain_randomization=True,  # marks this as domain randomization
@@ -36,12 +34,12 @@ apply the draw.
 Domain Randomization Flag
 -------------------------
 
-When creating an ``EventTerm`` for domain randomization, set ``domain_randomization=True``.
+When creating an ``EventTermCfg`` for domain randomization, set ``domain_randomization=True``.
 This allows the environment to track which fields are being randomized:
 
 .. code-block:: python
 
-    EventTerm(
+    EventTermCfg(
         mode="reset",
         func=mdp.randomize_field,
         domain_randomization=True,  # required for DR tracking
@@ -108,8 +106,7 @@ Friction (reset)
 
 .. code-block:: python
 
-    foot_friction: EventTerm = term(
-        EventTerm,
+    foot_friction: EventTermCfg = EventTermCfg(
         mode="reset",
         func=mdp.randomize_field,
         domain_randomization=True,
@@ -147,8 +144,7 @@ Randomize default joint positions to simulate joint offset calibration errors:
 
 .. code-block:: python
 
-    joint_offset: EventTerm = term(
-        EventTerm,
+    joint_offset: EventTermCfg = EventTermCfg(
         mode="startup",
         func=mdp.randomize_field,
         domain_randomization=True,
@@ -166,8 +162,7 @@ Center of Mass (COM) (startup)
 
 .. code-block:: python
 
-    com: EventTerm = term(
-        EventTerm,
+    com: EventTermCfg = EventTermCfg(
         mode="startup",
         func=mdp.randomize_field,
         domain_randomization=True,
@@ -209,8 +204,7 @@ for event terms that need to maintain state or perform initialization logic:
 
 
     # Use the custom class in your environment config
-    terrain_friction: EventTerm = term(
-        EventTerm,
+    terrain_friction: EventTermCfg = EventTermCfg(
         mode="reset",
         func=RandomizeTerrainFriction,
         domain_randomization=True,
