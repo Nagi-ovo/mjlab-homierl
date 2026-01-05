@@ -9,7 +9,7 @@ multiple frame attachment options, and configurable alignment modes.
 
 .. raw:: html
 
-   <video height="500" controls style="display: block; margin: 0 auto;">
+   <video controls style="display: block; margin: 0 auto; max-width: 100%; height: auto;">
      <source src="../_static/raycast_demo.mp4" type="video/mp4">
    </video>
 
@@ -63,7 +63,7 @@ Parallel rays arranged in a 2D grid with fixed spatial resolution.
 
 .. raw:: html
 
-   <video width="600" autoplay loop muted playsinline style="display: block; margin: 0 auto;">
+   <video autoplay loop muted playsinline style="display: block; margin: 0 auto; max-width: 100%; height: auto;">
      <source src="../_static/pattern_grid.mp4" type="video/mp4">
    </video>
 
@@ -93,7 +93,7 @@ LiDAR sensor.
 
 .. raw:: html
 
-   <video width="600" autoplay loop muted playsinline style="display: block; margin: 0 auto;">
+   <video autoplay loop muted playsinline style="display: block; margin: 0 auto; max-width: 100%; height: auto;">
      <source src="../_static/pattern_pinhole.mp4" type="video/mp4">
    </video>
 
