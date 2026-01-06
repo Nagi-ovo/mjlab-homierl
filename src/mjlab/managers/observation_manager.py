@@ -1,19 +1,111 @@
 """Observation manager for computing observations."""
 
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
 import torch
 from prettytable import PrettyTable
 
-from mjlab.managers.manager_base import ManagerBase
-from mjlab.managers.manager_term_config import ObservationGroupCfg, ObservationTermCfg
+from mjlab.managers.manager_base import ManagerBase, ManagerTermBaseCfg
 from mjlab.utils.buffers import CircularBuffer, DelayBuffer
 from mjlab.utils.noise import noise_cfg, noise_model
+from mjlab.utils.noise.noise_cfg import NoiseCfg, NoiseModelCfg
+
+
+@dataclass
+class ObservationTermCfg(ManagerTermBaseCfg):
+  """Configuration for an observation term.
+
+  Processing pipeline: compute → noise → clip → scale → delay → history.
+  Delay models sensor latency. History provides temporal context. Both are optional
+  and can be combined.
+  """
+
+  noise: NoiseCfg | NoiseModelCfg | None = None
+  """Noise model to apply to the observation."""
+
+  clip: tuple[float, float] | None = None
+  """Range (min, max) to clip the observation values."""
+
+  scale: tuple[float, ...] | float | torch.Tensor | None = None
+  """Scaling factor(s) to multiply the observation by."""
+
+  delay_min_lag: int = 0
+  """Minimum lag (in steps) for delayed observations. Lag sampled uniformly from
+  [min_lag, max_lag]. Convert to ms: lag * (1000 / control_hz)."""
+
+  delay_max_lag: int = 0
+  """Maximum lag (in steps) for delayed observations. Use min=max for constant delay."""
+
+  delay_per_env: bool = True
+  """If True, each environment samples its own lag. If False, all environments share
+  the same lag at each step."""
+
+  delay_hold_prob: float = 0.0
+  """Probability of reusing the previous lag instead of resampling. Useful for
+  temporally correlated latency patterns."""
+
+  delay_update_period: int = 0
+  """Resample lag every N steps (models multi-rate sensors). If 0, update every step."""
+
+  delay_per_env_phase: bool = True
+  """If True and update_period > 0, stagger update timing across envs to avoid
+  synchronized resampling."""
+
+  history_length: int = 0
+  """Number of past observations to keep in history. 0 = no history."""
+
+  flatten_history_dim: bool = True
+  """Whether to flatten the history dimension into observation.
+
+  When True and concatenate_terms=True, uses term-major ordering:
+  [A_t0, A_t1, ..., A_tH-1, B_t0, B_t1, ..., B_tH-1, ...]
+  See docs/api/observation_history_delay.md for details on ordering."""
+
+
+@dataclass
+class ObservationGroupCfg:
+  """Configuration for an observation group.
+
+  An observation group bundles multiple observation terms together. Groups are
+  typically used to separate observations for different purposes (e.g., "policy"
+  for the actor, "critic" for the value function).
+  """
+
+  terms: dict[str, ObservationTermCfg]
+  """Dictionary mapping term names to their configurations."""
+
+  concatenate_terms: bool = True
+  """Whether to concatenate all terms into a single tensor. If False, returns
+  a dict mapping term names to their individual tensors."""
+
+  concatenate_dim: int = -1
+  """Dimension along which to concatenate terms. Default -1 (last dimension)."""
+
+  enable_corruption: bool = False
+  """Whether to apply noise corruption to observations. Set to True during
+  training for domain randomization, False during evaluation."""
+
+  history_length: int | None = None
+  """Group-level history length override. If set, applies to all terms in
+  this group. If None, each term uses its own ``history_length`` setting."""
+
+  flatten_history_dim: bool = True
+  """Whether to flatten history into the observation dimension. If True,
+  observations have shape ``(num_envs, obs_dim * history_length)``. If False,
+  shape is ``(num_envs, history_length, obs_dim)``."""
 
 
 class ObservationManager(ManagerBase):
+  """Manages observation computation for the environment.
+
+  The observation manager computes observations from multiple terms organized
+  into groups. Each term can have noise, clipping, scaling, delay, and history
+  applied. Groups can optionally concatenate their terms into a single tensor.
+  """
+
   def __init__(self, cfg: dict[str, ObservationGroupCfg], env):
     self.cfg = deepcopy(cfg)
     super().__init__(env=env)

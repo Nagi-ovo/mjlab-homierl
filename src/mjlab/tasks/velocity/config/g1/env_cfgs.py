@@ -7,10 +7,8 @@ from mjlab.asset_zoo.robots import (
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs import mdp as envs_mdp
 from mjlab.envs.mdp.actions import JointPositionActionCfg
-from mjlab.managers.manager_term_config import (
-  EventTermCfg,
-  RewardTermCfg,
-)
+from mjlab.managers.event_manager import EventTermCfg
+from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.velocity import mdp
 from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
@@ -60,7 +58,6 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
   cfg.viewer.body_name = "torso_link"
 
-  assert cfg.commands is not None
   twist_cmd = cfg.commands["twist"]
   assert isinstance(twist_cmd, UniformVelocityCommandCfg)
   twist_cmd.viz.z_offset = 1.15
@@ -169,14 +166,11 @@ def unitree_g1_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.scene.terrain.terrain_generator = None
 
   # Disable terrain curriculum.
-  assert cfg.curriculum is not None
   assert "terrain_levels" in cfg.curriculum
   del cfg.curriculum["terrain_levels"]
 
   if play:
-    commands = cfg.commands
-    assert commands is not None
-    twist_cmd = commands["twist"]
+    twist_cmd = cfg.commands["twist"]
     assert isinstance(twist_cmd, UniformVelocityCommandCfg)
     twist_cmd.ranges.lin_vel_x = (-1.5, 2.0)
     twist_cmd.ranges.ang_vel_z = (-0.7, 0.7)

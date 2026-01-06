@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING
 import torch
 
 from mjlab.actuator.actuator import TransmissionType
-from mjlab.managers.action_manager import ActionTerm
-from mjlab.managers.manager_term_config import ActionTermCfg
+from mjlab.managers.action_manager import ActionTerm, ActionTermCfg
 from mjlab.utils.lab_api.string import resolve_matching_names_values
 
 if TYPE_CHECKING:

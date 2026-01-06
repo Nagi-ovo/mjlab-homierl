@@ -3,19 +3,74 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal
 
 import torch
 from prettytable import PrettyTable
 
-from mjlab.managers.manager_base import ManagerBase
-from mjlab.managers.manager_term_config import EventMode, EventTermCfg
+from mjlab.managers.manager_base import ManagerBase, ManagerTermBaseCfg
 
 if TYPE_CHECKING:
   from mjlab.envs import ManagerBasedRlEnv
 
 
+EventMode = Literal["startup", "reset", "interval"]
+
+
+@dataclass(kw_only=True)
+class EventTermCfg(ManagerTermBaseCfg):
+  """Configuration for an event term.
+
+  Event terms trigger operations at specific simulation events. They're commonly
+  used for domain randomization, state resets, and periodic perturbations.
+
+  The three modes determine when the event fires:
+
+  - ``"startup"``: Once when the environment initializes. Use for parameters that
+    should be randomized per-environment but stay constant within an episode (
+    e.g., domain randomization).
+
+  - ``"reset"``: On every episode reset. Use for parameters that should vary
+    between episodes (e.g., initial robot pose, domain randomization).
+
+  - ``"interval"``: Periodically during simulation, controlled by
+    ``interval_range_s``. Use for perturbations that should happen during
+    episodes (e.g., pushing the robot, external disturbances).
+  """
+
+  mode: EventMode
+  """When the event triggers: ``"startup"`` (once at init), ``"reset"`` (every
+  episode), or ``"interval"`` (periodically during simulation)."""
+
+  interval_range_s: tuple[float, float] | None = None
+  """Time range in seconds for interval mode. The next trigger time is uniformly
+  sampled from ``[min, max]``. Required when ``mode="interval"``."""
+
+  is_global_time: bool = False
+  """Whether all environments share the same timer. If True, all envs trigger
+  simultaneously. If False (default), each env has an independent timer that
+  resets on episode reset. Only applies to ``mode="interval"``."""
+
+  min_step_count_between_reset: int = 0
+  """Minimum environment steps between triggers. Prevents the event from firing
+  too frequently when episodes reset rapidly. Only applies to ``mode="reset"``.
+  Set to 0 (default) to trigger on every reset."""
+
+  domain_randomization: bool = False
+  """Whether this event performs domain randomization. If True, the field name
+  from ``params["field"]`` is tracked and exposed via
+  ``EventManager.domain_randomization_fields`` for logging/debugging."""
+
+
 class EventManager(ManagerBase):
+  """Manages event-based operations for the environment.
+
+  The event manager triggers operations at different simulation events: startup
+  (once at initialization), reset (on episode reset), or interval (periodically
+  during simulation). Common uses include domain randomization and state resets.
+  """
+
   _env: ManagerBasedRlEnv
 
   def __init__(self, cfg: dict[str, EventTermCfg], env: ManagerBasedRlEnv):

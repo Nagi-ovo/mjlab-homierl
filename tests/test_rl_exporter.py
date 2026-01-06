@@ -11,10 +11,7 @@ from conftest import get_test_device
 from mjlab.actuator import XmlMotorActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg, mdp
-from mjlab.managers.manager_term_config import (
-  ObservationGroupCfg,
-  ObservationTermCfg,
-)
+from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
 from mjlab.rl.exporter_utils import (
   attach_metadata_to_onnx,
   get_base_metadata,

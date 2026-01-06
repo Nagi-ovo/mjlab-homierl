@@ -40,7 +40,6 @@ def yam_lift_cube_env_cfg(
   assert isinstance(joint_pos_action, JointPositionActionCfg)
   joint_pos_action.scale = YAM_ACTION_SCALE
 
-  assert cfg.commands is not None
   lift_command = cfg.commands["lift_height"]
   assert isinstance(lift_command, LiftingCommandCfg)
 

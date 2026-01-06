@@ -3,16 +3,27 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import torch
 from prettytable import PrettyTable
 
-from mjlab.managers.manager_base import ManagerBase
-from mjlab.managers.manager_term_config import RewardTermCfg
+from mjlab.managers.manager_base import ManagerBase, ManagerTermBaseCfg
 
 if TYPE_CHECKING:
   from mjlab.envs.manager_based_rl_env import ManagerBasedRlEnv
+
+
+@dataclass(kw_only=True)
+class RewardTermCfg(ManagerTermBaseCfg):
+  """Configuration for a reward term."""
+
+  func: Any
+  """The callable that computes this reward term's value."""
+
+  weight: float
+  """Weight multiplier for this reward term."""
 
 
 class RewardManager(ManagerBase):

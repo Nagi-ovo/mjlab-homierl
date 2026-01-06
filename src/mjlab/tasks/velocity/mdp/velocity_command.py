@@ -7,8 +7,7 @@ import numpy as np
 import torch
 
 from mjlab.entity import Entity
-from mjlab.managers.command_manager import CommandTerm
-from mjlab.managers.manager_term_config import CommandTermCfg
+from mjlab.managers.command_manager import CommandTerm, CommandTermCfg
 from mjlab.utils.lab_api.math import (
   matrix_from_quat,
   quat_apply,

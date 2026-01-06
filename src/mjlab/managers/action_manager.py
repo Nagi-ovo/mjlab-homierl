@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Sequence
 
 import torch
@@ -12,7 +13,27 @@ from mjlab.managers.manager_base import ManagerBase, ManagerTermBase
 
 if TYPE_CHECKING:
   from mjlab.envs import ManagerBasedRlEnv
-  from mjlab.managers.manager_term_config import ActionTermCfg
+
+
+@dataclass(kw_only=True)
+class ActionTermCfg(abc.ABC):
+  """Configuration for an action term.
+
+  Action terms process raw actions from the policy and apply them to entities
+  in the scene (e.g., setting joint positions, velocities, or efforts).
+  """
+
+  entity_name: str
+  """Name of the entity in the scene that this action term controls."""
+
+  clip: dict[str, tuple] | None = None
+  """Optional clipping bounds per transmission type. Maps transmission name
+  (e.g., 'position', 'velocity') to (min, max) tuple."""
+
+  @abc.abstractmethod
+  def build(self, env: ManagerBasedRlEnv) -> ActionTerm:
+    """Build the action term from this config."""
+    raise NotImplementedError
 
 
 class ActionTerm(ManagerTermBase):
@@ -47,6 +68,13 @@ class ActionTerm(ManagerTermBase):
 
 
 class ActionManager(ManagerBase):
+  """Manages action processing for the environment.
+
+  The action manager aggregates multiple action terms, each controlling a different
+  entity or aspect of the simulation. It splits the policy's action tensor and
+  routes each slice to the appropriate action term.
+  """
+
   def __init__(self, cfg: dict[str, ActionTermCfg], env: ManagerBasedRlEnv):
     self.cfg = cfg
     super().__init__(env=env)
