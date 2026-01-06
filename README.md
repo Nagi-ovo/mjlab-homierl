@@ -30,12 +30,20 @@ cd mjlab-homierl
 
 ```bash
 uv run train Mjlab-Homie-Unitree-H1 --env.scene.num-envs 4096
+
+uv run train Mjlab-Homie-Unitree-H1 \
+  --gpu-ids 0 1 \
+  --env.scene.num-envs 4096
 ```
 
 ### Train (with robotiq hands)
 
 ```bash
 uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
+
+uv run train Mjlab-Homie-Unitree-H1-with_hands \
+  --gpu-ids 0 1 \
+  --env.scene.num-envs 4096
 ```
 
 ### Play (w/o hands)
