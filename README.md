@@ -97,6 +97,11 @@ uv run play Mjlab-Your-Task-Id --agent random  # Sends uniform random actions.
 - [x] **Velocity/height tracking**: Dual tracking rewards for locomotion and squatting
 - [x] **Posture rewards**: Variable posture constraints (tighter when standing, looser when walking/running)
 
+#### 4. Disturbance Randomization (Random Push + Hand Load)
+- [x] **Random push via external wrenches**: Periodic horizontal force pulses applied to the base (`pelvis`) to simulate external disturbances (see `src/mjlab/tasks/homie/config/h1/env_cfgs.py`)
+- [x] **Hand load (0–5kg)**: Constant downward force per hand (per-env, sampled once) applied via `xfrc_applied`; uses wrist links when hands are enabled, otherwise elbow links
+- [x] **No curriculum**: Push and hand load are active from the start at full range
+
 ### ⚠️ **Missing/Different Components**
 
 #### 1. Upper-Body Motion Details
@@ -158,7 +163,7 @@ uv run play Mjlab-Your-Task-Id --agent random  # Sends uniform random actions.
 
 
 #### 2. Domain Randomization
-- [ ] **Hand payload mass randomization**: Original randomizes left/right hand masses separately
+- [ ] **Hand payload mass randomization**: Not implemented as *mass* changes in MuJoCo; mjlab-homierl applies an equivalent downward load (0–5kg per hand) via external wrenches instead
 
 <details>
 <summary>Original isaacgym implementation</summary>
@@ -292,7 +297,7 @@ uv run play Mjlab-Your-Task-Id --agent random  # Sends uniform random actions.
 
 </details>
 
-- [ ] **Push interval tuning**: Original has separate `upper_interval` (1 step) vs `push_interval` (4s)
+- [ ] **Random push implementation**: mjlab-homierl implements periodic pushes (4s cadence) but uses MuJoCo external wrenches instead of instantaneous base-velocity impulses
 
 <details>
 <summary>Original isaacgym implementation</summary>
