@@ -23,7 +23,14 @@ class CurriculumTermCfg(ManagerTermBaseCfg):
   curriculum learning strategies (e.g., gradually increasing task difficulty).
   """
 
-  pass
+  env_group: str | None = None
+  """Optional environment group to apply this curriculum term to.
+
+  When set, the curriculum manager filters the incoming ``env_ids`` to those
+  belonging to the named environment group before invoking the term. This enables
+  applying different curricula to different subsets of environments without
+  hard-coding indices.
+  """
 
 
 class CurriculumManager(ManagerBase):

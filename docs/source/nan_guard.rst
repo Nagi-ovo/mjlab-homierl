@@ -13,7 +13,7 @@ TL;DR
 
 .. code-block:: bash
 
-    uv run train.py --enable-nan-guard True
+    uv run train <task_id> --enable-nan-guard True
 
 
 This will automatically capture and save simulation states when NaN/Inf is

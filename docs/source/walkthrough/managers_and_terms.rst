@@ -15,27 +15,29 @@
 1) TermCfg：用 dataclass 描述“怎么构建/怎么调用”
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-路径：``src/mjlab/managers/manager_term_config.py``
+路径：``src/mjlab/managers/manager_base.py``（``ManagerTermBaseCfg``）+ ``src/mjlab/managers/*_manager.py``（各类 ``*TermCfg``）
 
 - ``RewardTermCfg`` / ``TerminationTermCfg`` / ``CurriculumTermCfg`` / ``EventTermCfg``：
   继承 ``ManagerTermBaseCfg``，核心字段是 ``func`` 和 ``params`` （以及 reward 的 ``weight`` 等）。
 - ``ObservationTermCfg``：额外定义 noise/clip/scale/delay/history 的处理管线。
 - ``ActionTermCfg``：是抽象类，要求实现 ``build(env) -> ActionTerm``。
-- ``CommandTermCfg``：持有 ``class_type``，由 ``CommandManager`` 直接实例化 term。
+- ``CommandTermCfg``：是抽象类，要求实现 ``build(env) -> CommandTerm``（``CommandManager`` 通过它构建命令 term）。
 
 .. code-block:: python
 
-   # file: src/mjlab/managers/manager_term_config.py
+   # file: src/mjlab/managers/manager_base.py
    @dataclass
    class ManagerTermBaseCfg:
        func: Any
        params: dict[str, Any] = field(default_factory=lambda: {})
 
+   # file: src/mjlab/managers/reward_manager.py
    @dataclass(kw_only=True)
    class RewardTermCfg(ManagerTermBaseCfg):
        func: Any
        weight: float
 
+   # file: src/mjlab/managers/observation_manager.py
    @dataclass
    class ObservationTermCfg(ManagerTermBaseCfg):
        # Processing pipeline: compute → noise → clip → scale → delay → history.
@@ -270,5 +272,4 @@ CurriculumManager：在 reset 前/时更新“训练日程”
 .. note::
 
    只有当 term 对象提供 ``reset`` 方法时，manager 才会在 episode reset 时调用它（见各 manager 的 ``_class_term_cfgs`` 逻辑）。
-
 

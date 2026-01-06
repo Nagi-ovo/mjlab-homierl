@@ -41,13 +41,13 @@ uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
 ### Play (w/o hands)
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1 --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
+uv run play Mjlab-Homie-Unitree-H1 --checkpoint-file MODEL_PATH --num-envs 30 --viewer viser
 ```
 
 ### Play (with robotiq hands)
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint_file MODEL_PATH --num-envs 30 --viewer viser
+uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint-file MODEL_PATH --num-envs 30 --viewer viser
 ```
 
 ---

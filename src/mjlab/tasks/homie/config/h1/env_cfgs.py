@@ -13,13 +13,10 @@ from mjlab.asset_zoo.robots.unitree_h1.h1_constants import (
 )
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
-from mjlab.managers.action_manager import ActionTerm
-from mjlab.managers.manager_term_config import (
-  ActionTermCfg,
-  CurriculumTermCfg,
-  EventTermCfg,
-  RewardTermCfg,
-)
+from mjlab.managers.action_manager import ActionTerm, ActionTermCfg
+from mjlab.managers.curriculum_manager import CurriculumTermCfg
+from mjlab.managers.event_manager import EventTermCfg
+from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.homie import mdp
 from mjlab.tasks.homie.homie_env_cfg import make_homie_env_cfg

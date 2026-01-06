@@ -74,7 +74,9 @@ Step 1：写 base cfg（只定义任务逻辑，不绑特定机器人）
 
    # file: src/mjlab/tasks/my_task/my_task_env_cfg.py
    from mjlab.envs import ManagerBasedRlEnvCfg
-   from mjlab.managers.manager_term_config import ObservationGroupCfg, ObservationTermCfg, RewardTermCfg, TerminationTermCfg
+   from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
+   from mjlab.managers.reward_manager import RewardTermCfg
+   from mjlab.managers.termination_manager import TerminationTermCfg
    from mjlab.managers.scene_entity_config import SceneEntityCfg
    from mjlab.scene import SceneCfg
    from mjlab.sim import SimulationCfg, MujocoCfg
@@ -178,5 +180,3 @@ Step 5：先 play（dummy agent）再 train
 - **SceneEntityCfg 未补齐**：base cfg 里留了 ``geom_names=()`` / ``site_names=()``，robot override 忘记填会导致 ids 解析为空或不符合预期。
 - **Python 循环太多**：4096 env 下会直接变慢；优先用 torch 向量化。
 - **tracking motion_file 没注入**：tracking 类任务请按 train.py 的方式走（``--registry-name`` 或 ``--motion-file``）。
-
-
