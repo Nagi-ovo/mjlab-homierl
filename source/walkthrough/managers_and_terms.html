@@ -507,25 +507,27 @@ document.write(`
 <h2>三层抽象：TermCfg → Term → Manager<a class="headerlink" href="#termcfg-term-manager" title="Link to this heading">#</a></h2>
 <section id="termcfg-dataclass">
 <h3>1) TermCfg：用 dataclass 描述“怎么构建/怎么调用”<a class="headerlink" href="#termcfg-dataclass" title="Link to this heading">#</a></h3>
-<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/manager_term_config.py</span></code></p>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/manager_base.py``（``ManagerTermBaseCfg</span></code>）+ <code class="docutils literal notranslate"><span class="pre">src/mjlab/managers/*_manager.py``（各类</span> <span class="pre">``*TermCfg</span></code>）</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">RewardTermCfg</span></code> / <code class="docutils literal notranslate"><span class="pre">TerminationTermCfg</span></code> / <code class="docutils literal notranslate"><span class="pre">CurriculumTermCfg</span></code> / <code class="docutils literal notranslate"><span class="pre">EventTermCfg</span></code>：
 继承 <code class="docutils literal notranslate"><span class="pre">ManagerTermBaseCfg</span></code>，核心字段是 <code class="docutils literal notranslate"><span class="pre">func</span></code> 和 <code class="docutils literal notranslate"><span class="pre">params</span></code> （以及 reward 的 <code class="docutils literal notranslate"><span class="pre">weight</span></code> 等）。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ObservationTermCfg</span></code>：额外定义 noise/clip/scale/delay/history 的处理管线。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ActionTermCfg</span></code>：是抽象类，要求实现 <code class="docutils literal notranslate"><span class="pre">build(env)</span> <span class="pre">-&gt;</span> <span class="pre">ActionTerm</span></code>。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">CommandTermCfg</span></code>：持有 <code class="docutils literal notranslate"><span class="pre">class_type</span></code>，由 <code class="docutils literal notranslate"><span class="pre">CommandManager</span></code> 直接实例化 term。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CommandTermCfg</span></code>：是抽象类，要求实现 <code class="docutils literal notranslate"><span class="pre">build(env)</span> <span class="pre">-&gt;</span> <span class="pre">CommandTerm``（``CommandManager</span></code> 通过它构建命令 term）。</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/manager_term_config.py</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/managers/manager_base.py</span>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ManagerTermBaseCfg</span><span class="p">:</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">Any</span>
     <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{})</span>
 
+<span class="c1"># file: src/mjlab/managers/reward_manager.py</span>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RewardTermCfg</span><span class="p">(</span><span class="n">ManagerTermBaseCfg</span><span class="p">):</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">Any</span>
     <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span>
 
+<span class="c1"># file: src/mjlab/managers/observation_manager.py</span>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ObservationTermCfg</span><span class="p">(</span><span class="n">ManagerTermBaseCfg</span><span class="p">):</span>
     <span class="c1"># Processing pipeline: compute → noise → clip → scale → delay → history.</span>

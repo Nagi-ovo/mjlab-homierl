@@ -81,7 +81,7 @@ My training crashes with NaN errors
       from dataclasses import dataclass, field
 
       from mjlab.envs.mdp.terminations import nan_detection
-      from mjlab.managers.manager_term_config import TerminationTermCfg
+      from mjlab.managers.termination_manager import TerminationTermCfg
 
       @dataclass
       class TerminationCfg:
@@ -109,11 +109,11 @@ My training crashes with NaN errors
 
    Enable ``nan_guard`` to capture the simulation state when NaNs occur:
 
-   .. code-block:: bash
+	   .. code-block:: bash
 
-      uv run train.py --enable-nan-guard True
+	      uv run train <task_id> --enable-nan-guard True
 
-   See the :doc:`NaN Guard documentation <nan_guard>` for details.
+	   See the :doc:`NaN Guard documentation <nan_guard>` for details.
 
    The ``nan_guard`` tool makes it easier to:
 

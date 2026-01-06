@@ -563,7 +563,7 @@ you handle this:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.envs.mdp.terminations</span><span class="w"> </span><span class="kn">import</span> <span class="n">nan_detection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.manager_term_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerminationTermCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.termination_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerminationTermCfg</span>
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TerminationCfg</span><span class="p">:</span>
@@ -591,10 +591,12 @@ termination.</p>
 <li><p><strong>For debugging</strong> - NaN guard</p></li>
 </ol>
 <p>Enable <code class="docutils literal notranslate"><span class="pre">nan_guard</span></code> to capture the simulation state when NaNs occur:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>train.py<span class="w"> </span>--enable-nan-guard<span class="w"> </span>True
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </span>&lt;task_id&gt;<span class="w"> </span>--enable-nan-guard<span class="w"> </span>True
 </pre></div>
 </div>
 <p>See the <a class="reference internal" href="nan_guard.html"><span class="doc">NaN Guard documentation</span></a> for details.</p>
+</div></blockquote>
 <p>The <code class="docutils literal notranslate"><span class="pre">nan_guard</span></code> tool makes it easier to:</p>
 <ul class="simple">
 <li><p>Inspect the simulation state at the moment NaNs appear.</p></li>

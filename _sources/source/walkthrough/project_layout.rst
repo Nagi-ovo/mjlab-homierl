@@ -34,7 +34,7 @@
    * - ``src/mjlab/rl/``
      - 与 RSL-RL 的接口：VecEnv wrapper、policy/algorithm cfg dataclass。
    * - ``src/mjlab/scripts/``
-     - CLI 入口：``train.py``、``play.py``、demo、工具脚本等。
+     - CLI 入口：``train``、``play``（实现见 ``train.py``、``play.py``）、demo、工具脚本等。
    * - ``docs/``
      - Sphinx 文档（你正在读的这份 walkthrough 也在这里）。
 
@@ -53,5 +53,4 @@
 - base task cfg：``src/mjlab/tasks/tracking/tracking_env_cfg.py``
 - g1 override + 注册：``src/mjlab/tasks/tracking/config/g1/*``
 - MDP terms：``src/mjlab/tasks/tracking/mdp/*``
-
 

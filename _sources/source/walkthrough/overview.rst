@@ -71,11 +71,10 @@
 --------------------
 
 - **环境生命周期 + manager 加载顺序**：``src/mjlab/envs/manager_based_rl_env.py``
-- **manager/term 的基类与“函数 vs 类 term”机制**：``src/mjlab/managers/manager_base.py``、``src/mjlab/managers/manager_term_config.py``
+- **manager/term 的基类与“函数 vs 类 term”机制**：``src/mjlab/managers/manager_base.py`` + ``src/mjlab/managers/*_manager.py``
 - **SceneEntityCfg（延迟绑定：名字 → ids）**：``src/mjlab/managers/scene_entity_config.py``
 - **两个 g1 任务**：
 
   - velocity：``src/mjlab/tasks/velocity/velocity_env_cfg.py`` + ``src/mjlab/tasks/velocity/config/g1/env_cfgs.py``
   - tracking：``src/mjlab/tasks/tracking/tracking_env_cfg.py`` + ``src/mjlab/tasks/tracking/config/g1/env_cfgs.py``
-
 

@@ -414,22 +414,21 @@ document.write(`
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.envs</span><span class="w"> </span><span class="kn">import</span> <span class="n">types</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.envs.mdp.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">reset_scene_to_default</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.action_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ActionManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.command_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">CommandManager</span><span class="p">,</span> <span class="n">NullCommandManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.curriculum_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">CurriculumManager</span><span class="p">,</span> <span class="n">NullCurriculumManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.event_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.manager_term_config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-  <span class="n">ActionTermCfg</span><span class="p">,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.action_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ActionManager</span><span class="p">,</span> <span class="n">ActionTermCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.command_manager</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+  <span class="n">CommandManager</span><span class="p">,</span>
   <span class="n">CommandTermCfg</span><span class="p">,</span>
-  <span class="n">CurriculumTermCfg</span><span class="p">,</span>
-  <span class="n">EventTermCfg</span><span class="p">,</span>
-  <span class="n">ObservationGroupCfg</span><span class="p">,</span>
-  <span class="n">RewardTermCfg</span><span class="p">,</span>
-  <span class="n">TerminationTermCfg</span><span class="p">,</span>
+  <span class="n">NullCommandManager</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.observation_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.reward_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">RewardManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.termination_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerminationManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.curriculum_manager</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+  <span class="n">CurriculumManager</span><span class="p">,</span>
+  <span class="n">CurriculumTermCfg</span><span class="p">,</span>
+  <span class="n">NullCurriculumManager</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.event_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventManager</span><span class="p">,</span> <span class="n">EventTermCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.observation_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationGroupCfg</span><span class="p">,</span> <span class="n">ObservationManager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.reward_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">RewardManager</span><span class="p">,</span> <span class="n">RewardTermCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.termination_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerminationManager</span><span class="p">,</span> <span class="n">TerminationTermCfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.scene</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scene</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.scene.scene</span><span class="w"> </span><span class="kn">import</span> <span class="n">SceneCfg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.sim</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimulationCfg</span>
@@ -447,14 +446,36 @@ document.write(`
 <a class="viewcode-back" href="../../../source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ManagerBasedRlEnvCfg</span><span class="p">:</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Configuration for a manager-based RL environment.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Configuration for a manager-based RL environment.</span>
+
+<span class="sd">  This config defines all aspects of an RL environment: the physical scene,</span>
+<span class="sd">  observations, actions, rewards, terminations, and optional features like</span>
+<span class="sd">  commands and curriculum learning.</span>
+
+<span class="sd">  The environment step size is ``sim.mujoco.timestep * decimation``. For example,</span>
+<span class="sd">  with a 2ms physics timestep and decimation=10, the environment runs at 50Hz.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
 
   <span class="c1"># Base environment configuration.</span>
+
   <span class="n">decimation</span><span class="p">:</span> <span class="nb">int</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Number of simulation steps per environment step.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Number of physics simulation steps per environment step. Higher values mean</span>
+<span class="sd">  coarser control frequency. Environment step duration = physics_dt * decimation.&quot;&quot;&quot;</span>
+
   <span class="n">scene</span><span class="p">:</span> <span class="n">SceneCfg</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Scene configuration defining terrain, entities, and sensors. The scene</span>
+<span class="sd">  specifies ``num_envs``, the number of parallel environments.&quot;&quot;&quot;</span>
+
   <span class="n">observations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ObservationGroupCfg</span><span class="p">]</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Observation groups configuration. Each group (e.g., &quot;policy&quot;, &quot;critic&quot;) contains</span>
+<span class="sd">  observation terms that are concatenated. Groups can have different settings for</span>
+<span class="sd">  noise, history, and delay. Can be empty for environments without observations.&quot;&quot;&quot;</span>
+
   <span class="n">actions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ActionTermCfg</span><span class="p">]</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Action terms configuration. Each term controls a specific entity/aspect</span>
+<span class="sd">  (e.g., joint positions). Action dimensions are concatenated across terms.</span>
+<span class="sd">  Can be empty for observation-only environments.&quot;&quot;&quot;</span>
+
   <span class="n">events</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">EventTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
     <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span>
       <span class="s2">&quot;reset_scene_to_default&quot;</span><span class="p">:</span> <span class="n">EventTermCfg</span><span class="p">(</span>
@@ -463,25 +484,44 @@ document.write(`
       <span class="p">)</span>
     <span class="p">}</span>
   <span class="p">)</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Event terms for domain randomization and state resets. Default includes</span>
+<span class="sd">  ``reset_scene_to_default`` which resets entities to their initial state.</span>
+<span class="sd">  Can be set to empty to disable all events including default reset.&quot;&quot;&quot;</span>
+
   <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Random seed for reproducibility. If None, a random seed is used. The actual</span>
+<span class="sd">  seed used is stored back into this field after initialization.&quot;&quot;&quot;</span>
+
   <span class="n">sim</span><span class="p">:</span> <span class="n">SimulationCfg</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">SimulationCfg</span><span class="p">)</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Simulation configuration including physics timestep, solver iterations,</span>
+<span class="sd">  contact parameters, and NaN guarding.&quot;&quot;&quot;</span>
+
   <span class="n">viewer</span><span class="p">:</span> <span class="n">ViewerConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ViewerConfig</span><span class="p">)</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Viewer configuration for rendering (camera position, resolution, etc.).&quot;&quot;&quot;</span>
 
   <span class="c1"># RL-specific configuration.</span>
+
   <span class="n">episode_length_s</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Duration of an episode (in seconds).</span>
 
 <span class="sd">  Episode length in steps is computed as:</span>
 <span class="sd">    ceil(episode_length_s / (sim.mujoco.timestep * decimation))</span>
 <span class="sd">  &quot;&quot;&quot;</span>
+
   <span class="n">rewards</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">RewardTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Reward terms configuration.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Reward terms configuration. Can be empty for unsupervised environments.&quot;&quot;&quot;</span>
+
   <span class="n">terminations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TerminationTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Termination terms configuration.&quot;&quot;&quot;</span>
-  <span class="n">commands</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CommandTermCfg</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Command terms configuration. If None, no commands are used.&quot;&quot;&quot;</span>
-  <span class="n">curriculum</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CurriculumTermCfg</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Curriculum terms configuration. If None, no curriculum is used.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Termination terms configuration. Can be empty for infinite episodes (no</span>
+<span class="sd">  terminations). Use ``mdp.time_out`` with ``time_out=True`` for episode time limits.&quot;&quot;&quot;</span>
+
+  <span class="n">commands</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CommandTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Command generator terms (e.g., velocity targets). Can be empty if the</span>
+<span class="sd">  task has no goal commands.&quot;&quot;&quot;</span>
+
+  <span class="n">curriculum</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CurriculumTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Curriculum terms for adaptive difficulty. Can be empty to disable.&quot;&quot;&quot;</span>
+
   <span class="n">is_finite_horizon</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Whether the task has a finite or infinite horizon. Defaults to False (infinite).</span>
 
@@ -491,6 +531,7 @@ document.write(`
 <span class="sd">    receives a truncated done signal to bootstrap the value of continuing beyond the</span>
 <span class="sd">    limit.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
+
   <span class="n">scale_rewards_by_dt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Whether to multiply rewards by the environment step duration (dt).</span>
 
@@ -647,7 +688,7 @@ document.write(`
 
     <span class="c1"># Command manager (must be before observation manager since observations</span>
     <span class="c1"># may reference commands).</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">commands</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">commands</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">command_manager</span> <span class="o">=</span> <span class="n">CommandManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">commands</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">command_manager</span> <span class="o">=</span> <span class="n">NullCommandManager</span><span class="p">()</span>
@@ -667,7 +708,7 @@ document.write(`
       <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">rewards</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">scale_by_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">scale_rewards_by_dt</span>
     <span class="p">)</span>
     <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[INFO] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reward_manager</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">curriculum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">curriculum</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">curriculum_manager</span> <span class="o">=</span> <span class="n">CurriculumManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">curriculum</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">curriculum_manager</span> <span class="o">=</span> <span class="n">NullCurriculumManager</span><span class="p">()</span>

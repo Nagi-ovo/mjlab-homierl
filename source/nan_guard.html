@@ -491,7 +491,7 @@ numerical instability issues.</p>
 <section id="tl-dr">
 <h2>TL;DR<a class="headerlink" href="#tl-dr" title="Link to this heading">#</a></h2>
 <p><strong>Running into NaN issues during training?</strong> Enable the NaN guard with a single flag:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>train.py<span class="w"> </span>--enable-nan-guard<span class="w"> </span>True
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </span>&lt;task_id&gt;<span class="w"> </span>--enable-nan-guard<span class="w"> </span>True
 </pre></div>
 </div>
 <p>This will automatically capture and save simulation states when NaN/Inf is
@@ -584,7 +584,7 @@ negligible overhead. When enabled, overhead scales with <code class="docutils li
 <p>While <code class="docutils literal notranslate"><span class="pre">nan_guard</span></code> helps <strong>debug</strong> NaN issues by capturing states, you can also
 <strong>prevent</strong> training crashes using the <code class="docutils literal notranslate"><span class="pre">nan_detection</span></code> termination:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.envs.mdp.terminations</span><span class="w"> </span><span class="kn">import</span> <span class="n">nan_detection</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.manager_term_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerminationTermCfg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.managers.termination_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">TerminationTermCfg</span>
 
 <span class="c1"># In your termination config:</span>
 <span class="n">nan_term</span><span class="p">:</span> <span class="n">TerminationTermCfg</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
