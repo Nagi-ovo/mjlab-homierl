@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -526,7 +527,19 @@ document.write(`
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensorCfg.__init__">(mjlab.sensor.ContactSensorCfg method)</a>
 </li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.GridPatternCfg.__init__">(mjlab.sensor.GridPatternCfg method)</a>
+</li>
         <li><a href="source/api/sensor.html#mjlab.sensor.ObjRef.__init__">(mjlab.sensor.ObjRef method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg.__init__">(mjlab.sensor.PinholeCameraPatternCfg method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.__init__">(mjlab.sensor.RayCastData method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor.__init__">(mjlab.sensor.RayCastSensor method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.__init__">(mjlab.sensor.RayCastSensorCfg method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.__init__">(mjlab.sensor.RayCastSensorCfg.VizCfg method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.SensorCfg.__init__">(mjlab.sensor.SensorCfg method)</a>
 </li>
@@ -687,10 +700,10 @@ document.write(`
       </ul></li>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxFlatTerrainCfg">BoxFlatTerrainCfg (class in mjlab.terrains)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxInvertedPyramidStairsTerrainCfg">BoxInvertedPyramidStairsTerrainCfg (class in mjlab.terrains)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxPyramidStairsTerrainCfg">BoxPyramidStairsTerrainCfg (class in mjlab.terrains)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxRandomGridTerrainCfg">BoxRandomGridTerrainCfg (class in mjlab.terrains)</a>
@@ -724,9 +737,13 @@ document.write(`
 </li>
         <li><a href="source/api/entity.html#mjlab.entity.EntityCfg.build">(mjlab.entity.EntityCfg method)</a>
 </li>
+        <li><a href="source/api/managers.html#mjlab.managers.CommandTermCfg.build">(mjlab.managers.CommandTermCfg method)</a>
+</li>
         <li><a href="source/api/sensor.html#mjlab.sensor.BuiltinSensorCfg.build">(mjlab.sensor.BuiltinSensorCfg method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensorCfg.build">(mjlab.sensor.ContactSensorCfg method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.build">(mjlab.sensor.RayCastSensorCfg method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.SensorCfg.build">(mjlab.sensor.SensorCfg method)</a>
 </li>
@@ -764,8 +781,6 @@ document.write(`
       <li><a href="source/api/sim.html#mjlab.sim.MujocoCfg.ccd_iterations">ccd_iterations (mjlab.sim.MujocoCfg attribute)</a>
 </li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnv.cfg">cfg (mjlab.envs.ManagerBasedRlEnv attribute)</a>
-</li>
-      <li><a href="source/api/managers.html#mjlab.managers.CommandTermCfg.class_type">class_type (mjlab.managers.CommandTermCfg attribute)</a>
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.WarpBridge.clear_cache">clear_cache() (mjlab.sim.WarpBridge method)</a>
 </li>
@@ -906,6 +921,8 @@ document.write(`
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensor.data">(mjlab.sensor.ContactSensor property)</a>
 </li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor.data">(mjlab.sensor.RayCastSensor property)</a>
+</li>
         <li><a href="source/api/sensor.html#mjlab.sensor.Sensor.data">(mjlab.sensor.Sensor property)</a>
 </li>
         <li><a href="source/api/sim.html#mjlab.sim.Simulation.data">(mjlab.sim.Simulation property)</a>
@@ -918,7 +935,11 @@ document.write(`
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensorCfg.debug">debug (mjlab.sensor.ContactSensorCfg attribute)</a>
 </li>
       <li><a href="source/api/managers.html#mjlab.managers.CommandTermCfg.debug_vis">debug_vis (mjlab.managers.CommandTermCfg attribute)</a>
+
+      <ul>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.debug_vis">(mjlab.sensor.RayCastSensorCfg attribute)</a>
 </li>
+      </ul></li>
       <li><a href="source/api/managers.html#mjlab.managers.CommandManager.debug_vis">debug_vis() (mjlab.managers.CommandManager method)</a>
 
       <ul>
@@ -926,11 +947,15 @@ document.write(`
 </li>
         <li><a href="source/api/managers.html#mjlab.managers.NullCommandManager.debug_vis">(mjlab.managers.NullCommandManager method)</a>
 </li>
-      </ul></li>
-      <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.decimation">decimation (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor.debug_vis">(mjlab.sensor.RayCastSensor method)</a>
 </li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.Sensor.debug_vis">(mjlab.sensor.Sensor method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.decimation">decimation (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
+</li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.default_joint_pos">default_joint_pos (mjlab.entity.EntityData attribute)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.default_joint_pos_limits">default_joint_pos_limits (mjlab.entity.EntityData attribute)</a>
@@ -967,7 +992,13 @@ document.write(`
       </ul></li>
       <li><a href="source/api/terrains.html#mjlab.terrains.TerrainGeneratorCfg.difficulty_range">difficulty_range (mjlab.terrains.TerrainGeneratorCfg attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.GridPatternCfg.direction">direction (mjlab.sensor.GridPatternCfg attribute)</a>
+</li>
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.dist">dist (mjlab.sensor.ContactData attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.dist_history">dist_history (mjlab.sensor.ContactData attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.distances">distances (mjlab.sensor.RayCastData attribute)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.HfRandomUniformTerrainCfg.downsampled_scale">downsampled_scale (mjlab.terrains.HfRandomUniformTerrainCfg attribute)</a>
 </li>
@@ -995,6 +1026,8 @@ document.write(`
         <li><a href="source/api/sensor.html#mjlab.sensor.BuiltinSensor.edit_spec">(mjlab.sensor.BuiltinSensor method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensor.edit_spec">(mjlab.sensor.ContactSensor method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor.edit_spec">(mjlab.sensor.RayCastSensor method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.Sensor.edit_spec">(mjlab.sensor.Sensor method)</a>
 </li>
@@ -1057,6 +1090,8 @@ document.write(`
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactMatch.exclude">exclude (mjlab.sensor.ContactMatch attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.exclude_parent_body">exclude_parent_body (mjlab.sensor.RayCastSensorCfg attribute)</a>
+</li>
       <li><a href="source/api/sim.html#mjlab.sim.Simulation.expand_model_fields">expand_model_fields() (mjlab.sim.Simulation method)</a>
 </li>
       <li><a href="source/api/scene.html#mjlab.scene.SceneCfg.extent">extent (mjlab.scene.SceneCfg attribute)</a>
@@ -1091,15 +1126,21 @@ document.write(`
         <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.force">(mjlab.sensor.ContactData attribute)</a>
 </li>
       </ul></li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.force_history">force_history (mjlab.sensor.ContactData attribute)</a>
+</li>
       <li><a href="source/api/sim.html#mjlab.sim.Simulation.forward">forward() (mjlab.sim.Simulation method)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.forward_vec_b">forward_vec_b (mjlab.entity.EntityData attribute)</a>
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.found">found (mjlab.sensor.ContactData attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg.fovy">fovy (mjlab.sensor.PinholeCameraPatternCfg attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/actuator.html#mjlab.actuator.BuiltinMuscleActuatorCfg.fpmax">fpmax (mjlab.actuator.BuiltinMuscleActuatorCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.frame">frame (mjlab.sensor.RayCastSensorCfg attribute)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityIndexing.free_joint_q_adr">free_joint_q_adr (mjlab.entity.EntityIndexing attribute)</a>
 </li>
@@ -1108,6 +1149,10 @@ document.write(`
       <li><a href="source/api/actuator.html#mjlab.actuator.ActuatorCfg.frictionloss">frictionloss (mjlab.actuator.ActuatorCfg attribute)</a>
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.BuiltinSensor.from_existing">from_existing() (mjlab.sensor.BuiltinSensor class method)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg.from_intrinsic_matrix">from_intrinsic_matrix() (mjlab.sensor.PinholeCameraPatternCfg class method)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg.from_mujoco_camera">from_mujoco_camera() (mjlab.sensor.PinholeCameraPatternCfg class method)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxFlatTerrainCfg.function">function() (mjlab.terrains.BoxFlatTerrainCfg method)</a>
 
@@ -1143,6 +1188,12 @@ document.write(`
       </ul></li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.generalized_force">generalized_force (mjlab.entity.EntityData property)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.GridPatternCfg.generate_rays">generate_rays() (mjlab.sensor.GridPatternCfg method)</a>
+
+      <ul>
+        <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg.generate_rays">(mjlab.sensor.PinholeCameraPatternCfg method)</a>
+</li>
+      </ul></li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.geom_ang_vel_w">geom_ang_vel_w (mjlab.entity.EntityData property)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityIndexing.geom_ids">geom_ids (mjlab.entity.EntityIndexing attribute)</a>
@@ -1209,6 +1260,8 @@ document.write(`
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxRandomGridTerrainCfg.grid_width">grid_width (mjlab.terrains.BoxRandomGridTerrainCfg attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.GridPatternCfg">GridPatternCfg (class in mjlab.sensor)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1221,17 +1274,31 @@ document.write(`
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.heading_w">heading_w (mjlab.entity.EntityData property)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg.height">height (mjlab.sensor.PinholeCameraPatternCfg attribute)</a>
+</li>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxRandomGridTerrainCfg.height_merge_threshold">height_merge_threshold (mjlab.terrains.BoxRandomGridTerrainCfg attribute)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.HfPyramidSlopedTerrainCfg">HfPyramidSlopedTerrainCfg (class in mjlab.terrains)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.HfRandomUniformTerrainCfg">HfRandomUniformTerrainCfg (class in mjlab.terrains)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/terrains.html#mjlab.terrains.HfWaveTerrainCfg">HfWaveTerrainCfg (class in mjlab.terrains)</a>
 </li>
       <li><a href="source/api/actuator.html#mjlab.actuator.LearnedMlpActuatorCfg.history_length">history_length (mjlab.actuator.LearnedMlpActuatorCfg attribute)</a>
+
+      <ul>
+        <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensorCfg.history_length">(mjlab.sensor.ContactSensorCfg attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.hit_color">hit_color (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.hit_pos_w">hit_pos_w (mjlab.sensor.RayCastData attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.hit_sphere_color">hit_sphere_color (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.hit_sphere_radius">hit_sphere_radius (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxPyramidStairsTerrainCfg.holes">holes (mjlab.terrains.BoxPyramidStairsTerrainCfg attribute)</a>
 
@@ -1261,6 +1328,8 @@ document.write(`
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.MujocoCfg.impratio">impratio (mjlab.sim.MujocoCfg attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.include_geom_groups">include_geom_groups (mjlab.sensor.RayCastSensorCfg attribute)</a>
+</li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.indexing">indexing (mjlab.entity.EntityData attribute)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityCfg.init_state">init_state (mjlab.entity.EntityCfg attribute)</a>
@@ -1283,6 +1352,8 @@ document.write(`
         <li><a href="source/api/sensor.html#mjlab.sensor.BuiltinSensor.initialize">(mjlab.sensor.BuiltinSensor method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensor.initialize">(mjlab.sensor.ContactSensor method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor.initialize">(mjlab.sensor.RayCastSensor method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.Sensor.initialize">(mjlab.sensor.Sensor method)</a>
 </li>
@@ -1415,6 +1486,8 @@ document.write(`
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityCfg.materials">materials (mjlab.entity.EntityCfg attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.max_distance">max_distance (mjlab.sensor.RayCastSensorCfg attribute)</a>
+</li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnv.max_episode_length">max_episode_length (mjlab.envs.ManagerBasedRlEnv property)</a>
 </li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnv.max_episode_length_s">max_episode_length_s (mjlab.envs.ManagerBasedRlEnv property)</a>
@@ -1426,6 +1499,8 @@ document.write(`
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxRandomGridTerrainCfg.merge_similar_heights">merge_similar_heights (mjlab.terrains.BoxRandomGridTerrainCfg attribute)</a>
 </li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnv.metadata">metadata (mjlab.envs.ManagerBasedRlEnv attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.miss_color">miss_color (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.Simulation.mj_data">mj_data (mjlab.sim.Simulation property)</a>
 </li>
@@ -1537,6 +1612,8 @@ document.write(`
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.ObjRef.name">(mjlab.sensor.ObjRef attribute)</a>
 </li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.name">(mjlab.sensor.RayCastSensorCfg attribute)</a>
+</li>
         <li><a href="source/api/sensor.html#mjlab.sensor.SensorCfg.name">(mjlab.sensor.SensorCfg attribute)</a>
 </li>
       </ul></li>
@@ -1554,12 +1631,18 @@ document.write(`
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.normal">normal (mjlab.sensor.ContactData attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.normal_color">normal_color (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.normal_length">normal_length (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.normals_w">normals_w (mjlab.sensor.RayCastData attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/managers.html#mjlab.managers.NullCommandManager">NullCommandManager (class in mjlab.managers)</a>
 </li>
       <li><a href="source/api/managers.html#mjlab.managers.NullCurriculumManager">NullCurriculumManager (class in mjlab.managers)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.num_actuators">num_actuators (mjlab.entity.Entity property)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.num_bodies">num_bodies (mjlab.entity.Entity property)</a>
@@ -1579,6 +1662,8 @@ document.write(`
       <li><a href="source/api/entity.html#mjlab.entity.Entity.num_geoms">num_geoms (mjlab.entity.Entity property)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.num_joints">num_joints (mjlab.entity.Entity property)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor.num_rays">num_rays (mjlab.sensor.RayCastSensor property)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.TerrainGeneratorCfg.num_rows">num_rows (mjlab.terrains.TerrainGeneratorCfg attribute)</a>
 </li>
@@ -1609,8 +1694,14 @@ document.write(`
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactMatch.pattern">pattern (mjlab.sensor.ContactMatch attribute)</a>
+
+      <ul>
+        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.pattern">(mjlab.sensor.RayCastSensorCfg attribute)</a>
 </li>
+      </ul></li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnv.physics_dt">physics_dt (mjlab.envs.ManagerBasedRlEnv property)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg">PinholeCameraPatternCfg (class in mjlab.sensor)</a>
 </li>
       <li><a href="source/api/terrains.html#mjlab.terrains.BoxPyramidStairsTerrainCfg.platform_width">platform_width (mjlab.terrains.BoxPyramidStairsTerrainCfg attribute)</a>
 
@@ -1634,6 +1725,8 @@ document.write(`
 </li>
       <li><a href="source/api/actuator.html#mjlab.actuator.LearnedMlpActuatorCfg.pos_scale">pos_scale (mjlab.actuator.LearnedMlpActuatorCfg attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.pos_w">pos_w (mjlab.sensor.RayCastData attribute)</a>
+</li>
       <li><a href="source/api/actuator.html#mjlab.actuator.ActuatorCmd.position_target">position_target (mjlab.actuator.ActuatorCmd attribute)</a>
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.ObjRef.prefixed_name">prefixed_name() (mjlab.sensor.ObjRef method)</a>
@@ -1655,6 +1748,10 @@ document.write(`
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.QUAT_DIM">QUAT_DIM (mjlab.entity.EntityData attribute)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.quat_w">quat_w (mjlab.sensor.RayCastData attribute)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="R">R</h2>
@@ -1663,6 +1760,16 @@ document.write(`
       <li><a href="source/api/terrains.html#mjlab.terrains.TerrainImporter.randomize_env_origins">randomize_env_origins() (mjlab.terrains.TerrainImporter method)</a>
 </li>
       <li><a href="source/api/actuator.html#mjlab.actuator.BuiltinMuscleActuatorCfg.range">range (mjlab.actuator.BuiltinMuscleActuatorCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.ray_alignment">ray_alignment (mjlab.sensor.RayCastSensorCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData">RayCastData (class in mjlab.sensor)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor">RayCastSensor (class in mjlab.sensor)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg">RayCastSensorCfg (class in mjlab.sensor)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg">RayCastSensorCfg.VizCfg (class in mjlab.sensor)</a>
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensorCfg.reduce">reduce (mjlab.sensor.ContactSensorCfg attribute)</a>
 </li>
@@ -1702,10 +1809,12 @@ document.write(`
         <li><a href="source/api/sim.html#mjlab.sim.Simulation.reset">(mjlab.sim.Simulation method)</a>
 </li>
       </ul></li>
-      <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.rewards">rewards (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/api/sensor.html#mjlab.sensor.GridPatternCfg.resolution">resolution (mjlab.sensor.GridPatternCfg attribute)</a>
+</li>
+      <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.rewards">rewards (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
+</li>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.root_body">root_body (mjlab.entity.Entity property)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityIndexing.root_body_id">root_body_id (mjlab.entity.EntityIndexing property)</a>
@@ -1764,6 +1873,8 @@ document.write(`
       </ul></li>
       <li><a href="source/api/actuator.html#mjlab.actuator.BuiltinMuscleActuatorCfg.scale">scale (mjlab.actuator.BuiltinMuscleActuatorCfg attribute)</a>
 </li>
+      <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.scale_rewards_by_dt">scale_rewards_by_dt (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
+</li>
       <li><a href="source/api/scene.html#mjlab.scene.Scene">Scene (class in mjlab.scene)</a>
 </li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.scene">scene (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
@@ -1818,16 +1929,20 @@ document.write(`
 </li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnv.setup_manager_visualizers">setup_manager_visualizers() (mjlab.envs.ManagerBasedRlEnv method)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.show_normals">show_normals (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.show_rays">show_rays (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
+</li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.sim">sim (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.Simulation">Simulation (class in mjlab.sim)</a>
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.SimulationCfg">SimulationCfg (class in mjlab.sim)</a>
 </li>
-      <li><a href="source/api/entity.html#mjlab.entity.EntityData.site_ang_vel_w">site_ang_vel_w (mjlab.entity.EntityData property)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/api/entity.html#mjlab.entity.EntityData.site_ang_vel_w">site_ang_vel_w (mjlab.entity.EntityData property)</a>
+</li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.site_effort_target">site_effort_target (mjlab.entity.EntityData attribute)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityIndexing.site_ids">site_ids (mjlab.entity.EntityIndexing attribute)</a>
@@ -1846,9 +1961,11 @@ document.write(`
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityIndexing.sites">sites (mjlab.entity.EntityIndexing attribute)</a>
 </li>
-      <li><a href="source/api/terrains.html#mjlab.terrains.SubTerrainCfg.size">size (mjlab.terrains.SubTerrainCfg attribute)</a>
+      <li><a href="source/api/sensor.html#mjlab.sensor.GridPatternCfg.size">size (mjlab.sensor.GridPatternCfg attribute)</a>
 
       <ul>
+        <li><a href="source/api/terrains.html#mjlab.terrains.SubTerrainCfg.size">(mjlab.terrains.SubTerrainCfg attribute)</a>
+</li>
         <li><a href="source/api/terrains.html#mjlab.terrains.TerrainGeneratorCfg.size">(mjlab.terrains.TerrainGeneratorCfg attribute)</a>
 </li>
       </ul></li>
@@ -1952,10 +2069,10 @@ document.write(`
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityIndexing.tendons">tendons (mjlab.entity.EntityIndexing attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.terminations">terminations (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/scene.html#mjlab.scene.Scene.terrain">terrain (mjlab.scene.Scene property)</a>
 
       <ul>
@@ -1991,6 +2108,8 @@ document.write(`
       <li><a href="source/api/sim.html#mjlab.sim.TorchArray">TorchArray (class in mjlab.sim)</a>
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.torque">torque (mjlab.sensor.ContactData attribute)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.ContactData.torque_history">torque_history (mjlab.sensor.ContactData attribute)</a>
 </li>
       <li><a href="source/api/actuator.html#mjlab.actuator.LearnedMlpActuatorCfg.torque_scale">torque_scale (mjlab.actuator.LearnedMlpActuatorCfg attribute)</a>
 </li>
@@ -2062,6 +2181,8 @@ document.write(`
       </ul></li>
       <li><a href="source/api/envs.html#mjlab.envs.ManagerBasedRlEnvCfg.viewer">viewer (mjlab.envs.ManagerBasedRlEnvCfg attribute)</a>
 </li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.viz">viz (mjlab.sensor.RayCastSensorCfg attribute)</a>
+</li>
       <li><a href="source/api/actuator.html#mjlab.actuator.BuiltinMuscleActuatorCfg.vmax">vmax (mjlab.actuator.BuiltinMuscleActuatorCfg attribute)</a>
 </li>
   </ul></td>
@@ -2071,6 +2192,8 @@ document.write(`
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/sim.html#mjlab.sim.WarpBridge">WarpBridge (class in mjlab.sim)</a>
+</li>
+      <li><a href="source/api/sensor.html#mjlab.sensor.PinholeCameraPatternCfg.width">width (mjlab.sensor.PinholeCameraPatternCfg attribute)</a>
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.TorchArray.wp_array">wp_array (mjlab.sim.TorchArray property)</a>
 </li>

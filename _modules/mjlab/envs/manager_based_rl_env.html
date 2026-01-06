@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -489,6 +490,13 @@ document.write(`
 <span class="sd">  - **Infinite horizon (False)**: The time limit is an artificial cutoff. The agent</span>
 <span class="sd">    receives a truncated done signal to bootstrap the value of continuing beyond the</span>
 <span class="sd">    limit.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">scale_rewards_by_dt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Whether to multiply rewards by the environment step duration (dt).</span>
+
+<span class="sd">  When True (default), reward values are scaled by step_dt to normalize cumulative</span>
+<span class="sd">  episodic rewards across different simulation frequencies. Set to False for</span>
+<span class="sd">  algorithms that expect unscaled reward signals (e.g., HER, static reward scaling).</span>
 <span class="sd">  &quot;&quot;&quot;</span></div>
 
 
@@ -655,7 +663,9 @@ document.write(`
 
     <span class="bp">self</span><span class="o">.</span><span class="n">termination_manager</span> <span class="o">=</span> <span class="n">TerminationManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">terminations</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
     <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[INFO] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">termination_manager</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">reward_manager</span> <span class="o">=</span> <span class="n">RewardManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">rewards</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">reward_manager</span> <span class="o">=</span> <span class="n">RewardManager</span><span class="p">(</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">rewards</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">scale_by_dt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">scale_rewards_by_dt</span>
+    <span class="p">)</span>
     <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[INFO] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reward_manager</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">curriculum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">curriculum_manager</span> <span class="o">=</span> <span class="n">CurriculumManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">curriculum</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
@@ -780,7 +790,9 @@ document.write(`
 <a class="viewcode-back" href="../../../source/api/envs.html#mjlab.envs.ManagerBasedRlEnv.update_visualizers">[docs]</a>
   <span class="k">def</span><span class="w"> </span><span class="nf">update_visualizers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visualizer</span><span class="p">:</span> <span class="n">DebugVisualizer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager_visualizers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-      <span class="n">mod</span><span class="o">.</span><span class="n">debug_vis</span><span class="p">(</span><span class="n">visualizer</span><span class="p">)</span></div>
+      <span class="n">mod</span><span class="o">.</span><span class="n">debug_vis</span><span class="p">(</span><span class="n">visualizer</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">sensors</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+      <span class="n">sensor</span><span class="o">.</span><span class="n">debug_vis</span><span class="p">(</span><span class="n">visualizer</span><span class="p">)</span></div>
 
 
   <span class="c1"># Environment grouping helpers.</span>

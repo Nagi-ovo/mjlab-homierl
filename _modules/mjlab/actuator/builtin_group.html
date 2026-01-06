@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -453,7 +454,10 @@ document.write(`
 <span class="sd">  &quot;&quot;&quot;</span>
 
   <span class="c1"># Map from (BuiltinActuator type, transmission_type) to (target_ids, ctrl_ids).</span>
-  <span class="n">_index_groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="n">TransmissionType</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span>
+  <span class="n">_index_groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span>
+    <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">BuiltinActuatorType</span><span class="p">],</span> <span class="n">TransmissionType</span><span class="p">],</span>
+    <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+  <span class="p">]</span>
 
 <div class="viewcode-block" id="BuiltinActuatorGroup.process">
 <a class="viewcode-back" href="../../../source/api/actuator.html#mjlab.actuator.BuiltinActuatorGroup.process">[docs]</a>
@@ -472,20 +476,26 @@ document.write(`
 <span class="sd">        - List of custom (non-builtin) actuators.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">builtin_groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="n">TransmissionType</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="n">Actuator</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">builtin_groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span>
+      <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">BuiltinActuatorType</span><span class="p">],</span> <span class="n">TransmissionType</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="n">Actuator</span><span class="p">]</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">custom_actuators</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Actuator</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="c1"># Group actuators by (type, transmission_type).</span>
     <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="n">actuators</span><span class="p">:</span>
       <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">act</span><span class="p">,</span> <span class="n">BuiltinActuatorType</span><span class="p">):</span>
-        <span class="n">key</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="n">TransmissionType</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">act</span><span class="p">),</span> <span class="n">act</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">transmission_type</span><span class="p">)</span>
+        <span class="n">key</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">BuiltinActuatorType</span><span class="p">],</span> <span class="n">TransmissionType</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+          <span class="nb">type</span><span class="p">(</span><span class="n">act</span><span class="p">),</span>
+          <span class="n">act</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">transmission_type</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">builtin_groups</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
       <span class="k">else</span><span class="p">:</span>
         <span class="n">custom_actuators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
 
     <span class="c1"># Return stacked indices for each (actuator_type, transmission_type) group.</span>
     <span class="n">index_groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span>
-      <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="n">TransmissionType</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+      <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">BuiltinActuatorType</span><span class="p">],</span> <span class="n">TransmissionType</span><span class="p">],</span>
+      <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
     <span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
       <span class="n">key</span><span class="p">:</span> <span class="p">(</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">act</span><span class="o">.</span><span class="n">target_ids</span> <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="n">acts</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>

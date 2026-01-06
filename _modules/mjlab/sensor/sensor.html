@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -415,6 +416,7 @@ document.write(`
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
   <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.entity</span><span class="w"> </span><span class="kn">import</span> <span class="n">Entity</span>
+  <span class="kn">from</span><span class="w"> </span><span class="nn">mjlab.viewer.debug_visualizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">DebugVisualizer</span>
 
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
@@ -531,6 +533,20 @@ document.write(`
 <span class="sd">      dt: Time step in seconds.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">del</span> <span class="n">dt</span>  <span class="c1"># Unused.</span></div>
+
+
+<div class="viewcode-block" id="Sensor.debug_vis">
+<a class="viewcode-back" href="../../../source/api/sensor.html#mjlab.sensor.Sensor.debug_vis">[docs]</a>
+  <span class="k">def</span><span class="w"> </span><span class="nf">debug_vis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">visualizer</span><span class="p">:</span> <span class="n">DebugVisualizer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Visualize sensor data for debugging.</span>
+
+<span class="sd">    Base implementation does nothing. Override in subclasses that support</span>
+<span class="sd">    debug visualization.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      visualizer: The debug visualizer to draw to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">del</span> <span class="n">visualizer</span>  <span class="c1"># Unused.</span></div>
 </div>
 
 </pre></div>

@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -502,6 +503,20 @@ document.write(`
   <span class="n">secondary_policy</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;first&quot;</span><span class="p">,</span> <span class="s2">&quot;any&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;first&quot;</span>
   <span class="n">track_air_time</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
   <span class="n">global_frame</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+  <span class="n">history_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Number of substeps to store in history buffer for force/torque/dist fields.</span>
+
+<span class="sd">  When 0 (default): No history buffer is allocated. History fields (force_history,</span>
+<span class="sd">  torque_history, dist_history) are None. Use the regular fields (force, torque, dist)</span>
+<span class="sd">  for the current instantaneous values.</span>
+
+<span class="sd">  When &gt;0: Allocates a history buffer that stores the last N substeps of contact data.</span>
+<span class="sd">  Shape is [B, N, history_length, ...] where index 0 is the most recent substep.</span>
+<span class="sd">  Set to your decimation value to capture all substeps within one policy step.</span>
+
+<span class="sd">  Note: history_length=1 is redundant with the regular fields but provides a consistent</span>
+<span class="sd">  [B, N, H, ...] shape if your code expects a history dimension.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
   <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="ContactSensorCfg.build">
@@ -561,7 +576,14 @@ document.write(`
   <span class="n">current_contact_time</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;[B, N] time in contact (if track_air_time=True)&quot;&quot;&quot;</span>
   <span class="n">last_contact_time</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;[B, N] duration of last contact phase (if track_air_time=True)&quot;&quot;&quot;</span></div>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;[B, N] duration of last contact phase (if track_air_time=True)&quot;&quot;&quot;</span>
+
+  <span class="n">force_history</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;[B, N, H, 3] contact forces over last H substeps (index 0 = most recent)&quot;&quot;&quot;</span>
+  <span class="n">torque_history</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;[B, N, H, 3] contact torques over last H substeps (index 0 = most recent)&quot;&quot;&quot;</span>
+  <span class="n">dist_history</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;[B, N, H] penetration depth over last H substeps (index 0 = most recent)&quot;&quot;&quot;</span></div>
 
 
 
@@ -585,7 +607,8 @@ document.write(`
     <span class="bp">self</span><span class="o">.</span><span class="n">_slots</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">_ContactSlot</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="n">mjwarp</span><span class="o">.</span><span class="n">Data</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="p">:</span> <span class="n">_AirTimeState</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="p">:</span> <span class="n">_AirTimeState</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="ContactSensor.edit_spec">
@@ -650,7 +673,26 @@ document.write(`
         <span class="n">current_contact_time</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_envs</span><span class="p">,</span> <span class="n">n_primary</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span>
         <span class="n">last_contact_time</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_envs</span><span class="p">,</span> <span class="n">n_primary</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span>
         <span class="n">last_time</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_envs</span><span class="p">,),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">),</span>
-      <span class="p">)</span></div>
+      <span class="p">)</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">history_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="n">n_envs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">n_primary</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">slot</span><span class="o">.</span><span class="n">primary_name</span> <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slots</span><span class="p">))</span>
+      <span class="n">n_contacts</span> <span class="o">=</span> <span class="n">n_primary</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">num_slots</span>
+      <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">history_length</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="o">=</span> <span class="p">{}</span>
+      <span class="k">if</span> <span class="s2">&quot;force&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;force&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+          <span class="p">(</span><span class="n">n_envs</span><span class="p">,</span> <span class="n">n_contacts</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+        <span class="p">)</span>
+      <span class="k">if</span> <span class="s2">&quot;torque&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;torque&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+          <span class="p">(</span><span class="n">n_envs</span><span class="p">,</span> <span class="n">n_contacts</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+        <span class="p">)</span>
+      <span class="k">if</span> <span class="s2">&quot;dist&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;dist&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+          <span class="p">(</span><span class="n">n_envs</span><span class="p">,</span> <span class="n">n_contacts</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+        <span class="p">)</span></div>
 
 
   <span class="nd">@property</span>
@@ -661,24 +703,31 @@ document.write(`
       <span class="n">out</span><span class="o">.</span><span class="n">last_air_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_air_time</span>
       <span class="n">out</span><span class="o">.</span><span class="n">current_contact_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">current_contact_time</span>
       <span class="n">out</span><span class="o">.</span><span class="n">last_contact_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_contact_time</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">out</span><span class="o">.</span><span class="n">force_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;force&quot;</span><span class="p">)</span>
+      <span class="n">out</span><span class="o">.</span><span class="n">torque_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;torque&quot;</span><span class="p">)</span>
+      <span class="n">out</span><span class="o">.</span><span class="n">dist_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dist&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">out</span>
 
 <div class="viewcode-block" id="ContactSensor.reset">
 <a class="viewcode-back" href="../../../source/api/sensor.html#mjlab.sensor.ContactSensor.reset">[docs]</a>
   <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-      <span class="k">return</span>
-
     <span class="k">if</span> <span class="n">env_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
       <span class="n">env_ids</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
     <span class="c1"># Reset air time state for specified envs.</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">current_air_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_air_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">current_contact_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_contact_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-      <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span></div>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">current_air_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_air_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">current_contact_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_contact_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span><span class="o">.</span><span class="n">last_time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">time</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span>
+
+    <span class="c1"># Reset history state for specified envs.</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">buf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">buf</span><span class="p">[</span><span class="n">env_ids</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span></div>
 
 
 <div class="viewcode-block" id="ContactSensor.update">
@@ -686,7 +735,9 @@ document.write(`
   <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">del</span> <span class="n">dt</span>  <span class="c1"># Unused.</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_air_time_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-      <span class="bp">self</span><span class="o">.</span><span class="n">_update_air_time_tracking</span><span class="p">()</span></div>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_update_air_time_tracking</span><span class="p">()</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_update_history</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="ContactSensor.compute_first_contact">
@@ -803,6 +854,24 @@ document.write(`
     <span class="p">)</span>
 
     <span class="n">state</span><span class="o">.</span><span class="n">last_time</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">current_time</span>
+
+  <span class="k">def</span><span class="w"> </span><span class="nf">_update_history</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Roll history buffer and insert current contact data at index 0.&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="n">contact_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_sensor_data</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="s2">&quot;force&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="ow">and</span> <span class="n">contact_data</span><span class="o">.</span><span class="n">force</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;force&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;force&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;force&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">contact_data</span><span class="o">.</span><span class="n">force</span>
+
+    <span class="k">if</span> <span class="s2">&quot;torque&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="ow">and</span> <span class="n">contact_data</span><span class="o">.</span><span class="n">torque</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;torque&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;torque&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;torque&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">contact_data</span><span class="o">.</span><span class="n">torque</span>
+
+    <span class="k">if</span> <span class="s2">&quot;dist&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span> <span class="ow">and</span> <span class="n">contact_data</span><span class="o">.</span><span class="n">dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;dist&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;dist&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_history_state</span><span class="p">[</span><span class="s2">&quot;dist&quot;</span><span class="p">][:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">contact_data</span><span class="o">.</span><span class="n">dist</span>
 
   <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_primary_names</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Entity</span><span class="p">],</span> <span class="n">match</span><span class="p">:</span> <span class="n">ContactMatch</span>

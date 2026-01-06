@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -595,7 +596,7 @@ document.write(`
       <span class="k">if</span> <span class="n">term_cfg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;term: </span><span class="si">{</span><span class="n">term_name</span><span class="si">}</span><span class="s2"> set to None, skipping...&quot;</span><span class="p">)</span>
         <span class="k">continue</span>
-      <span class="n">term</span> <span class="o">=</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">class_type</span><span class="p">(</span><span class="n">term_cfg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">)</span>
+      <span class="n">term</span> <span class="o">=</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="p">)</span>
       <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">term</span><span class="p">,</span> <span class="n">CommandTerm</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
           <span class="sa">f</span><span class="s2">&quot;Returned object for the term </span><span class="si">{</span><span class="n">term_name</span><span class="si">}</span><span class="s2"> is not of type CommandType.&quot;</span>

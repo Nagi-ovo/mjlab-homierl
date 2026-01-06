@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -422,6 +423,9 @@ document.write(`
   <span class="n">ModelBridge</span> <span class="o">=</span> <span class="n">WarpBridge</span>
   <span class="n">DataBridge</span> <span class="o">=</span> <span class="n">WarpBridge</span>
 
+<span class="c1"># Minimum CUDA driver version supported for conditional CUDA graphs.</span>
+<span class="n">_GRAPH_CAPTURE_MIN_DRIVER</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
 <span class="n">_JACOBIAN_MAP</span> <span class="o">=</span> <span class="p">{</span>
   <span class="s2">&quot;auto&quot;</span><span class="p">:</span> <span class="n">mujoco</span><span class="o">.</span><span class="n">mjtJacobian</span><span class="o">.</span><span class="n">mjJAC_AUTO</span><span class="p">,</span>
   <span class="s2">&quot;dense&quot;</span><span class="p">:</span> <span class="n">mujoco</span><span class="o">.</span><span class="n">mjtJacobian</span><span class="o">.</span><span class="n">mjJAC_DENSE</span><span class="p">,</span>
@@ -570,9 +574,7 @@ document.write(`
     <span class="bp">self</span><span class="o">.</span><span class="n">_model_bridge</span> <span class="o">=</span> <span class="n">WarpBridge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wp_model</span><span class="p">,</span> <span class="n">nworld</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_envs</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_data_bridge</span> <span class="o">=</span> <span class="n">WarpBridge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_wp_data</span><span class="p">)</span>
 
-    <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wp_device</span><span class="o">.</span><span class="n">is_cuda</span> <span class="ow">and</span> <span class="n">wp</span><span class="o">.</span><span class="n">is_mempool_enabled</span><span class="p">(</span>
-      <span class="bp">self</span><span class="o">.</span><span class="n">wp_device</span>
-    <span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">use_cuda_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_use_cuda_graph</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">create_graph</span><span class="p">()</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">nan_guard</span> <span class="o">=</span> <span class="n">NanGuard</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">nan_guard</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mj_model</span><span class="p">)</span></div>
@@ -718,7 +720,32 @@ document.write(`
         <span class="n">wp</span><span class="o">.</span><span class="n">capture_launch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reset_graph</span><span class="p">)</span>
       <span class="k">else</span><span class="p">:</span>
         <span class="n">mjwarp</span><span class="o">.</span><span class="n">reset_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wp_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wp_data</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_reset_mask_wp</span><span class="p">)</span></div>
-</div>
+
+
+  <span class="c1"># Private methods.</span>
+
+  <span class="k">def</span><span class="w"> </span><span class="nf">_should_use_cuda_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if CUDA graphs can be used based on device and driver version.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">wp_device</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">:</span>
+      <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">driver_ver</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">driver_version</span>
+    <span class="n">has_mempool</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">is_mempool_enabled</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wp_device</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">driver_ver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[WARNING] CUDA Graphs disabled: driver version unavailable&quot;</span><span class="p">)</span>
+      <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">has_mempool</span> <span class="ow">and</span> <span class="n">driver_ver</span> <span class="o">&gt;=</span> <span class="n">_GRAPH_CAPTURE_MIN_DRIVER</span><span class="p">:</span>
+      <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="n">reasons</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">has_mempool</span><span class="p">:</span>
+      <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;mempool disabled&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">driver_ver</span> <span class="o">&lt;</span> <span class="n">_GRAPH_CAPTURE_MIN_DRIVER</span><span class="p">:</span>
+      <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;driver </span><span class="si">{</span><span class="n">driver_ver</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">driver_ver</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> &lt; 12.4&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[WARNING] CUDA Graphs disabled: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reasons</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
 
 </pre></div>
 

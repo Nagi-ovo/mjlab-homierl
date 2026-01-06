@@ -250,6 +250,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../source/observation.html">Observation History and Delay</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/actuators.html">Actuators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../source/raycast_sensor.html">RayCast Sensor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../source/distributed_training.html">Distributed Training</a></li>
 </ul>
 
@@ -449,12 +450,19 @@ document.write(`
 <div class="viewcode-block" id="CommandTermCfg">
 <a class="viewcode-back" href="../../../source/api/managers.html#mjlab.managers.CommandTermCfg">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">CommandTermCfg</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CommandTermCfg</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Configuration for a command generator term.&quot;&quot;&quot;</span>
 
-  <span class="n">class_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">CommandTerm</span><span class="p">]</span>
   <span class="n">resampling_time_range</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
-  <span class="n">debug_vis</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+  <span class="n">debug_vis</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="CommandTermCfg.build">
+<a class="viewcode-back" href="../../../source/api/managers.html#mjlab.managers.CommandTermCfg.build">[docs]</a>
+  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+  <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">ManagerBasedRlEnv</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandTerm</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the command term from this config.&quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
 
 
 
