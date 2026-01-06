@@ -222,6 +222,9 @@ class UniformVelocityCommandCfg(CommandTermCfg):
 
   viz: VizCfg = field(default_factory=VizCfg)
 
+  def build(self, env: ManagerBasedRlEnv) -> UniformVelocityCommand:
+    return UniformVelocityCommand(self, env)
+
   def __post_init__(self):
     if self.heading_command and self.ranges.heading is None:
       raise ValueError(
@@ -395,3 +398,6 @@ class RelativeHeightCommandCfg(CommandTermCfg):
     actual_color: tuple[float, float, float, float] = (0.0, 0.6, 1.0, 0.7)
 
   viz: VizCfg = field(default_factory=VizCfg)
+
+  def build(self, env: ManagerBasedRlEnv) -> RelativeHeightCommand:
+    return RelativeHeightCommand(self, env)
