@@ -1,5 +1,6 @@
 """Unitree H1 homie (humanoid walk) environment configurations."""
 
+import math
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -17,6 +18,7 @@ from mjlab.managers.action_manager import ActionTerm, ActionTermCfg
 from mjlab.managers.curriculum_manager import CurriculumTermCfg
 from mjlab.managers.event_manager import EventTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
+from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.homie import mdp
 from mjlab.tasks.homie.homie_env_cfg import make_homie_env_cfg
@@ -304,6 +306,129 @@ def _sample_gripper_targets(
   action_term.sample_new_goals(env_ids=env_ids, target_range=target_range)
 
 
+class _StepScheduledExternalPush:
+  """Apply periodic horizontal pushes via MuJoCo external wrenches.
+
+  This avoids modifying framework code by running every env step (via an
+  interval event with range (0, 0)) and internally scheduling the actual push
+  cadence in control steps.
+  """
+
+  def __init__(self, cfg: EventTermCfg, env):
+    self._env = env
+    params = cfg.params
+
+    self._asset_cfg: SceneEntityCfg = params["asset_cfg"]
+    self._push_interval_s = float(params.get("push_interval_s", 4.0))
+    self._max_push_vel_xy = float(params.get("max_push_vel_xy", 0.5))
+    self._push_duration_s = float(params.get("push_duration_s", env.step_dt))
+
+    self._interval_steps = max(1, math.ceil(self._push_interval_s / env.step_dt))
+    self._duration_steps = max(1, math.ceil(self._push_duration_s / env.step_dt))
+
+    asset = env.scene[self._asset_cfg.name]
+    default_body_mass = env.sim.get_default_field("body_mass")
+    total_mass = default_body_mass[asset.indexing.body_ids].sum().item()
+    self._max_force_xy = total_mass * self._max_push_vel_xy / max(self._push_duration_s, 1e-6)
+
+    self._active_forces: torch.Tensor | None = None
+    self._clear_at_step: int | None = None
+
+  def _write_wrench(self, forces: torch.Tensor) -> None:
+    asset = self._env.scene[self._asset_cfg.name]
+    torques = torch.zeros_like(forces)
+    asset.write_external_wrench_to_sim(
+      forces, torques, env_ids=None, body_ids=self._asset_cfg.body_ids
+    )
+
+  def __call__(self, env, env_ids, **_kwargs) -> None:
+    del env, env_ids  # Unused; scheduling is global.
+
+    # Convert to a zero-based step index (first call happens after step 0).
+    step_index = int(self._env.common_step_counter) - 1
+
+    if self._active_forces is not None:
+      assert self._clear_at_step is not None
+      if step_index >= self._clear_at_step:
+        self._write_wrench(torch.zeros_like(self._active_forces))
+        self._active_forces = None
+        self._clear_at_step = None
+      else:
+        # Re-apply to survive per-env resets that clear xfrc_applied.
+        self._write_wrench(self._active_forces)
+
+    if step_index % self._interval_steps != 0:
+      return
+
+    num_envs = self._env.num_envs
+    device = self._env.device
+    forces = torch.zeros((num_envs, 1, 3), device=device, dtype=torch.float32)
+    forces[:, 0, 0] = torch.empty((num_envs,), device=device).uniform_(
+      -self._max_force_xy, self._max_force_xy
+    )
+    forces[:, 0, 1] = torch.empty((num_envs,), device=device).uniform_(
+      -self._max_force_xy, self._max_force_xy
+    )
+
+    self._write_wrench(forces)
+    self._active_forces = forces
+    self._clear_at_step = step_index + self._duration_steps
+
+
+class _HandLoadExternalWrench:
+  """Apply a constant downward load on each hand via external wrenches.
+
+  The load is specified as an equivalent mass in kilograms and converted to a
+  world-frame force using gravity. Values are sampled once per environment and
+  persist across episode resets (re-applied on reset since MuJoCo clears forces).
+  """
+
+  def __init__(self, cfg: EventTermCfg, env):
+    self._env = env
+    params = cfg.params
+
+    self._asset_cfg: SceneEntityCfg = params["asset_cfg"]
+    self._mass_range = tuple(params.get("mass_range", (0.0, 5.0)))
+
+    try:
+      self._g = float(abs(env.sim.mj_model.opt.gravity[2]))
+    except Exception:
+      self._g = 9.81
+
+    self._mass_kg = torch.full(
+      (env.num_envs, 2), float("nan"), device=env.device, dtype=torch.float32
+    )
+
+  def __call__(self, env, env_ids, **_kwargs) -> None:
+    del env  # Unused; use self._env.
+    if env_ids is None:
+      env_ids = torch.arange(self._env.num_envs, device=self._env.device, dtype=torch.int)
+    elif isinstance(env_ids, slice):
+      env_ids = torch.arange(self._env.num_envs, device=self._env.device, dtype=torch.int)
+    else:
+      env_ids = env_ids.to(device=self._env.device, dtype=torch.int)
+
+    # Lazily sample once (respects env seeding done before reset events).
+    existing = self._mass_kg[env_ids]
+    needs_sample = torch.isnan(existing).any(dim=1)
+    if needs_sample.any():
+      ids_to_sample = env_ids[needs_sample]
+      low, high = float(self._mass_range[0]), float(self._mass_range[1])
+      self._mass_kg[ids_to_sample] = torch.empty(
+        (len(ids_to_sample), 2), device=self._env.device, dtype=torch.float32
+      ).uniform_(low, high)
+
+    mass_kg = self._mass_kg[env_ids]
+    forces = torch.zeros((len(env_ids), 2, 3), device=self._env.device, dtype=torch.float32)
+    forces[:, :, 2] = -mass_kg * self._g
+    torques = torch.zeros_like(forces)
+
+    asset = self._env.scene[self._asset_cfg.name]
+    asset.write_external_wrench_to_sim(
+      forces, torques, env_ids=env_ids, body_ids=self._asset_cfg.body_ids
+    )
+
+
 def unitree_h1_homie_env_cfg(
   play: bool = False,
   curriculum_start_step: int = 0,
@@ -476,6 +601,36 @@ def unitree_h1_homie_env_cfg(
 
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = geom_names
 
+  # Random push: apply short horizontal external force pulses to the base.
+  cfg.events["push_robot"] = EventTermCfg(
+    func=_StepScheduledExternalPush,
+    mode="interval",
+    interval_range_s=(0.0, 0.0),  # Run every step; internal scheduler applies cadence.
+    is_global_time=True,
+    params={
+      "asset_cfg": SceneEntityCfg("robot", body_names=("pelvis",), preserve_order=True),
+      "push_interval_s": 4.0,
+      "max_push_vel_xy": 0.5,
+    },
+  )
+
+  # Hand load: constant downward wrench equivalent to a 0-5kg payload per hand.
+  hand_body_names = (
+    ("left_wrist_link", "right_wrist_link")
+    if hands
+    else ("left_elbow_link", "right_elbow_link")
+  )
+  cfg.events["hand_load"] = EventTermCfg(
+    func=_HandLoadExternalWrench,
+    mode="reset",
+    params={
+      "asset_cfg": SceneEntityCfg(
+        "robot", body_names=hand_body_names, preserve_order=True
+      ),
+      "mass_range": (0.0, 5.0),
+    },
+  )
+
   cfg.rewards["pose"].params["std_standing"] = {".*": 0.05}
   cfg.rewards["pose"].params["std_walking"] = {
     # Lower body (H1 has simpler leg structure than G1)
@@ -566,6 +721,7 @@ def unitree_h1_homie_env_cfg(
 
     cfg.observations["policy"].enable_corruption = False
     cfg.events.pop("push_robot", None)
+    cfg.events.pop("hand_load", None)
 
     commands = cfg.commands
     assert commands is not None
