@@ -6,8 +6,11 @@ import pytest
 import torch
 from conftest import get_test_device
 
-from mjlab.managers.manager_term_config import ObservationGroupCfg, ObservationTermCfg
-from mjlab.managers.observation_manager import ObservationManager
+from mjlab.managers.observation_manager import (
+  ObservationGroupCfg,
+  ObservationManager,
+  ObservationTermCfg,
+)
 
 
 @pytest.fixture

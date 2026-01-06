@@ -13,7 +13,7 @@ TL;DR
 
 .. code-block:: python
 
-    from mjlab.managers.manager_term_config import ObservationTermCfg
+    from mjlab.managers.observation_manager import ObservationTermCfg
 
     joint_vel: ObservationTermCfg = ObservationTermCfg(
         func=joint_vel,

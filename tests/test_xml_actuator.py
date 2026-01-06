@@ -7,10 +7,7 @@ from conftest import get_test_device
 from mjlab.actuator import XmlMotorActuatorCfg
 from mjlab.entity import Entity, EntityArticulationInfoCfg, EntityCfg
 from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg, mdp
-from mjlab.managers.manager_term_config import (
-  ObservationGroupCfg,
-  ObservationTermCfg,
-)
+from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
 from mjlab.scene import SceneCfg
 from mjlab.sim import MujocoCfg, SimulationCfg
 from mjlab.terrains import TerrainImporterCfg

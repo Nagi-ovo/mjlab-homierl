@@ -81,7 +81,7 @@ My training crashes with NaN errors
       from dataclasses import dataclass, field
 
       from mjlab.envs.mdp.terminations import nan_detection
-      from mjlab.managers.manager_term_config import TerminationTermCfg
+      from mjlab.managers.termination_manager import TerminationTermCfg
 
       @dataclass
       class TerminationCfg:

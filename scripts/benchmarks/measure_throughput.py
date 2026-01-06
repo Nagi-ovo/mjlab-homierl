@@ -126,7 +126,7 @@ def benchmark_task(task: str, cfg: ThroughputConfig) -> BenchmarkResult:
   env_cfg.scene.num_envs = cfg.num_envs
 
   # Handle tracking task motion file.
-  if env_cfg.commands is not None:
+  if env_cfg.commands:
     motion_cmd = env_cfg.commands.get("motion")
     if isinstance(motion_cmd, MotionCommandCfg):
       api = wandb.Api()

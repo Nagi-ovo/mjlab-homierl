@@ -6,7 +6,7 @@ from mjlab.asset_zoo.robots import (
 )
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
-from mjlab.managers.manager_term_config import ObservationGroupCfg
+from mjlab.managers.observation_manager import ObservationGroupCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
 from mjlab.tasks.tracking.mdp import MotionCommandCfg
 from mjlab.tasks.tracking.tracking_env_cfg import make_tracking_env_cfg
@@ -35,7 +35,6 @@ def unitree_g1_flat_tracking_env_cfg(
   assert isinstance(joint_pos_action, JointPositionActionCfg)
   joint_pos_action.scale = G1_ACTION_SCALE
 
-  assert cfg.commands is not None
   motion_cmd = cfg.commands["motion"]
   assert isinstance(motion_cmd, MotionCommandCfg)
   motion_cmd.anchor_body_name = "torso_link"

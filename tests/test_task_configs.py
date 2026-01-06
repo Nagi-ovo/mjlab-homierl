@@ -3,7 +3,7 @@
 import pytest
 
 from mjlab.envs import ManagerBasedRlEnvCfg
-from mjlab.managers.manager_term_config import ObservationGroupCfg
+from mjlab.managers.observation_manager import ObservationGroupCfg
 from mjlab.tasks.registry import list_tasks, load_env_cfg
 
 

@@ -10,22 +10,21 @@ from prettytable import PrettyTable
 
 from mjlab.envs import types
 from mjlab.envs.mdp.events import reset_scene_to_default
-from mjlab.managers.action_manager import ActionManager
-from mjlab.managers.command_manager import CommandManager, NullCommandManager
-from mjlab.managers.curriculum_manager import CurriculumManager, NullCurriculumManager
-from mjlab.managers.event_manager import EventManager
-from mjlab.managers.manager_term_config import (
-  ActionTermCfg,
+from mjlab.managers.action_manager import ActionManager, ActionTermCfg
+from mjlab.managers.command_manager import (
+  CommandManager,
   CommandTermCfg,
-  CurriculumTermCfg,
-  EventTermCfg,
-  ObservationGroupCfg,
-  RewardTermCfg,
-  TerminationTermCfg,
+  NullCommandManager,
 )
-from mjlab.managers.observation_manager import ObservationManager
-from mjlab.managers.reward_manager import RewardManager
-from mjlab.managers.termination_manager import TerminationManager
+from mjlab.managers.curriculum_manager import (
+  CurriculumManager,
+  CurriculumTermCfg,
+  NullCurriculumManager,
+)
+from mjlab.managers.event_manager import EventManager, EventTermCfg
+from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationManager
+from mjlab.managers.reward_manager import RewardManager, RewardTermCfg
+from mjlab.managers.termination_manager import TerminationManager, TerminationTermCfg
 from mjlab.scene import Scene
 from mjlab.scene.scene import SceneCfg
 from mjlab.sim import SimulationCfg
@@ -41,14 +40,36 @@ from mjlab.viewer.viewer_config import ViewerConfig
 
 @dataclass(kw_only=True)
 class ManagerBasedRlEnvCfg:
-  """Configuration for a manager-based RL environment."""
+  """Configuration for a manager-based RL environment.
+
+  This config defines all aspects of an RL environment: the physical scene,
+  observations, actions, rewards, terminations, and optional features like
+  commands and curriculum learning.
+
+  The environment step size is ``sim.mujoco.timestep * decimation``. For example,
+  with a 2ms physics timestep and decimation=10, the environment runs at 50Hz.
+  """
 
   # Base environment configuration.
+
   decimation: int
-  """Number of simulation steps per environment step."""
+  """Number of physics simulation steps per environment step. Higher values mean
+  coarser control frequency. Environment step duration = physics_dt * decimation."""
+
   scene: SceneCfg
+  """Scene configuration defining terrain, entities, and sensors. The scene
+  specifies ``num_envs``, the number of parallel environments."""
+
   observations: dict[str, ObservationGroupCfg]
+  """Observation groups configuration. Each group (e.g., "policy", "critic") contains
+  observation terms that are concatenated. Groups can have different settings for
+  noise, history, and delay. Can be empty for environments without observations."""
+
   actions: dict[str, ActionTermCfg]
+  """Action terms configuration. Each term controls a specific entity/aspect
+  (e.g., joint positions). Action dimensions are concatenated across terms.
+  Can be empty for observation-only environments."""
+
   events: dict[str, EventTermCfg] = field(
     default_factory=lambda: {
       "reset_scene_to_default": EventTermCfg(
@@ -57,25 +78,44 @@ class ManagerBasedRlEnvCfg:
       )
     }
   )
+  """Event terms for domain randomization and state resets. Default includes
+  ``reset_scene_to_default`` which resets entities to their initial state.
+  Can be set to empty to disable all events including default reset."""
+
   seed: int | None = None
+  """Random seed for reproducibility. If None, a random seed is used. The actual
+  seed used is stored back into this field after initialization."""
+
   sim: SimulationCfg = field(default_factory=SimulationCfg)
+  """Simulation configuration including physics timestep, solver iterations,
+  contact parameters, and NaN guarding."""
+
   viewer: ViewerConfig = field(default_factory=ViewerConfig)
+  """Viewer configuration for rendering (camera position, resolution, etc.)."""
 
   # RL-specific configuration.
+
   episode_length_s: float = 0.0
   """Duration of an episode (in seconds).
 
   Episode length in steps is computed as:
     ceil(episode_length_s / (sim.mujoco.timestep * decimation))
   """
+
   rewards: dict[str, RewardTermCfg] = field(default_factory=dict)
-  """Reward terms configuration."""
+  """Reward terms configuration. Can be empty for unsupervised environments."""
+
   terminations: dict[str, TerminationTermCfg] = field(default_factory=dict)
-  """Termination terms configuration."""
-  commands: dict[str, CommandTermCfg] | None = None
-  """Command terms configuration. If None, no commands are used."""
-  curriculum: dict[str, CurriculumTermCfg] | None = None
-  """Curriculum terms configuration. If None, no curriculum is used."""
+  """Termination terms configuration. Can be empty for infinite episodes (no
+  terminations). Use ``mdp.time_out`` with ``time_out=True`` for episode time limits."""
+
+  commands: dict[str, CommandTermCfg] = field(default_factory=dict)
+  """Command generator terms (e.g., velocity targets). Can be empty if the
+  task has no goal commands."""
+
+  curriculum: dict[str, CurriculumTermCfg] = field(default_factory=dict)
+  """Curriculum terms for adaptive difficulty. Can be empty to disable."""
+
   is_finite_horizon: bool = False
   """Whether the task has a finite or infinite horizon. Defaults to False (infinite).
 
@@ -85,6 +125,7 @@ class ManagerBasedRlEnvCfg:
     receives a truncated done signal to bootstrap the value of continuing beyond the
     limit.
   """
+
   scale_rewards_by_dt: bool = True
   """Whether to multiply rewards by the environment step duration (dt).
 
@@ -227,7 +268,7 @@ class ManagerBasedRlEnv:
 
     # Command manager (must be before observation manager since observations
     # may reference commands).
-    if self.cfg.commands is not None:
+    if self.cfg.commands:
       self.command_manager = CommandManager(self.cfg.commands, self)
     else:
       self.command_manager = NullCommandManager()
@@ -247,7 +288,7 @@ class ManagerBasedRlEnv:
       self.cfg.rewards, self, scale_by_dt=self.cfg.scale_rewards_by_dt
     )
     print_info(f"[INFO] {self.reward_manager}")
-    if self.cfg.curriculum is not None:
+    if self.cfg.curriculum:
       self.curriculum_manager = CurriculumManager(self.cfg.curriculum, self)
     else:
       self.curriculum_manager = NullCurriculumManager()

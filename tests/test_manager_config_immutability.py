@@ -13,13 +13,12 @@ import torch
 from conftest import get_test_device
 
 from mjlab.entity import Entity, EntityCfg
-from mjlab.managers.manager_term_config import (
+from mjlab.managers.observation_manager import (
   ObservationGroupCfg,
+  ObservationManager,
   ObservationTermCfg,
-  RewardTermCfg,
 )
-from mjlab.managers.observation_manager import ObservationManager
-from mjlab.managers.reward_manager import RewardManager
+from mjlab.managers.reward_manager import RewardManager, RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sim.sim import Simulation, SimulationCfg
 

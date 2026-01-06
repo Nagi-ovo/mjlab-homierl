@@ -8,8 +8,7 @@ from conftest import get_test_device
 
 from mjlab import actuator
 from mjlab.envs.mdp import events
-from mjlab.managers.event_manager import EventManager
-from mjlab.managers.manager_term_config import EventTermCfg
+from mjlab.managers.event_manager import EventManager, EventTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 
 

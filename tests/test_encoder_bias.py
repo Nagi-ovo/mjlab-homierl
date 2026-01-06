@@ -18,11 +18,8 @@ from conftest import get_test_device
 from mjlab.actuator import BuiltinPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg, mdp
-from mjlab.managers.manager_term_config import (
-  EventTermCfg,
-  ObservationGroupCfg,
-  ObservationTermCfg,
-)
+from mjlab.managers.event_manager import EventTermCfg
+from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.scene import SceneCfg
 from mjlab.sim import MujocoCfg, SimulationCfg

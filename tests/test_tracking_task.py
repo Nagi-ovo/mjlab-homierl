@@ -25,7 +25,6 @@ def test_tracking_tasks_have_motion_command(tracking_task_ids: list[str]) -> Non
   for task_id in tracking_task_ids:
     cfg = load_env_cfg(task_id)
 
-    assert cfg.commands is not None, f"Task {task_id} has no commands"
     assert "motion" in cfg.commands, f"Task {task_id} missing 'motion' command"
 
     motion_cmd = cfg.commands["motion"]
@@ -83,7 +82,6 @@ def test_tracking_play_disables_rsi_randomization() -> None:
   for task_id in tracking_tasks:
     cfg = load_env_cfg(task_id, play=True)
 
-    assert cfg.commands is not None, f"Task {task_id} (play mode) has no commands"
     motion_cmd = cfg.commands["motion"]
     assert isinstance(motion_cmd, MotionCommandCfg), (
       f"Task {task_id} (play mode) motion command is not MotionCommandCfg"
@@ -109,7 +107,6 @@ def test_tracking_play_uses_start_sampling_mode() -> None:
   for task_id in tracking_tasks:
     cfg = load_env_cfg(task_id, play=True)
 
-    assert cfg.commands is not None, f"Task {task_id} (play mode) has no commands"
     motion_cmd = cfg.commands["motion"]
     assert isinstance(motion_cmd, MotionCommandCfg), (
       f"Task {task_id} (play mode) motion command is not MotionCommandCfg"

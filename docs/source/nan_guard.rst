@@ -119,7 +119,7 @@ While ``nan_guard`` helps **debug** NaN issues by capturing states, you can also
 .. code-block:: python
 
     from mjlab.envs.mdp.terminations import nan_detection
-    from mjlab.managers.manager_term_config import TerminationTermCfg
+    from mjlab.managers.termination_manager import TerminationTermCfg
 
     # In your termination config:
     nan_term: TerminationTermCfg = field(

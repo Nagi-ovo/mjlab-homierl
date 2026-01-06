@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence
 
 import torch
@@ -12,8 +13,32 @@ from mjlab.managers.manager_base import ManagerBase, ManagerTermBase
 
 if TYPE_CHECKING:
   from mjlab.envs.manager_based_rl_env import ManagerBasedRlEnv
-  from mjlab.managers.manager_term_config import CommandTermCfg
   from mjlab.viewer.debug_visualizer import DebugVisualizer
+
+
+@dataclass(kw_only=True)
+class CommandTermCfg(abc.ABC):
+  """Configuration for a command generator term.
+
+  Command terms generate goal commands for the agent (e.g., target velocity,
+  target position). Commands are automatically resampled at configurable
+  intervals and can track metrics for logging.
+  """
+
+  resampling_time_range: tuple[float, float]
+  """Time range in seconds for command resampling. When the timer expires, a new
+  command is sampled and the timer is reset to a value uniformly drawn from
+  ``[min, max]``. Set both values equal for fixed-interval resampling."""
+
+  debug_vis: bool = False
+  """Whether to enable debug visualization for this command term. When True,
+  the command term's ``_debug_vis_impl`` method is called each frame to render
+  visual aids (e.g., velocity arrows, target markers)."""
+
+  @abc.abstractmethod
+  def build(self, env: ManagerBasedRlEnv) -> CommandTerm:
+    """Build the command term from this config."""
+    raise NotImplementedError
 
 
 class CommandTerm(ManagerTermBase):
@@ -83,6 +108,13 @@ class CommandTerm(ManagerTermBase):
 
 
 class CommandManager(ManagerBase):
+  """Manages command generation for the environment.
+
+  The command manager generates and updates goal commands for the agent (e.g.,
+  target velocity, target position). Commands are resampled at configurable
+  intervals and can track metrics for logging.
+  """
+
   _env: ManagerBasedRlEnv
 
   def __init__(self, cfg: dict[str, CommandTermCfg], env: ManagerBasedRlEnv):

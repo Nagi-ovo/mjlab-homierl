@@ -10,8 +10,7 @@ from conftest import get_test_device
 from mjlab.actuator import BuiltinPositionActuatorCfg
 from mjlab.entity import Entity, EntityArticulationInfoCfg, EntityCfg
 from mjlab.envs.mdp.rewards import electrical_power_cost
-from mjlab.managers.manager_term_config import RewardTermCfg
-from mjlab.managers.reward_manager import RewardManager
+from mjlab.managers.reward_manager import RewardManager, RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sim.sim import Simulation, SimulationCfg
 

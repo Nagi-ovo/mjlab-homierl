@@ -52,7 +52,6 @@ def run_evaluate(task_id: str, cfg: EvaluateConfig) -> dict[str, float]:
   env_cfg = load_env_cfg(task_id, play=False)
   agent_cfg = load_rl_cfg(task_id)
 
-  assert env_cfg.commands is not None
   motion_cmd = env_cfg.commands.get("motion")
   if not isinstance(motion_cmd, MotionCommandCfg):
     raise ValueError(f"Task {task_id} is not a tracking task.")
