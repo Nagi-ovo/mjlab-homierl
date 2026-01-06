@@ -155,21 +155,14 @@ def create_env_cfg(
 
   cfg = ManagerBasedRlEnvCfg(
     decimation=10,
-    episode_length_s=1e9,
     scene=SceneCfg(
       num_envs=1,
       env_spacing=0.0,
       extent=2.0,
       terrain=terrain_cfg,
-      entities={
-        "scanner": scanner_entity_cfg,
-      },
+      entities={"scanner": scanner_entity_cfg},
       sensors=(raycast_cfg,),
     ),
-    observations={},
-    actions={},
-    rewards={},
-    terminations={},
   )
 
   cfg.viewer.body_name = "scanner"

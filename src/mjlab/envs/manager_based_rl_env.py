@@ -60,15 +60,14 @@ class ManagerBasedRlEnvCfg:
   """Scene configuration defining terrain, entities, and sensors. The scene
   specifies ``num_envs``, the number of parallel environments."""
 
-  observations: dict[str, ObservationGroupCfg]
+  observations: dict[str, ObservationGroupCfg] = field(default_factory=dict)
   """Observation groups configuration. Each group (e.g., "policy", "critic") contains
   observation terms that are concatenated. Groups can have different settings for
-  noise, history, and delay. Can be empty for environments without observations."""
+  noise, history, and delay."""
 
-  actions: dict[str, ActionTermCfg]
+  actions: dict[str, ActionTermCfg] = field(default_factory=dict)
   """Action terms configuration. Each term controls a specific entity/aspect
-  (e.g., joint positions). Action dimensions are concatenated across terms.
-  Can be empty for observation-only environments."""
+  (e.g., joint positions). Action dimensions are concatenated across terms."""
 
   events: dict[str, EventTermCfg] = field(
     default_factory=lambda: {
@@ -103,18 +102,17 @@ class ManagerBasedRlEnvCfg:
   """
 
   rewards: dict[str, RewardTermCfg] = field(default_factory=dict)
-  """Reward terms configuration. Can be empty for unsupervised environments."""
+  """Reward terms configuration."""
 
   terminations: dict[str, TerminationTermCfg] = field(default_factory=dict)
-  """Termination terms configuration. Can be empty for infinite episodes (no
-  terminations). Use ``mdp.time_out`` with ``time_out=True`` for episode time limits."""
+  """Termination terms configuration. If empty, episodes never reset. Use
+  ``mdp.time_out`` with ``time_out=True`` for episode time limits."""
 
   commands: dict[str, CommandTermCfg] = field(default_factory=dict)
-  """Command generator terms (e.g., velocity targets). Can be empty if the
-  task has no goal commands."""
+  """Command generator terms (e.g., velocity targets)."""
 
   curriculum: dict[str, CurriculumTermCfg] = field(default_factory=dict)
-  """Curriculum terms for adaptive difficulty. Can be empty to disable."""
+  """Curriculum terms for adaptive difficulty."""
 
   is_finite_horizon: bool = False
   """Whether the task has a finite or infinite horizon. Defaults to False (infinite).
