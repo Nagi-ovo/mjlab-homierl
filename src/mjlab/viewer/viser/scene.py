@@ -880,6 +880,11 @@ class ViserMujocoScene(DebugVisualizer):
   # DebugVisualizer Protocol Implementation
   # ============================================================================
 
+  @property
+  @override
+  def meansize(self) -> float:
+    return self.meansize_override or self.mj_model.stat.meansize
+
   @override
   def add_arrow(
     self,

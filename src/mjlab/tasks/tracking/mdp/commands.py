@@ -484,7 +484,6 @@ class MotionCommandCfg(CommandTermCfg):
   anchor_body_name: str
   body_names: tuple[str, ...]
   entity_name: str
-  class_type: type[CommandTerm] = MotionCommand
   pose_range: dict[str, tuple[float, float]] = field(default_factory=dict)
   velocity_range: dict[str, tuple[float, float]] = field(default_factory=dict)
   joint_position_range: tuple[float, float] = (-0.52, 0.52)
@@ -500,3 +499,6 @@ class MotionCommandCfg(CommandTermCfg):
     ghost_color: tuple[float, float, float, float] = (0.5, 0.7, 0.5, 0.5)
 
   viz: VizCfg = field(default_factory=VizCfg)
+
+  def build(self, env: ManagerBasedRlEnv) -> MotionCommand:
+    return MotionCommand(self, env)

@@ -29,11 +29,17 @@ class MujocoNativeDebugVisualizer(DebugVisualizer):
     self.mj_model = mj_model
     self.env_idx = env_idx
     self._initial_geom_count = scn.ngeom
+    self._meansize: float = mj_model.stat.meansize
 
     self._vopt = mujoco.MjvOption()
     self._vopt.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = True
     self._pert = mujoco.MjvPerturb()
     self._viz_data = mujoco.MjData(mj_model)
+
+  @property
+  @override
+  def meansize(self) -> float:
+    return self._meansize
 
   @override
   def add_arrow(

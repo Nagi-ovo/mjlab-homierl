@@ -64,6 +64,7 @@ def unitree_go1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   ].site_names = site_names
 
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = geom_names
+  cfg.events["base_com"].params["asset_cfg"].body_names = ("trunk",)
 
   cfg.rewards["pose"].params["std_standing"] = {
     r".*(FR|FL|RR|RL)_(hip|thigh)_joint.*": 0.05,

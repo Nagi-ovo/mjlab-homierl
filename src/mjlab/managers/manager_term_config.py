@@ -44,12 +44,16 @@ class ActionTermCfg(abc.ABC):
 
 
 @dataclass(kw_only=True)
-class CommandTermCfg:
+class CommandTermCfg(abc.ABC):
   """Configuration for a command generator term."""
 
-  class_type: type[CommandTerm]
   resampling_time_range: tuple[float, float]
   debug_vis: bool = False
+
+  @abc.abstractmethod
+  def build(self, env: ManagerBasedRlEnv) -> CommandTerm:
+    """Build the command term from this config."""
+    raise NotImplementedError
 
 
 ##

@@ -12,6 +12,7 @@ import torch
 
 if TYPE_CHECKING:
   from mjlab.entity import Entity
+  from mjlab.viewer.debug_visualizer import DebugVisualizer
 
 
 T = TypeVar("T")
@@ -109,3 +110,14 @@ class Sensor(ABC, Generic[T]):
       dt: Time step in seconds.
     """
     del dt  # Unused.
+
+  def debug_vis(self, visualizer: DebugVisualizer) -> None:
+    """Visualize sensor data for debugging.
+
+    Base implementation does nothing. Override in subclasses that support
+    debug visualization.
+
+    Args:
+      visualizer: The debug visualizer to draw to.
+    """
+    del visualizer  # Unused.

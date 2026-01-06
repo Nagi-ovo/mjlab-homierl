@@ -66,9 +66,9 @@ dev = [
   "ipdb>=0.13.13",
   "pre-commit>=4.3.0",
   "pyright>=1.1.407",
-  "pytest>=8.4.2",
-  "ruff>=0.14.7",
-  "ty>=0.0.1a29",
+  "pytest>=v9.0.2",
+  "ruff>=v0.14.10",
+  "ty>=v0.0.9",
 ]
 
 [project.optional-dependencies]
@@ -118,7 +118,7 @@ url = "https://py.mujoco.org"
 explicit = true
 
 [tool.uv.sources]
-mujoco-warp = { git = "https://github.com/google-deepmind/mujoco_warp", rev = "f2f795796fc433adf8e235f01fae3747585ae5db"}
+mujoco-warp = { git = "https://github.com/google-deepmind/mujoco_warp", rev = "9491175b7cbea87e28d3e3e67733095317c33398"}
 warp-lang = { index = "nvidia", marker = "sys_platform != 'darwin'" }
 mujoco = { index = "mujoco" }
 torch = { index = "pytorch-cu128", extra = "cu128", marker = "sys_platform != 'darwin'" }

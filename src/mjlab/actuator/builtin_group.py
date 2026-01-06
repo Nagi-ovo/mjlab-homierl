@@ -48,7 +48,10 @@ class BuiltinActuatorGroup:
   """
 
   # Map from (BuiltinActuator type, transmission_type) to (target_ids, ctrl_ids).
-  _index_groups: dict[tuple[type, TransmissionType], tuple[torch.Tensor, torch.Tensor]]
+  _index_groups: dict[
+    tuple[type[BuiltinActuatorType], TransmissionType],
+    tuple[torch.Tensor, torch.Tensor],
+  ]
 
   @staticmethod
   def process(
@@ -65,20 +68,26 @@ class BuiltinActuatorGroup:
         - List of custom (non-builtin) actuators.
     """
 
-    builtin_groups: dict[tuple[type, TransmissionType], list[Actuator]] = {}
+    builtin_groups: dict[
+      tuple[type[BuiltinActuatorType], TransmissionType], list[Actuator]
+    ] = {}
     custom_actuators: list[Actuator] = []
 
     # Group actuators by (type, transmission_type).
     for act in actuators:
       if isinstance(act, BuiltinActuatorType):
-        key: tuple[type, TransmissionType] = (type(act), act.cfg.transmission_type)
+        key: tuple[type[BuiltinActuatorType], TransmissionType] = (
+          type(act),
+          act.cfg.transmission_type,
+        )
         builtin_groups.setdefault(key, []).append(act)
       else:
         custom_actuators.append(act)
 
     # Return stacked indices for each (actuator_type, transmission_type) group.
     index_groups: dict[
-      tuple[type, TransmissionType], tuple[torch.Tensor, torch.Tensor]
+      tuple[type[BuiltinActuatorType], TransmissionType],
+      tuple[torch.Tensor, torch.Tensor],
     ] = {
       key: (
         torch.cat([act.target_ids for act in acts], dim=0),

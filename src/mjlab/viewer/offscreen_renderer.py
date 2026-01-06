@@ -54,16 +54,22 @@ class OffscreenRenderer:
     self,
     data: Any,
     debug_vis_callback: Callable[[MujocoNativeDebugVisualizer], None] | None = None,
+    camera: str | None = None,
   ) -> None:
     """Update renderer with simulation data."""
     if self._renderer is None:
       raise ValueError("Renderer not initialized. Call 'initialize()' first.")
 
     env_idx = self._cfg.env_idx
-    self._data.qpos[:] = data.qpos[env_idx].cpu().numpy()
-    self._data.qvel[:] = data.qvel[env_idx].cpu().numpy()
+    if self._model.nq > 0:
+      self._data.qpos[:] = data.qpos[env_idx].cpu().numpy()
+      self._data.qvel[:] = data.qvel[env_idx].cpu().numpy()
+    if self._model.nmocap > 0:
+      self._data.mocap_pos[:] = data.mocap_pos[env_idx].cpu().numpy()
+      self._data.mocap_quat[:] = data.mocap_quat[env_idx].cpu().numpy()
     mujoco.mj_forward(self._model, self._data)
-    self._renderer.update_scene(self._data, camera=self._cam)
+    cam = camera if camera is not None else self._cam
+    self._renderer.update_scene(self._data, camera=cam)
 
     # Note: update_scene() resets the scene each frame, so no need to manually clear.
     if debug_vis_callback is not None:
@@ -73,10 +79,14 @@ class OffscreenRenderer:
       debug_vis_callback(visualizer)
 
     # Add additional environments as geoms.
-    nworld = data.qpos.shape[0]
+    nworld = data.nworld
     for i in range(min(nworld, _MAX_ENVS)):
-      self._data.qpos[:] = data.qpos[i].cpu().numpy()
-      self._data.qvel[:] = data.qvel[i].cpu().numpy()
+      if self._model.nq > 0:
+        self._data.qpos[:] = data.qpos[i].cpu().numpy()
+        self._data.qvel[:] = data.qvel[i].cpu().numpy()
+      if self._model.nmocap > 0:
+        self._data.mocap_pos[:] = data.mocap_pos[i].cpu().numpy()
+        self._data.mocap_quat[:] = data.mocap_quat[i].cpu().numpy()
       mujoco.mj_forward(self._model, self._data)
       mujoco.mjv_addGeoms(
         self._model,

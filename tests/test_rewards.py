@@ -271,3 +271,63 @@ def test_reward_manager_handles_neginf_values(mock_env):
 
   assert not torch.isinf(rewards).any()
   assert rewards[2] == 0.0
+
+
+def test_reward_scaling_enabled(mock_env):
+  """Test that rewards are scaled by dt when scale_by_dt=True (default)."""
+
+  def constant_reward(env):
+    return torch.ones(env.num_envs, device=env.device)
+
+  cfg = {"term": RewardTermCfg(func=constant_reward, weight=2.0, params={})}
+  manager = RewardManager(cfg, mock_env, scale_by_dt=True)
+
+  dt = 0.02
+  rewards = manager.compute(dt=dt)
+
+  # With scaling: reward = raw_value (1.0) * weight (2.0) * dt (0.02) = 0.04
+  expected = 1.0 * 2.0 * dt
+  assert torch.allclose(rewards, torch.full((4,), expected))
+
+  # _step_reward should be unscaled (raw_value * weight)
+  step_reward = manager._step_reward[:, 0]
+  expected_step = 1.0 * 2.0
+  assert torch.allclose(step_reward, torch.full((4,), expected_step))
+
+
+def test_reward_scaling_disabled(mock_env):
+  """Test that rewards are not scaled by dt when scale_by_dt=False."""
+
+  def constant_reward(env):
+    return torch.ones(env.num_envs, device=env.device)
+
+  cfg = {"term": RewardTermCfg(func=constant_reward, weight=2.0, params={})}
+  manager = RewardManager(cfg, mock_env, scale_by_dt=False)
+
+  dt = 0.02
+  rewards = manager.compute(dt=dt)
+
+  # Without scaling: reward = raw_value (1.0) * weight (2.0) = 2.0
+  expected = 1.0 * 2.0
+  assert torch.allclose(rewards, torch.full((4,), expected))
+
+  # _step_reward should still be unscaled (same as reward when not scaling)
+  step_reward = manager._step_reward[:, 0]
+  assert torch.allclose(step_reward, torch.full((4,), expected))
+
+
+def test_reward_scaling_default_is_enabled(mock_env):
+  """Test that scale_by_dt defaults to True for backward compatibility."""
+
+  def constant_reward(env):
+    return torch.ones(env.num_envs, device=env.device)
+
+  cfg = {"term": RewardTermCfg(func=constant_reward, weight=1.0, params={})}
+  # Don't pass scale_by_dt - should default to True
+  manager = RewardManager(cfg, mock_env)
+
+  dt = 0.01
+  rewards = manager.compute(dt=dt)
+
+  # Default (scaling enabled): reward = 1.0 * 1.0 * 0.01 = 0.01
+  assert torch.allclose(rewards, torch.full((4,), 0.01))

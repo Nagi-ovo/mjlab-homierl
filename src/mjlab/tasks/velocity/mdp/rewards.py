@@ -396,7 +396,20 @@ def soft_landing(
 
 
 class variable_posture:
-  """Penalize deviation from default pose, with tighter constraints when standing."""
+  """Penalize deviation from default pose with speed-dependent tolerance.
+
+  Uses per-joint standard deviations to control how much each joint can deviate
+  from default pose. Smaller std = stricter (less deviation allowed), larger
+  std = more forgiving. The reward is: exp(-mean(error² / std²))
+
+  Three speed regimes (based on linear + angular command velocity):
+    - std_standing (speed < walking_threshold): Tight tolerance for holding pose.
+    - std_walking (walking_threshold <= speed < running_threshold): Moderate.
+    - std_running (speed >= running_threshold): Loose tolerance for large motion.
+
+  Tune std values per joint based on how much motion that joint needs at each
+  speed. Map joint name patterns to std values, e.g. {".*knee.*": 0.35}.
+  """
 
   def __init__(self, cfg: RewardTermCfg, env: ManagerBasedRlEnv):
     asset: Entity = env.scene[cfg.params["asset_cfg"].name]

@@ -70,7 +70,16 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   ].site_names = site_names
 
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = geom_names
+  cfg.events["base_com"].params["asset_cfg"].body_names = ("torso_link",)
 
+  # Rationale for std values:
+  # - Knees/hip_pitch get the loosest std to allow natural leg bending during stride.
+  # - Hip roll/yaw stay tighter to prevent excessive lateral sway and keep gait stable.
+  # - Ankle roll is very tight for balance; ankle pitch looser for foot clearance.
+  # - Waist roll/pitch stay tight to keep the torso upright and stable.
+  # - Shoulders/elbows get moderate freedom for natural arm swing during walking.
+  # - Wrists are loose (0.3) since they don't affect balance much.
+  # Running values are ~1.5-2x walking values to accommodate larger motion range.
   cfg.rewards["pose"].params["std_standing"] = {".*": 0.05}
   cfg.rewards["pose"].params["std_walking"] = {
     # Lower body.

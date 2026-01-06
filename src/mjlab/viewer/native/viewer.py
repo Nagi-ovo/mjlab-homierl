@@ -128,8 +128,9 @@ class NativeMujocoViewer(BaseViewer):
 
     with self._mj_lock:
       sim_data = self.env.unwrapped.sim.data
-      self.mjd.qpos[:] = sim_data.qpos[self.env_idx].cpu().numpy()
-      self.mjd.qvel[:] = sim_data.qvel[self.env_idx].cpu().numpy()
+      if self.mjm.nq > 0:
+        self.mjd.qpos[:] = sim_data.qpos[self.env_idx].cpu().numpy()
+        self.mjd.qvel[:] = sim_data.qvel[self.env_idx].cpu().numpy()
       if self.mjm.nmocap > 0:
         self.mjd.mocap_pos[:] = sim_data.mocap_pos[self.env_idx].cpu().numpy()
         self.mjd.mocap_quat[:] = sim_data.mocap_quat[self.env_idx].cpu().numpy()
@@ -195,14 +196,28 @@ class NativeMujocoViewer(BaseViewer):
       v.sync(state_only=True)
 
   def sync_viewer_to_env(self) -> None:
-    """Copy perturbation forces from viewer to env (when not paused)."""
-    if not (self.enable_perturbations and not self._is_paused and self.mjd):
+    """Copy perturbation forces and mocap poses from viewer to env."""
+    if not self.enable_perturbations or self._is_paused or not self.mjd:
       return
+    assert self.mjm is not None
     with self._mj_lock:
       xfrc = torch.as_tensor(
         self.mjd.xfrc_applied, dtype=torch.float, device=self.env.device
       )
-    self.env.unwrapped.sim.data.xfrc_applied[:] = xfrc[None]
+      if self.mjm.nmocap > 0:
+        mocap_pos = torch.as_tensor(
+          self.mjd.mocap_pos, dtype=torch.float, device=self.env.device
+        )
+        mocap_quat = torch.as_tensor(
+          self.mjd.mocap_quat, dtype=torch.float, device=self.env.device
+        )
+      else:
+        mocap_pos = mocap_quat = None
+    sim_data = self.env.unwrapped.sim.data
+    sim_data.xfrc_applied[:] = xfrc[None]
+    if mocap_pos is not None and mocap_quat is not None:
+      sim_data.mocap_pos[:] = mocap_pos[None]
+      sim_data.mocap_quat[:] = mocap_quat[None]
 
   def close(self) -> None:
     """Close viewer and cleanup."""

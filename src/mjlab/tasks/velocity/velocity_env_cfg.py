@@ -161,7 +161,16 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.push_by_setting_velocity,
       mode="interval",
       interval_range_s=(1.0, 3.0),
-      params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
+      params={
+        "velocity_range": {
+          "x": (-0.5, 0.5),
+          "y": (-0.5, 0.5),
+          "z": (-0.4, 0.4),
+          "roll": (-0.52, 0.52),
+          "pitch": (-0.52, 0.52),
+          "yaw": (-0.78, 0.78),
+        },
+      },
     ),
     "foot_friction": EventTermCfg(
       mode="startup",
@@ -172,6 +181,29 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         "operation": "abs",
         "field": "geom_friction",
         "ranges": (0.3, 1.2),
+      },
+    ),
+    "encoder_bias": EventTermCfg(
+      mode="startup",
+      func=mdp.randomize_encoder_bias,
+      params={
+        "asset_cfg": SceneEntityCfg("robot"),
+        "bias_range": (-0.015, 0.015),
+      },
+    ),
+    "base_com": EventTermCfg(
+      mode="startup",
+      func=mdp.randomize_field,
+      domain_randomization=True,
+      params={
+        "asset_cfg": SceneEntityCfg("robot", body_names=()),  # Set per-robot.
+        "operation": "add",
+        "field": "body_ipos",
+        "ranges": {
+          0: (-0.025, 0.025),
+          1: (-0.025, 0.025),
+          2: (-0.03, 0.03),
+        },
       },
     ),
   }

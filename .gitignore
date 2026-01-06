@@ -9,7 +9,6 @@ debug.py
 *.ipynb_checkpoints/
 motions/
 *_rerun*
-*.mp4
 artifacts/
 .venv/
 render_robots.py

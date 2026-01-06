@@ -118,7 +118,6 @@ class LiftingCommand(CommandTerm):
 @dataclass(kw_only=True)
 class LiftingCommandCfg(CommandTermCfg):
   entity_name: str
-  class_type: type[CommandTerm] = LiftingCommand
   success_threshold: float = 0.05
   difficulty: Literal["fixed", "dynamic"] = "fixed"
 
@@ -153,3 +152,6 @@ class LiftingCommandCfg(CommandTermCfg):
     target_color: tuple[float, float, float, float] = (1.0, 0.5, 0.0, 0.3)
 
   viz: VizCfg = field(default_factory=VizCfg)
+
+  def build(self, env: ManagerBasedRlEnv) -> LiftingCommand:
+    return LiftingCommand(self, env)

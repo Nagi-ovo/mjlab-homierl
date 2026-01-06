@@ -253,25 +253,10 @@ class TerrainGenerator:
 
     total_width = self.cfg.size[0] * self.cfg.num_rows
     total_height = self.cfg.size[1] * self.cfg.num_cols
-
     light_height = max(total_width, total_height) * 0.6
 
-    positions = [
-      (0, 0),  # Center.
-      (-total_width * 0.5, -total_height * 0.5),  # Bottom-left.
-      (-total_width * 0.5, total_height * 0.5),  # Top-left.
-      (total_width * 0.5, -total_height * 0.5),  # Bottom-right.
-      (total_width * 0.5, total_height * 0.5),  # Top-right.
-    ]
-
-    for i, (x, y) in enumerate(positions):
-      intensity = 0.4 if i == 0 else 0.2
-
-      spec.body("terrain").add_light(
-        pos=(x, y, light_height),
-        type=mujoco.mjtLightType.mjLIGHT_SPOT,
-        diffuse=(intensity, intensity, intensity * 0.95),
-        specular=(0.1, 0.1, 0.1),
-        cutoff=70,
-        exponent=2,
-      )
+    spec.body("terrain").add_light(
+      pos=(0, 0, light_height),
+      type=mujoco.mjtLightType.mjLIGHT_DIRECTIONAL,
+      dir=(0, 0, -1),
+    )

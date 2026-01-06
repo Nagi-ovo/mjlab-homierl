@@ -22,6 +22,12 @@ class DebugVisualizer(ABC):
   env_idx: int
   """Index of the environment being visualized."""
 
+  @property
+  @abstractmethod
+  def meansize(self) -> float:
+    """Mean size of the model, used for scaling visualization elements."""
+    ...
+
   @abstractmethod
   def add_arrow(
     self,
@@ -136,8 +142,13 @@ class DebugVisualizer(ABC):
 class NullDebugVisualizer:
   """No-op visualizer when visualization is disabled."""
 
-  def __init__(self, env_idx: int = 0):
+  def __init__(self, env_idx: int = 0, meansize: float = 0.1):
     self.env_idx = env_idx
+    self._meansize = meansize
+
+  @property
+  def meansize(self) -> float:
+    return self._meansize
 
   def add_arrow(self, start, end, color, width=0.015, label=None) -> None:
     pass

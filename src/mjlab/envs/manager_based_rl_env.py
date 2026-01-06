@@ -85,6 +85,13 @@ class ManagerBasedRlEnvCfg:
     receives a truncated done signal to bootstrap the value of continuing beyond the
     limit.
   """
+  scale_rewards_by_dt: bool = True
+  """Whether to multiply rewards by the environment step duration (dt).
+
+  When True (default), reward values are scaled by step_dt to normalize cumulative
+  episodic rewards across different simulation frequencies. Set to False for
+  algorithms that expect unscaled reward signals (e.g., HER, static reward scaling).
+  """
 
 
 class ManagerBasedRlEnv:
@@ -239,7 +246,9 @@ class ManagerBasedRlEnv:
 
     self.termination_manager = TerminationManager(self.cfg.terminations, self)
     print_info(f"[INFO] {self.termination_manager}")
-    self.reward_manager = RewardManager(self.cfg.rewards, self)
+    self.reward_manager = RewardManager(
+      self.cfg.rewards, self, scale_by_dt=self.cfg.scale_rewards_by_dt
+    )
     print_info(f"[INFO] {self.reward_manager}")
     if self.cfg.curriculum is not None:
       self.curriculum_manager = CurriculumManager(self.cfg.curriculum, self)
@@ -347,6 +356,8 @@ class ManagerBasedRlEnv:
   def update_visualizers(self, visualizer: DebugVisualizer) -> None:
     for mod in self.manager_visualizers.values():
       mod.debug_vis(visualizer)
+    for sensor in self.scene.sensors.values():
+      sensor.debug_vis(visualizer)
 
   # Environment grouping helpers.
 

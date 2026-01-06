@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(make check:*)",
+      "Bash(make test:*)",
+      "Bash(make docs:*)",
+      "Bash(git fetch:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)",
+      "Bash(gh api:*)",
+      "Bash(git ls-tree:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "make format"
+          }
+        ]
+      }
+    ]
+  }
+}

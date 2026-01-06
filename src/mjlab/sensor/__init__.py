@@ -5,5 +5,12 @@ from mjlab.sensor.contact_sensor import ContactData as ContactData
 from mjlab.sensor.contact_sensor import ContactMatch as ContactMatch
 from mjlab.sensor.contact_sensor import ContactSensor as ContactSensor
 from mjlab.sensor.contact_sensor import ContactSensorCfg as ContactSensorCfg
+from mjlab.sensor.raycast_sensor import GridPatternCfg as GridPatternCfg
+from mjlab.sensor.raycast_sensor import (
+  PinholeCameraPatternCfg as PinholeCameraPatternCfg,
+)
+from mjlab.sensor.raycast_sensor import RayCastData as RayCastData
+from mjlab.sensor.raycast_sensor import RayCastSensor as RayCastSensor
+from mjlab.sensor.raycast_sensor import RayCastSensorCfg as RayCastSensorCfg
 from mjlab.sensor.sensor import Sensor as Sensor
 from mjlab.sensor.sensor import SensorCfg as SensorCfg

@@ -63,7 +63,7 @@ Quick Note: Entity Data vs Sensors
 Sensor Types
 ------------
 
-mjlab currently provides two sensor implementations:
+mjlab provides three sensor implementations:
 
 BuiltinSensor
 ^^^^^^^^^^^^^
@@ -74,6 +74,12 @@ ContactSensor
 ^^^^^^^^^^^^^
 Detects contacts between bodies, geoms, or subtrees. Returns structured
 `ContactData` with forces, positions, air time metrics, etc.
+
+RayCastSensor
+^^^^^^^^^^^^^
+GPU-accelerated raycasting for terrain scanning and depth sensing. Supports
+grid and pinhole camera patterns with configurable alignment modes.
+See :ref:`raycast_sensor` for full documentation.
 
 BuiltinSensor
 -------------
