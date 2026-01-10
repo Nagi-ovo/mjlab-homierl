@@ -475,9 +475,7 @@ document.write(`
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-delay">Observation Delay</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#delay-parameters">Delay Parameters</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-delay-vs-multi-rate">Understanding Delay vs Multi-Rate</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-delays-from-real-world-latency">Computing Delays from Real-World Latency</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-multi-rate-updates">Computing Multi-Rate Updates</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
 </ul>
 </li>
@@ -619,77 +617,53 @@ affects policies trained with history but not those without.</p>
 </section>
 <section id="observation-delay">
 <h2>Observation Delay<a class="headerlink" href="#observation-delay" title="Link to this heading">#</a></h2>
-<p>Real robots have sensors with communication delays (WiFi, USB) and varying refresh
-rates (30Hz camera, 100Hz encoders). The delay system models both sensor latency
-and slower-than-control refresh rates.</p>
+<p>Real robots have sensors with communication delays (WiFi, USB). The delay system
+models sensor latency by returning observations from earlier timesteps.</p>
 <section id="delay-parameters">
 <h3>Delay Parameters<a class="headerlink" href="#delay-parameters" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">delay_min_lag</span></code> / <code class="docutils literal notranslate"><span class="pre">delay_max_lag</span></code> (default: 0) Lag range in steps. Uniformly
-samples an integer lag from <code class="docutils literal notranslate"><span class="pre">[min_lag,</span> <span class="pre">max_lag]</span></code> (both inclusive) each update.
+samples an integer lag from <code class="docutils literal notranslate"><span class="pre">[min_lag,</span> <span class="pre">max_lag]</span></code> (both inclusive).
 <code class="docutils literal notranslate"><span class="pre">lag=0</span></code> means current observation, <code class="docutils literal notranslate"><span class="pre">lag=2</span></code> means 2 steps ago.</p>
 <p><code class="docutils literal notranslate"><span class="pre">delay_per_env</span></code> (default: True) If True, each environment gets a different
 lag. If False, all environments share the same lag.</p>
 <p><code class="docutils literal notranslate"><span class="pre">delay_hold_prob</span></code> (default: 0.0)
 Probability [0, 1] of keeping the previous lag instead of resampling.</p>
-<p><code class="docutils literal notranslate"><span class="pre">delay_update_period</span></code> (default: 0) How often (in steps) to resample the lag
-and potentially get a new observation. If 0, resample every step. If &gt; 0, the
-observation may repeat for N steps (models sensors that refresh slower than
-control rate).</p>
-<p><code class="docutils literal notranslate"><span class="pre">delay_per_env_phase</span></code> (default: True) If True, each environment has a
-different phase offset for update period (staggers refresh times).</p>
-</section>
-<section id="understanding-delay-vs-multi-rate">
-<h3>Understanding Delay vs Multi-Rate<a class="headerlink" href="#understanding-delay-vs-multi-rate" title="Link to this heading">#</a></h3>
-<p><strong>Delay and multi-rate are orthogonal concepts</strong> that model different real-world
-phenomena:</p>
-<ul class="simple">
-<li><p><strong>Delay</strong> (<code class="docutils literal notranslate"><span class="pre">delay_min_lag</span></code> / <code class="docutils literal notranslate"><span class="pre">delay_max_lag</span></code>): Models sensor latency / communication
-delay. Controls <em>how old</em> the observation is.</p></li>
-<li><p><strong>Multi-rate</strong> (<code class="docutils literal notranslate"><span class="pre">delay_update_period</span></code>): Models sensor refresh rate. Controls <em>how
-often</em> the sensor produces a new reading.</p></li>
-</ul>
-<p><strong>Visualizing the difference (50Hz control = 20ms/step):</strong></p>
+<p><code class="docutils literal notranslate"><span class="pre">delay_update_period</span></code> (default: 0) How often (in steps) to resample the lag.
+If 0, resample every step. If N &gt; 0, the lag value stays constant for N steps
+before being resampled (creates temporally correlated latency patterns).</p>
+<p><code class="docutils literal notranslate"><span class="pre">delay_per_env_phase</span></code> (default: True) If True and <code class="docutils literal notranslate"><span class="pre">delay_update_period</span> <span class="pre">&gt;</span> <span class="pre">0</span></code>,
+stagger resample timing across environments with random phase offsets.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">delay_update_period</span></code> controls how often the <em>lag value</em> is resampled, not
+how often observations are refreshed. You still get a new (delayed) observation
+every step - the lag just stays constant for N steps before being resampled.</p>
+</div>
+<p><strong>Visualizing delay (50Hz control = 20ms/step):</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Sensor<span class="w"> </span>captures:<span class="w">  </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F<span class="w">     </span>G<span class="w">     </span>H
 <span class="w">                  </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓<span class="w">     </span>↓
 Control<span class="w"> </span>steps:<span class="w">    </span><span class="m">0</span><span class="w">     </span><span class="m">1</span><span class="w">     </span><span class="m">2</span><span class="w">     </span><span class="m">3</span><span class="w">     </span><span class="m">4</span><span class="w">     </span><span class="m">5</span><span class="w">     </span><span class="m">6</span><span class="w">     </span><span class="m">7</span>
 <span class="w">                 </span>20ms<span class="w">  </span>40ms<span class="w">  </span>60ms<span class="w">  </span>80ms<span class="w">  </span>100ms<span class="w"> </span>120ms<span class="w"> </span>140ms<span class="w"> </span>160ms
 
-No<span class="w"> </span>delay,<span class="w"> </span>no<span class="w"> </span>multi-rate<span class="w"> </span><span class="o">(</span>baseline<span class="w"> </span>-<span class="w"> </span>perfect<span class="w"> </span>sensor<span class="o">)</span>:
+No<span class="w"> </span>delay<span class="w"> </span><span class="o">(</span>baseline<span class="w"> </span>-<span class="w"> </span>perfect<span class="w"> </span>sensor<span class="o">)</span>:
 You<span class="w"> </span>receive:<span class="w">      </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F<span class="w">     </span>G<span class="w">     </span>H
 <span class="w">                  </span>↑<span class="w"> </span>current<span class="w"> </span>observation<span class="w"> </span>every<span class="w"> </span>step
 
-Delay<span class="w"> </span>only<span class="w"> </span><span class="o">(</span><span class="nv">lag</span><span class="o">=</span><span class="m">2</span>,<span class="w"> </span>no<span class="w"> </span>update_period<span class="o">)</span>:
-You<span class="w"> </span>receive:<span class="w">      </span>-<span class="w">     </span>-<span class="w">     </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F
-<span class="w">                              </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑
-<span class="w">                             </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w">  </span>40ms<span class="w"> </span>delay
-<span class="w">                </span>Every<span class="w"> </span>step<span class="w"> </span>gets<span class="w"> </span>a<span class="w"> </span>NEW<span class="w"> </span>observation,<span class="w"> </span>just<span class="w"> </span>40ms<span class="w"> </span>old
-
-Multi-rate<span class="w"> </span>only<span class="w"> </span><span class="o">(</span><span class="nv">update_period</span><span class="o">=</span><span class="m">2</span>,<span class="w"> </span>no<span class="w"> </span>lag<span class="o">)</span>:
-You<span class="w"> </span>receive:<span class="w">      </span>A<span class="w">     </span>A<span class="w">     </span>C<span class="w">     </span>C<span class="w">     </span>E<span class="w">     </span>E<span class="w">     </span>G<span class="w">     </span>G
-<span class="w">                  </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑
-<span class="w">                </span>Observations<span class="w"> </span>update<span class="w"> </span>every<span class="w"> </span><span class="m">2</span><span class="w"> </span>steps<span class="w"> </span><span class="o">(</span>25Hz<span class="w"> </span>refresh<span class="o">)</span>
-<span class="w">                </span>Steps<span class="w"> </span><span class="m">1</span>,3,5,7<span class="w"> </span>repeat<span class="w"> </span>previous<span class="w"> </span>observation
-
-Both<span class="w"> </span>delay<span class="w"> </span>+<span class="w"> </span>multi-rate<span class="w"> </span><span class="o">(</span><span class="nv">lag</span><span class="o">=</span><span class="m">2</span>,<span class="w"> </span><span class="nv">update_period</span><span class="o">=</span><span class="m">2</span><span class="o">)</span>:
-Sensor<span class="w"> </span>captures:<span class="w">  </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F<span class="w">     </span>G<span class="w">     </span>H
-You<span class="w"> </span>receive:<span class="w">      </span>-<span class="w">     </span>-<span class="w">     </span>A<span class="w">     </span>A<span class="w">     </span>C<span class="w">     </span>C<span class="w">     </span>E<span class="w">     </span>E
-<span class="w">                              </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑<span class="w">     </span>↑same<span class="w"> </span>↑
-<span class="w">                </span>40ms<span class="w"> </span>delayed<span class="w"> </span>+<span class="w"> </span>only<span class="w"> </span>refreshes<span class="w"> </span>every<span class="w"> </span><span class="m">2</span><span class="w"> </span>steps
-<span class="w">                </span>Models<span class="w"> </span>25Hz<span class="w"> </span>camera<span class="w"> </span>with<span class="w"> </span>40ms<span class="w"> </span>latency
+Delay<span class="w"> </span>with<span class="w"> </span><span class="nv">lag</span><span class="o">=</span><span class="m">2</span>:
+You<span class="w"> </span>receive:<span class="w">      </span>A<span class="w">     </span>A<span class="w">     </span>A<span class="w">     </span>B<span class="w">     </span>C<span class="w">     </span>D<span class="w">     </span>E<span class="w">     </span>F
+<span class="w">                  </span>↑clamp↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑<span class="w">     </span>↑
+<span class="w">                </span>Steps<span class="w"> </span><span class="m">0</span>-1:<span class="w"> </span>lag<span class="w"> </span>clamped<span class="w"> </span><span class="o">(</span>buffer<span class="w"> </span>not<span class="w"> </span>full<span class="w"> </span>yet<span class="o">)</span>
+<span class="w">                </span>Step<span class="w"> </span><span class="m">2</span>+:<span class="w"> </span>40ms<span class="w"> </span>delay,<span class="w"> </span>every<span class="w"> </span>step<span class="w"> </span>gets<span class="w"> </span>NEW<span class="w"> </span>observation
 </pre></div>
 </div>
-<p><strong>Real-world example - 30Hz camera at 50Hz control with 40ms latency:</strong></p>
+<p><strong>Example - Camera with 40-60ms latency at 50Hz control:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">camera</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
     <span class="n">func</span><span class="o">=</span><span class="n">camera_obs</span><span class="p">,</span>
-    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>        <span class="c1"># 40ms latency</span>
-    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-    <span class="n">delay_update_period</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># 25Hz refresh (approximates 30Hz)</span>
+    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># 40ms latency</span>
+    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># 60ms latency</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Common mistake:</strong> Using only <code class="docutils literal notranslate"><span class="pre">delay_min_lag=2,</span> <span class="pre">delay_max_lag=2</span></code> gives you
-40ms latency but you still get 50 different camera frames per second. You need
-<code class="docutils literal notranslate"><span class="pre">delay_update_period=2</span></code> to model the slower refresh rate.</p>
 </section>
 <section id="computing-delays-from-real-world-latency">
 <h3>Computing Delays from Real-World Latency<a class="headerlink" href="#computing-delays-from-real-world-latency" title="Link to this heading">#</a></h3>
@@ -710,64 +684,35 @@ use <code class="docutils literal notranslate"><span class="pre">delay_min_lag=2
 (both inclusive), giving either 40ms or 60ms delay.</p>
 </div>
 </section>
-<section id="computing-multi-rate-updates">
-<h3>Computing Multi-Rate Updates<a class="headerlink" href="#computing-multi-rate-updates" title="Link to this heading">#</a></h3>
-<p>Convert sensor refresh rate to update period:</p>
-<p>update_period = control_hz / sensor_hz</p>
-<p><strong>Example at 50Hz control:</strong></p>
-<ul class="simple">
-<li><p>30Hz camera: update_period = 50 / 30 ≈ 2 steps → <strong>actual 25Hz</strong> (error: -17%)</p></li>
-<li><p>25Hz LiDAR: update_period = 50 / 25 = 2 steps → <strong>actual 25Hz</strong> (exact)</p></li>
-<li><p>10Hz GPS: update_period = 50 / 10 = 5 steps → <strong>actual 10Hz</strong> (exact)</p></li>
-</ul>
-<p><strong>Example at 100Hz control:</strong></p>
-<ul class="simple">
-<li><p>30Hz camera: update_period = 100 / 30 ≈ 3 steps → <strong>actual 33.3Hz</strong> (error: +11%)</p></li>
-<li><p>50Hz IMU: update_period = 100 / 50 = 2 steps → <strong>actual 50Hz</strong> (exact)</p></li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Since <code class="docutils literal notranslate"><span class="pre">update_period</span></code> must be an integer, sensor rates that don’t evenly
-divide the control frequency can only be approximated. For example, 30Hz at 50Hz
-control needs update_period=1.67, so round to 2 → 25Hz (17% error). Higher control
-frequencies reduce quantization error (100Hz control approximates 30Hz as 33.3Hz
-with only 11% error).</p>
-</div>
-</section>
 <section id="examples">
 <h3>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h3>
-<p><strong>Joint encoders (100Hz, no delay) at 50Hz control:</strong></p>
+<p><strong>Joint encoders (no delay):</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joint_pos</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="n">joint_pos</span><span class="p">)</span>
 <span class="c1"># delay_min_lag=delay_max_lag=0 by default.</span>
 </pre></div>
 </div>
-<p><strong>Camera (30Hz, 40-60ms latency) at 50Hz control:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 30Hz camera: update_period = 50/30 ≈ 2 → actually 25Hz (17% error, acceptable)</span>
-<span class="c1"># 40-60ms latency = 2-3 steps at 50Hz (20ms/step)</span>
+<p><strong>Camera with 40-60ms latency at 50Hz control:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 40-60ms latency = 2-3 steps at 50Hz (20ms/step)</span>
 <span class="n">camera</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
     <span class="n">func</span><span class="o">=</span><span class="n">camera_obs</span><span class="p">,</span>
-    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>          <span class="c1"># 40ms</span>
-    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>          <span class="c1"># 60ms</span>
-    <span class="n">delay_update_period</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>    <span class="c1"># 25Hz (approximates 30Hz)</span>
-    <span class="n">delay_per_env_phase</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Staggered refresh across envs</span>
+    <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># 40ms</span>
+    <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># 60ms</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Mixed-rate system at 50Hz control:</strong></p>
+<p><strong>Mixed system - fast encoders and slow camera:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolicyCfg</span><span class="p">(</span><span class="n">ObservationGroupCfg</span><span class="p">):</span>
     <span class="c1"># Fast encoders (no delay)</span>
     <span class="n">joint_pos</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
         <span class="n">func</span><span class="o">=</span><span class="n">joint_pos</span><span class="p">,</span>
-        <span class="c1"># delay_min_lag=0, delay_max_lag=0 (default)</span>
     <span class="p">)</span>
 
-    <span class="c1"># 25Hz camera (40-80ms latency)</span>
+    <span class="c1"># Camera with 40-80ms latency</span>
     <span class="n">camera</span><span class="p">:</span> <span class="n">ObservationTermCfg</span> <span class="o">=</span> <span class="n">ObservationTermCfg</span><span class="p">(</span>
         <span class="n">func</span><span class="o">=</span><span class="n">camera_obs</span><span class="p">,</span>
         <span class="n">delay_min_lag</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># 40ms</span>
         <span class="n">delay_max_lag</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>  <span class="c1"># 80ms</span>
-        <span class="n">delay_update_period</span><span class="o">=</span><span class="mi">2</span>  <span class="c1"># 25Hz (50Hz control / 2)</span>
     <span class="p">)</span>
 </pre></div>
 </div>
@@ -860,9 +805,7 @@ when <code class="docutils literal notranslate"><span class="pre">history_length
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-delay">Observation Delay</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#delay-parameters">Delay Parameters</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-delay-vs-multi-rate">Understanding Delay vs Multi-Rate</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-delays-from-real-world-latency">Computing Delays from Real-World Latency</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-multi-rate-updates">Computing Multi-Rate Updates</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#examples">Examples</a></li>
 </ul>
 </li>

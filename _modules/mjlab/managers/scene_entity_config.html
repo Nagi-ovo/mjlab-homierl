@@ -441,41 +441,43 @@ document.write(`
 <span class="sd">  This configuration allows flexible specification of entity components either by name</span>
 <span class="sd">  or by ID. During resolution, it ensures consistency between names and IDs, and can</span>
 <span class="sd">  optimize to slice(None) when all components are selected.</span>
-
-<span class="sd">  Attributes:</span>
-<span class="sd">    name: The name of the entity in the scene.</span>
-<span class="sd">    joint_names: Names of joints to include. Can be a single string or tuple.</span>
-<span class="sd">    joint_ids: IDs of joints to include. Can be a list or slice.</span>
-<span class="sd">    body_names: Names of bodies to include. Can be a single string or tuple.</span>
-<span class="sd">    body_ids: IDs of bodies to include. Can be a list or slice.</span>
-<span class="sd">    geom_names: Names of geometries to include. Can be a single string or tuple.</span>
-<span class="sd">    geom_ids: IDs of geometries to include. Can be a list or slice.</span>
-<span class="sd">    site_names: Names of sites to include. Can be a single string or tuple.</span>
-<span class="sd">    site_ids: IDs of sites to include. Can be a list or slice.</span>
-<span class="sd">    actuator_names: Names of actuators to include. Can be a single string or list.</span>
-<span class="sd">    actuator_ids: IDs of actuators to include. Can be a list or slice.</span>
-<span class="sd">    preserve_order: If True, maintains the order of components as specified. If False,</span>
-<span class="sd">      allows reordering for optimization.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
   <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;The name of the entity in the scene.&quot;&quot;&quot;</span>
 
   <span class="n">joint_names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Names of joints to include. Can be a single string or tuple.&quot;&quot;&quot;</span>
+
   <span class="n">joint_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;IDs of joints to include. Can be a list or slice.&quot;&quot;&quot;</span>
 
   <span class="n">body_names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Names of bodies to include. Can be a single string or tuple.&quot;&quot;&quot;</span>
+
   <span class="n">body_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;IDs of bodies to include. Can be a list or slice.&quot;&quot;&quot;</span>
 
   <span class="n">geom_names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Names of geometries to include. Can be a single string or tuple.&quot;&quot;&quot;</span>
+
   <span class="n">geom_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;IDs of geometries to include. Can be a list or slice.&quot;&quot;&quot;</span>
 
   <span class="n">site_names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Names of sites to include. Can be a single string or tuple.&quot;&quot;&quot;</span>
+
   <span class="n">site_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;IDs of sites to include. Can be a list or slice.&quot;&quot;&quot;</span>
 
   <span class="n">actuator_names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Names of actuators to include. Can be a single string or list.&quot;&quot;&quot;</span>
+
   <span class="n">actuator_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;IDs of actuators to include. Can be a list or slice.&quot;&quot;&quot;</span>
 
   <span class="n">preserve_order</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;If True, maintains the order of components as specified.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SceneEntityCfg.resolve">
 <a class="viewcode-back" href="../../../source/api/managers.html#mjlab.managers.SceneEntityCfg.resolve">[docs]</a>

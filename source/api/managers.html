@@ -666,23 +666,11 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.geom_ids"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.geom_ids</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.site_names"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_names</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.site_ids"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_ids</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.__init__"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.actuator_names"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_names</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.actuator_ids"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_ids</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.preserve_order"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.preserve_order</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.name</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.joint_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.joint_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.body_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.body_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.geom_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.geom_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.preserve_order</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.resolve"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.resolve()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.__init__"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.__init__()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.TerminationManager"><code class="docutils literal notranslate"><span class="pre">TerminationManager</span></code></a><ul class="nav section-nav flex-column">
@@ -2379,177 +2367,44 @@ the unscaled reward rate (raw_value * weight)</p></li>
 <p>This configuration allows flexible specification of entity components either by name
 or by ID. During resolution, it ensures consistency between names and IDs, and can
 optimize to slice(None) when all components are selected.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.name" title="Link to this definition">#</a></dt>
-<dd><p>The name of the entity in the scene.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.joint_names">
-<span class="sig-name descname"><span class="pre">joint_names</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.joint_names" title="Link to this definition">#</a></dt>
-<dd><p>Names of joints to include. Can be a single string or tuple.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, …] | None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.joint_ids">
-<span class="sig-name descname"><span class="pre">joint_ids</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.joint_ids" title="Link to this definition">#</a></dt>
-<dd><p>IDs of joints to include. Can be a list or slice.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>] | <a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)">slice</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.body_names">
-<span class="sig-name descname"><span class="pre">body_names</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.body_names" title="Link to this definition">#</a></dt>
-<dd><p>Names of bodies to include. Can be a single string or tuple.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, …] | None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.body_ids">
-<span class="sig-name descname"><span class="pre">body_ids</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.body_ids" title="Link to this definition">#</a></dt>
-<dd><p>IDs of bodies to include. Can be a list or slice.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>] | <a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)">slice</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.geom_names">
-<span class="sig-name descname"><span class="pre">geom_names</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.geom_names" title="Link to this definition">#</a></dt>
-<dd><p>Names of geometries to include. Can be a single string or tuple.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, …] | None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.geom_ids">
-<span class="sig-name descname"><span class="pre">geom_ids</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.geom_ids" title="Link to this definition">#</a></dt>
-<dd><p>IDs of geometries to include. Can be a list or slice.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>] | <a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)">slice</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.site_names">
-<span class="sig-name descname"><span class="pre">site_names</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.site_names" title="Link to this definition">#</a></dt>
-<dd><p>Names of sites to include. Can be a single string or tuple.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, …] | None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.site_ids">
-<span class="sig-name descname"><span class="pre">site_ids</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.site_ids" title="Link to this definition">#</a></dt>
-<dd><p>IDs of sites to include. Can be a list or slice.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>] | <a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)">slice</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.actuator_names">
-<span class="sig-name descname"><span class="pre">actuator_names</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.actuator_names" title="Link to this definition">#</a></dt>
-<dd><p>Names of actuators to include. Can be a single string or list.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a> | <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>] | None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.actuator_ids">
-<span class="sig-name descname"><span class="pre">actuator_ids</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.actuator_ids" title="Link to this definition">#</a></dt>
-<dd><p>IDs of actuators to include. Can be a list or slice.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>] | <a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)">slice</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.preserve_order">
-<span class="sig-name descname"><span class="pre">preserve_order</span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.preserve_order" title="Link to this definition">#</a></dt>
-<dd><p>If True, maintains the order of components as specified. If False,
-allows reordering for optimization.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
-</dd>
-</dl>
-</dd></dl>
-
 <p><strong>Attributes:</strong></p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id0" title="mjlab.managers.SceneEntityCfg.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.name" title="mjlab.managers.SceneEntityCfg.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
+<td><p>The name of the entity in the scene.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id1" title="mjlab.managers.SceneEntityCfg.joint_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joint_names</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.joint_names" title="mjlab.managers.SceneEntityCfg.joint_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joint_names</span></code></a></p></td>
+<td><p>Names of joints to include.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id2" title="mjlab.managers.SceneEntityCfg.joint_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joint_ids</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.joint_ids" title="mjlab.managers.SceneEntityCfg.joint_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joint_ids</span></code></a></p></td>
+<td><p>IDs of joints to include.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id3" title="mjlab.managers.SceneEntityCfg.body_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">body_names</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.body_names" title="mjlab.managers.SceneEntityCfg.body_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">body_names</span></code></a></p></td>
+<td><p>Names of bodies to include.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id4" title="mjlab.managers.SceneEntityCfg.body_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">body_ids</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.body_ids" title="mjlab.managers.SceneEntityCfg.body_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">body_ids</span></code></a></p></td>
+<td><p>IDs of bodies to include.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id5" title="mjlab.managers.SceneEntityCfg.geom_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_names</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.geom_names" title="mjlab.managers.SceneEntityCfg.geom_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_names</span></code></a></p></td>
+<td><p>Names of geometries to include.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id6" title="mjlab.managers.SceneEntityCfg.geom_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_ids</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.geom_ids" title="mjlab.managers.SceneEntityCfg.geom_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">geom_ids</span></code></a></p></td>
+<td><p>IDs of geometries to include.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id7" title="mjlab.managers.SceneEntityCfg.site_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">site_names</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.site_names" title="mjlab.managers.SceneEntityCfg.site_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">site_names</span></code></a></p></td>
+<td><p>Names of sites to include.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id8" title="mjlab.managers.SceneEntityCfg.site_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">site_ids</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.site_ids" title="mjlab.managers.SceneEntityCfg.site_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">site_ids</span></code></a></p></td>
+<td><p>IDs of sites to include.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id9" title="mjlab.managers.SceneEntityCfg.actuator_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">actuator_names</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.actuator_names" title="mjlab.managers.SceneEntityCfg.actuator_names"><code class="xref py py-obj docutils literal notranslate"><span class="pre">actuator_names</span></code></a></p></td>
+<td><p>Names of actuators to include.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id10" title="mjlab.managers.SceneEntityCfg.actuator_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">actuator_ids</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.actuator_ids" title="mjlab.managers.SceneEntityCfg.actuator_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">actuator_ids</span></code></a></p></td>
+<td><p>IDs of actuators to include.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id11" title="mjlab.managers.SceneEntityCfg.preserve_order"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preserve_order</span></code></a></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.preserve_order" title="mjlab.managers.SceneEntityCfg.preserve_order"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preserve_order</span></code></a></p></td>
+<td><p>If True, maintains the order of components as specified.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2557,74 +2412,91 @@ allows reordering for optimization.</p>
 <p><strong>Methods:</strong></p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.resolve" title="mjlab.managers.SceneEntityCfg.resolve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve</span></code></a>(scene)</p></td>
-<td><p>Resolve names and IDs for all configured fields.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.__init__" title="mjlab.managers.SceneEntityCfg.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(name[, joint_names, joint_ids, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.__init__" title="mjlab.managers.SceneEntityCfg.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(name[, joint_names, joint_ids, ...])</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mjlab.managers.SceneEntityCfg.resolve" title="mjlab.managers.SceneEntityCfg.resolve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve</span></code></a>(scene)</p></td>
+<td><p>Resolve names and IDs for all configured fields.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><a class="headerlink" href="#id0" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.name" title="Link to this definition">#</a></dt>
+<dd><p>The name of the entity in the scene.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.joint_names">
+<span class="sig-name descname"><span class="pre">joint_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.joint_names" title="Link to this definition">#</a></dt>
+<dd><p>Names of joints to include. Can be a single string or tuple.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.joint_ids">
+<span class="sig-name descname"><span class="pre">joint_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.joint_ids" title="Link to this definition">#</a></dt>
+<dd><p>IDs of joints to include. Can be a list or slice.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.body_names">
+<span class="sig-name descname"><span class="pre">body_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.body_names" title="Link to this definition">#</a></dt>
+<dd><p>Names of bodies to include. Can be a single string or tuple.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.body_ids">
+<span class="sig-name descname"><span class="pre">body_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.body_ids" title="Link to this definition">#</a></dt>
+<dd><p>IDs of bodies to include. Can be a list or slice.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.geom_names">
+<span class="sig-name descname"><span class="pre">geom_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.geom_names" title="Link to this definition">#</a></dt>
+<dd><p>Names of geometries to include. Can be a single string or tuple.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.geom_ids">
+<span class="sig-name descname"><span class="pre">geom_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.geom_ids" title="Link to this definition">#</a></dt>
+<dd><p>IDs of geometries to include. Can be a list or slice.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.site_names">
+<span class="sig-name descname"><span class="pre">site_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.site_names" title="Link to this definition">#</a></dt>
+<dd><p>Names of sites to include. Can be a single string or tuple.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.site_ids">
+<span class="sig-name descname"><span class="pre">site_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.site_ids" title="Link to this definition">#</a></dt>
+<dd><p>IDs of sites to include. Can be a list or slice.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geom_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geom_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actuator_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">list[str]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actuator_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preserve_order:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">joint_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id1" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.actuator_names">
+<span class="sig-name descname"><span class="pre">actuator_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.actuator_names" title="Link to this definition">#</a></dt>
+<dd><p>Names of actuators to include. Can be a single string or list.</p>
+</dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">joint_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#id2" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.actuator_ids">
+<span class="sig-name descname"><span class="pre">actuator_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.actuator_ids" title="Link to this definition">#</a></dt>
+<dd><p>IDs of actuators to include. Can be a list or slice.</p>
+</dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">body_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id3" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">body_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#id4" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">geom_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id5" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">geom_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#id6" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">site_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id7" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">site_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#id8" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">actuator_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id9" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">actuator_ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)"><span class="pre">slice</span></a></em><a class="headerlink" href="#id10" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">preserve_order</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#id11" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.preserve_order">
+<span class="sig-name descname"><span class="pre">preserve_order</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.preserve_order" title="Link to this definition">#</a></dt>
+<dd><p>If True, maintains the order of components as specified.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.resolve">
@@ -2647,11 +2519,6 @@ It handles three cases:
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="mjlab.managers.SceneEntityCfg.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geom_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geom_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">tuple[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">...]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actuator_names:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">list[str]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actuator_ids:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">slice</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preserve_order:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#mjlab.managers.SceneEntityCfg.__init__" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -3055,23 +2922,11 @@ Classes are auto-instantiated with <code class="docutils literal notranslate"><s
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.geom_ids"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.geom_ids</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.site_names"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_names</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.site_ids"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_ids</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.__init__"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.actuator_names"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_names</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.actuator_ids"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_ids</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.preserve_order"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.preserve_order</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.name</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.joint_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.joint_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.body_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.body_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.geom_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.geom_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.site_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_names</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.actuator_ids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.preserve_order</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.resolve"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.resolve()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.SceneEntityCfg.__init__"><code class="docutils literal notranslate"><span class="pre">SceneEntityCfg.__init__()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mjlab.managers.TerminationManager"><code class="docutils literal notranslate"><span class="pre">TerminationManager</span></code></a><ul class="nav section-nav flex-column">
