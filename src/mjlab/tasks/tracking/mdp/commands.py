@@ -49,23 +49,11 @@ class MotionLoader:
       data["body_ang_vel_w"], dtype=torch.float32, device=device
     )
     self._body_indexes = body_indexes
+    self.body_pos_w = self._body_pos_w[:, self._body_indexes]
+    self.body_quat_w = self._body_quat_w[:, self._body_indexes]
+    self.body_lin_vel_w = self._body_lin_vel_w[:, self._body_indexes]
+    self.body_ang_vel_w = self._body_ang_vel_w[:, self._body_indexes]
     self.time_step_total = self.joint_pos.shape[0]
-
-  @property
-  def body_pos_w(self) -> torch.Tensor:
-    return self._body_pos_w[:, self._body_indexes]
-
-  @property
-  def body_quat_w(self) -> torch.Tensor:
-    return self._body_quat_w[:, self._body_indexes]
-
-  @property
-  def body_lin_vel_w(self) -> torch.Tensor:
-    return self._body_lin_vel_w[:, self._body_indexes]
-
-  @property
-  def body_ang_vel_w(self) -> torch.Tensor:
-    return self._body_ang_vel_w[:, self._body_indexes]
 
 
 class MotionCommand(CommandTerm):

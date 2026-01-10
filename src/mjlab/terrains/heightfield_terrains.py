@@ -391,7 +391,7 @@ class HfRandomUniformTerrainCfg(SubTerrainCfg):
 @dataclass(kw_only=True)
 class HfWaveTerrainCfg(SubTerrainCfg):
   amplitude_range: tuple[float, float]
-  num_waves: float = 1.0
+  num_waves: int = 1
   horizontal_scale: float = 0.1
   vertical_scale: float = 0.005
   base_thickness_ratio: float = 0.25

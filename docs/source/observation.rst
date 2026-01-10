@@ -166,15 +166,14 @@ affects policies trained with history but not those without.
 Observation Delay
 -----------------
 
-Real robots have sensors with communication delays (WiFi, USB) and varying refresh
-rates (30Hz camera, 100Hz encoders). The delay system models both sensor latency
-and slower-than-control refresh rates.
+Real robots have sensors with communication delays (WiFi, USB). The delay system
+models sensor latency by returning observations from earlier timesteps.
 
 Delay Parameters
 ^^^^^^^^^^^^^^^^
 
 ``delay_min_lag`` / ``delay_max_lag`` (default: 0) Lag range in steps. Uniformly
-samples an integer lag from ``[min_lag, max_lag]`` (both inclusive) each update.
+samples an integer lag from ``[min_lag, max_lag]`` (both inclusive).
 ``lag=0`` means current observation, ``lag=2`` means 2 steps ago.
 
 ``delay_per_env`` (default: True) If True, each environment gets a different
@@ -183,26 +182,20 @@ lag. If False, all environments share the same lag.
 ``delay_hold_prob`` (default: 0.0)
 Probability [0, 1] of keeping the previous lag instead of resampling.
 
-``delay_update_period`` (default: 0) How often (in steps) to resample the lag
-and potentially get a new observation. If 0, resample every step. If > 0, the
-observation may repeat for N steps (models sensors that refresh slower than
-control rate).
+``delay_update_period`` (default: 0) How often (in steps) to resample the lag.
+If 0, resample every step. If N > 0, the lag value stays constant for N steps
+before being resampled (creates temporally correlated latency patterns).
 
-``delay_per_env_phase`` (default: True) If True, each environment has a
-different phase offset for update period (staggers refresh times).
+``delay_per_env_phase`` (default: True) If True and ``delay_update_period > 0``,
+stagger resample timing across environments with random phase offsets.
 
-Understanding Delay vs Multi-Rate
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
 
-**Delay and multi-rate are orthogonal concepts** that model different real-world
-phenomena:
+   ``delay_update_period`` controls how often the *lag value* is resampled, not
+   how often observations are refreshed. You still get a new (delayed) observation
+   every step - the lag just stays constant for N steps before being resampled.
 
-- **Delay** (``delay_min_lag`` / ``delay_max_lag``): Models sensor latency / communication
-  delay. Controls *how old* the observation is.
-- **Multi-rate** (``delay_update_period``): Models sensor refresh rate. Controls *how
-  often* the sensor produces a new reading.
-
-**Visualizing the difference (50Hz control = 20ms/step):**
+**Visualizing delay (50Hz control = 20ms/step):**
 
 .. code-block:: bash
 
@@ -211,46 +204,27 @@ phenomena:
     Control steps:    0     1     2     3     4     5     6     7
                      20ms  40ms  60ms  80ms  100ms 120ms 140ms 160ms
 
-    No delay, no multi-rate (baseline - perfect sensor):
+    No delay (baseline - perfect sensor):
     You receive:      A     B     C     D     E     F     G     H
                       ↑ current observation every step
 
-    Delay only (lag=2, no update_period):
-    You receive:      -     -     A     B     C     D     E     F
-                                  ↑     ↑     ↑     ↑     ↑     ↑
-                                 40ms  40ms  40ms  40ms  40ms  40ms delay
-                    Every step gets a NEW observation, just 40ms old
-
-    Multi-rate only (update_period=2, no lag):
-    You receive:      A     A     C     C     E     E     G     G
-                      ↑same ↑     ↑same ↑     ↑same ↑     ↑same ↑
-                    Observations update every 2 steps (25Hz refresh)
-                    Steps 1,3,5,7 repeat previous observation
-
-    Both delay + multi-rate (lag=2, update_period=2):
-    Sensor captures:  A     B     C     D     E     F     G     H
-    You receive:      -     -     A     A     C     C     E     E
-                                  ↑same ↑     ↑same ↑     ↑same ↑
-                    40ms delayed + only refreshes every 2 steps
-                    Models 25Hz camera with 40ms latency
+    Delay with lag=2:
+    You receive:      A     A     A     B     C     D     E     F
+                      ↑clamp↑     ↑     ↑     ↑     ↑     ↑     ↑
+                    Steps 0-1: lag clamped (buffer not full yet)
+                    Step 2+: 40ms delay, every step gets NEW observation
 
 
-**Real-world example - 30Hz camera at 50Hz control with 40ms latency:**
+**Example - Camera with 40-60ms latency at 50Hz control:**
 
 
 .. code-block:: python
 
     camera: ObservationTermCfg = ObservationTermCfg(
         func=camera_obs,
-        delay_min_lag=2,        # 40ms latency
-        delay_max_lag=2,
-        delay_update_period=2,  # 25Hz refresh (approximates 30Hz)
+        delay_min_lag=2,  # 40ms latency
+        delay_max_lag=3,  # 60ms latency
     )
-
-
-**Common mistake:** Using only ``delay_min_lag=2, delay_max_lag=2`` gives you
-40ms latency but you still get 50 different camera frames per second. You need
-``delay_update_period=2`` to model the slower refresh rate.
 
 Computing Delays from Real-World Latency
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -277,38 +251,10 @@ delay_steps = latency_ms / (1000 / control_hz)
      use ``delay_min_lag=2, delay_max_lag=3`` which uniformly samples lag ∈ {2, 3}
      (both inclusive), giving either 40ms or 60ms delay.
 
-Computing Multi-Rate Updates
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Convert sensor refresh rate to update period:
-
-
-update_period = control_hz / sensor_hz
-
-
-**Example at 50Hz control:**
-
-- 30Hz camera: update_period = 50 / 30 ≈ 2 steps → **actual 25Hz** (error: -17%)
-- 25Hz LiDAR: update_period = 50 / 25 = 2 steps → **actual 25Hz** (exact)
-- 10Hz GPS: update_period = 50 / 10 = 5 steps → **actual 10Hz** (exact)
-
-**Example at 100Hz control:**
-
-- 30Hz camera: update_period = 100 / 30 ≈ 3 steps → **actual 33.3Hz** (error: +11%)
-- 50Hz IMU: update_period = 100 / 50 = 2 steps → **actual 50Hz** (exact)
-
-.. note::
-
-     Since ``update_period`` must be an integer, sensor rates that don't evenly
-     divide the control frequency can only be approximated. For example, 30Hz at 50Hz
-     control needs update_period=1.67, so round to 2 → 25Hz (17% error). Higher control
-     frequencies reduce quantization error (100Hz control approximates 30Hz as 33.3Hz
-     with only 11% error).
-
 Examples
 ^^^^^^^^
 
-**Joint encoders (100Hz, no delay) at 50Hz control:**
+**Joint encoders (no delay):**
 
 .. code-block:: python
 
@@ -316,22 +262,19 @@ Examples
     # delay_min_lag=delay_max_lag=0 by default.
 
 
-**Camera (30Hz, 40-60ms latency) at 50Hz control:**
+**Camera with 40-60ms latency at 50Hz control:**
 
 .. code-block:: python
 
-    # 30Hz camera: update_period = 50/30 ≈ 2 → actually 25Hz (17% error, acceptable)
     # 40-60ms latency = 2-3 steps at 50Hz (20ms/step)
     camera: ObservationTermCfg = ObservationTermCfg(
         func=camera_obs,
-        delay_min_lag=2,          # 40ms
-        delay_max_lag=3,          # 60ms
-        delay_update_period=2,    # 25Hz (approximates 30Hz)
-        delay_per_env_phase=True  # Staggered refresh across envs
+        delay_min_lag=2,  # 40ms
+        delay_max_lag=3,  # 60ms
     )
 
 
-**Mixed-rate system at 50Hz control:**
+**Mixed system - fast encoders and slow camera:**
 
 .. code-block:: python
 
@@ -340,15 +283,13 @@ Examples
         # Fast encoders (no delay)
         joint_pos: ObservationTermCfg = ObservationTermCfg(
             func=joint_pos,
-            # delay_min_lag=0, delay_max_lag=0 (default)
         )
 
-        # 25Hz camera (40-80ms latency)
+        # Camera with 40-80ms latency
         camera: ObservationTermCfg = ObservationTermCfg(
             func=camera_obs,
             delay_min_lag=2,  # 40ms
             delay_max_lag=4,  # 80ms
-            delay_update_period=2  # 25Hz (50Hz control / 2)
         )
 
 

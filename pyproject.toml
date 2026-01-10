@@ -66,7 +66,7 @@ homie = "mjlab.scripts.infer_h1_with_hands_lowerbody_policy:main"
 dev = [
   "ipdb>=0.13.13",
   "pre-commit>=4.3.0",
-  "pyright>=1.1.407",
+  "pyright>=1.1.408",
   "pytest>=v9.0.2",
   "ruff>=v0.14.10",
   "ty>=v0.0.9",
@@ -119,10 +119,10 @@ url = "https://py.mujoco.org"
 explicit = true
 
 [tool.uv.sources]
-mujoco-warp = { git = "https://github.com/google-deepmind/mujoco_warp", rev = "9491175b7cbea87e28d3e3e67733095317c33398"}
 warp-lang = { index = "nvidia", marker = "sys_platform != 'darwin'" }
 mujoco = { index = "mujoco" }
 torch = { index = "pytorch-cu128", extra = "cu128", marker = "sys_platform != 'darwin'" }
+mujoco-warp = { git = "https://github.com/google-deepmind/mujoco_warp", rev = "4ce1c3e9fd635f6589f8b91b2cfba1739cba01a3" }
 
 [tool.ruff]
 src = ["src"]  # Helpful for recognizing first-party imports.
