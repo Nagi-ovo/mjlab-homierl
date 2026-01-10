@@ -55,7 +55,7 @@ uv run play Mjlab-Homie-Unitree-H1 --checkpoint-file MODEL_PATH --num-envs 30 --
 ### Play (with robotiq hands)
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint-file MODEL_PATH --num-envs 30 --viewer viser
+uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint-file homie_rl.pt --num-envs 30 --viewer viser --device cuda:0
 ```
 
 ---
