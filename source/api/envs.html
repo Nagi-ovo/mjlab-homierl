@@ -58,7 +58,7 @@
     <link rel="prev" title="API Reference" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 06, 2026"/>
+    <meta name="docbuild:last-update" content="Jan 10, 2026"/>
   </head>
   
   
@@ -813,7 +813,7 @@ with a 2ms physics timestep and decimation=10, the environment runs at 50Hz.</p>
 <p><strong>Methods:</strong></p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.envs.ManagerBasedRlEnvCfg.__init__" title="mjlab.envs.ManagerBasedRlEnvCfg.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*, decimation, scene, observations, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mjlab.envs.ManagerBasedRlEnvCfg.__init__" title="mjlab.envs.ManagerBasedRlEnvCfg.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(*, decimation, scene[, ...])</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -838,15 +838,14 @@ specifies <code class="docutils literal notranslate"><span class="pre">num_envs<
 <span class="sig-name descname"><span class="pre">observations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="managers.html#mjlab.managers.ObservationGroupCfg" title="mjlab.managers.observation_manager.ObservationGroupCfg"><span class="pre">ObservationGroupCfg</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.observations" title="Link to this definition">#</a></dt>
 <dd><p>Observation groups configuration. Each group (e.g., “policy”, “critic”) contains
 observation terms that are concatenated. Groups can have different settings for
-noise, history, and delay. Can be empty for environments without observations.</p>
+noise, history, and delay.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mjlab.envs.ManagerBasedRlEnvCfg.actions">
 <span class="sig-name descname"><span class="pre">actions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="managers.html#mjlab.managers.ActionTermCfg" title="mjlab.managers.action_manager.ActionTermCfg"><span class="pre">ActionTermCfg</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.actions" title="Link to this definition">#</a></dt>
 <dd><p>Action terms configuration. Each term controls a specific entity/aspect
-(e.g., joint positions). Action dimensions are concatenated across terms.
-Can be empty for observation-only environments.</p>
+(e.g., joint positions). Action dimensions are concatenated across terms.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -890,27 +889,26 @@ contact parameters, and NaN guarding.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mjlab.envs.ManagerBasedRlEnvCfg.rewards">
 <span class="sig-name descname"><span class="pre">rewards</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="managers.html#mjlab.managers.RewardTermCfg" title="mjlab.managers.reward_manager.RewardTermCfg"><span class="pre">RewardTermCfg</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.rewards" title="Link to this definition">#</a></dt>
-<dd><p>Reward terms configuration. Can be empty for unsupervised environments.</p>
+<dd><p>Reward terms configuration.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mjlab.envs.ManagerBasedRlEnvCfg.terminations">
 <span class="sig-name descname"><span class="pre">terminations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="managers.html#mjlab.managers.TerminationTermCfg" title="mjlab.managers.termination_manager.TerminationTermCfg"><span class="pre">TerminationTermCfg</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.terminations" title="Link to this definition">#</a></dt>
-<dd><p>Termination terms configuration. Can be empty for infinite episodes (no
-terminations). Use <code class="docutils literal notranslate"><span class="pre">mdp.time_out</span></code> with <code class="docutils literal notranslate"><span class="pre">time_out=True</span></code> for episode time limits.</p>
+<dd><p>Termination terms configuration. If empty, episodes never reset. Use
+<code class="docutils literal notranslate"><span class="pre">mdp.time_out</span></code> with <code class="docutils literal notranslate"><span class="pre">time_out=True</span></code> for episode time limits.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mjlab.envs.ManagerBasedRlEnvCfg.commands">
 <span class="sig-name descname"><span class="pre">commands</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="managers.html#mjlab.managers.CommandTermCfg" title="mjlab.managers.command_manager.CommandTermCfg"><span class="pre">CommandTermCfg</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.commands" title="Link to this definition">#</a></dt>
-<dd><p>Command generator terms (e.g., velocity targets). Can be empty if the
-task has no goal commands.</p>
+<dd><p>Command generator terms (e.g., velocity targets).</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mjlab.envs.ManagerBasedRlEnvCfg.curriculum">
 <span class="sig-name descname"><span class="pre">curriculum</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="managers.html#mjlab.managers.CurriculumTermCfg" title="mjlab.managers.curriculum_manager.CurriculumTermCfg"><span class="pre">CurriculumTermCfg</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.curriculum" title="Link to this definition">#</a></dt>
-<dd><p>Curriculum terms for adaptive difficulty. Can be empty to disable.</p>
+<dd><p>Curriculum terms for adaptive difficulty.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -937,7 +935,7 @@ algorithms that expect unscaled reward signals (e.g., HER, static reward scaling
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mjlab.envs.ManagerBasedRlEnvCfg.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">*,</span> <span class="pre">decimation:</span> <span class="pre">int,</span> <span class="pre">scene:</span> <span class="pre">~mjlab.scene.scene.SceneCfg,</span> <span class="pre">observations:</span> <span class="pre">dict[str,</span> <span class="pre">~mjlab.managers.observation_manager.ObservationGroupCfg],</span> <span class="pre">actions:</span> <span class="pre">dict[str,</span> <span class="pre">~mjlab.managers.action_manager.ActionTermCfg],</span> <span class="pre">events:</span> <span class="pre">dict[str,</span> <span class="pre">~mjlab.managers.event_manager.EventTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">seed:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">sim:</span> <span class="pre">~mjlab.sim.sim.SimulationCfg</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">viewer:</span> <span class="pre">~mjlab.viewer.viewer_config.ViewerConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">episode_length_s:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0,</span> <span class="pre">rewards:</span> <span class="pre">dict[str,</span> <span class="pre">~mjlab.managers.reward_manager.RewardTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">terminations:</span> <span class="pre">dict[str,</span> <span class="pre">~mjlab.managers.termination_manager.TerminationTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">commands:</span> <span class="pre">dict[str,</span> <span class="pre">~mjlab.managers.command_manager.CommandTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">curriculum:</span> <span class="pre">dict[str,</span> <span class="pre">~mjlab.managers.curriculum_manager.CurriculumTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">is_finite_horizon:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False,</span> <span class="pre">scale_rewards_by_dt:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimation:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scene:</span> <span class="pre">~mjlab.scene.scene.SceneCfg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~mjlab.managers.observation_manager.ObservationGroupCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~mjlab.managers.action_manager.ActionTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~mjlab.managers.event_manager.EventTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim:</span> <span class="pre">~mjlab.sim.sim.SimulationCfg</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer:</span> <span class="pre">~mjlab.viewer.viewer_config.ViewerConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">episode_length_s:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewards:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~mjlab.managers.reward_manager.RewardTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminations:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~mjlab.managers.termination_manager.TerminationTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">commands:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~mjlab.managers.command_manager.CommandTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curriculum:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~mjlab.managers.curriculum_manager.CurriculumTermCfg]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_finite_horizon:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_rewards_by_dt:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#mjlab.envs.ManagerBasedRlEnvCfg.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1067,7 +1065,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on Jan 06, 2026.
+  Last updated on Jan 10, 2026.
   <br/>
 </p>
   </div>

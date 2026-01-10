@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Jan 06, 2026"/>
+    <meta name="docbuild:last-update" content="Jan 10, 2026"/>
   </head>
   
   
@@ -466,15 +466,14 @@ document.write(`
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Scene configuration defining terrain, entities, and sensors. The scene</span>
 <span class="sd">  specifies ``num_envs``, the number of parallel environments.&quot;&quot;&quot;</span>
 
-  <span class="n">observations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ObservationGroupCfg</span><span class="p">]</span>
+  <span class="n">observations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ObservationGroupCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Observation groups configuration. Each group (e.g., &quot;policy&quot;, &quot;critic&quot;) contains</span>
 <span class="sd">  observation terms that are concatenated. Groups can have different settings for</span>
-<span class="sd">  noise, history, and delay. Can be empty for environments without observations.&quot;&quot;&quot;</span>
+<span class="sd">  noise, history, and delay.&quot;&quot;&quot;</span>
 
-  <span class="n">actions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ActionTermCfg</span><span class="p">]</span>
+  <span class="n">actions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ActionTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Action terms configuration. Each term controls a specific entity/aspect</span>
-<span class="sd">  (e.g., joint positions). Action dimensions are concatenated across terms.</span>
-<span class="sd">  Can be empty for observation-only environments.&quot;&quot;&quot;</span>
+<span class="sd">  (e.g., joint positions). Action dimensions are concatenated across terms.&quot;&quot;&quot;</span>
 
   <span class="n">events</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">EventTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
     <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span>
@@ -509,18 +508,17 @@ document.write(`
 <span class="sd">  &quot;&quot;&quot;</span>
 
   <span class="n">rewards</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">RewardTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Reward terms configuration. Can be empty for unsupervised environments.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Reward terms configuration.&quot;&quot;&quot;</span>
 
   <span class="n">terminations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TerminationTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Termination terms configuration. Can be empty for infinite episodes (no</span>
-<span class="sd">  terminations). Use ``mdp.time_out`` with ``time_out=True`` for episode time limits.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Termination terms configuration. If empty, episodes never reset. Use</span>
+<span class="sd">  ``mdp.time_out`` with ``time_out=True`` for episode time limits.&quot;&quot;&quot;</span>
 
   <span class="n">commands</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CommandTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Command generator terms (e.g., velocity targets). Can be empty if the</span>
-<span class="sd">  task has no goal commands.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Command generator terms (e.g., velocity targets).&quot;&quot;&quot;</span>
 
   <span class="n">curriculum</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CurriculumTermCfg</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">  </span><span class="sd">&quot;&quot;&quot;Curriculum terms for adaptive difficulty. Can be empty to disable.&quot;&quot;&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;Curriculum terms for adaptive difficulty.&quot;&quot;&quot;</span>
 
   <span class="n">is_finite_horizon</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Whether the task has a finite or infinite horizon. Defaults to False (infinite).</span>
@@ -990,7 +988,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on Jan 06, 2026.
+  Last updated on Jan 10, 2026.
   <br/>
 </p>
   </div>
