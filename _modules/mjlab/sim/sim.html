@@ -169,7 +169,7 @@
           
           
           
-          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
         </li>
         <li class="nav-item">
           
@@ -471,6 +471,7 @@ document.write(`
 
   <span class="c1"># Other.</span>
   <span class="n">gravity</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">9.81</span><span class="p">)</span>
+  <span class="n">multiccd</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="MujocoCfg.apply">
 <a class="viewcode-back" href="../../../source/api/sim.html#mjlab.sim.MujocoCfg.apply">[docs]</a>
@@ -487,7 +488,9 @@ document.write(`
     <span class="n">model</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">tolerance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tolerance</span>
     <span class="n">model</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">ls_iterations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls_iterations</span>
     <span class="n">model</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">ls_tolerance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ls_tolerance</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">ccd_iterations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccd_iterations</span></div>
+    <span class="n">model</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">ccd_iterations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ccd_iterations</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiccd</span><span class="p">:</span>
+      <span class="n">model</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">enableflags</span> <span class="o">|=</span> <span class="n">mujoco</span><span class="o">.</span><span class="n">mjtEnableBit</span><span class="o">.</span><span class="n">mjENBL_MULTICCD</span></div>
 </div>
 
 

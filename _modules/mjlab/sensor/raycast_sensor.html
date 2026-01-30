@@ -169,7 +169,7 @@
           
           
           
-          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
         </li>
         <li class="nav-item">
           
@@ -881,6 +881,7 @@ document.write(`
 <div class="viewcode-block" id="RayCastSensor.__init__">
 <a class="viewcode-back" href="../../../source/api/sensor.html#mjlab.sensor.RayCastSensor.__init__">[docs]</a>
   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">RayCastSensorCfg</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="n">mjwarp</span><span class="o">.</span><span class="n">Data</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">:</span> <span class="n">mjwarp</span><span class="o">.</span><span class="n">Model</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -985,7 +986,7 @@ document.write(`
     <span class="bp">self</span><span class="o">.</span><span class="n">_ray_bodyexclude</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
       <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_rays</span><span class="p">,),</span>
       <span class="n">body_exclude</span><span class="p">,</span>
-      <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+      <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
       <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -1007,8 +1008,7 @@ document.write(`
       <span class="bp">self</span><span class="o">.</span><span class="n">_create_graph</span><span class="p">()</span></div>
 
 
-  <span class="nd">@property</span>
-  <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RayCastData</span><span class="p">:</span>
+  <span class="k">def</span><span class="w"> </span><span class="nf">_compute_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RayCastData</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_perform_raycast</span><span class="p">()</span>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distances</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normals_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hit_pos_w</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -1119,7 +1119,7 @@ document.write(`
       <span class="n">d</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">struct</span><span class="p">,</span>  <span class="c1"># type: ignore[attr-defined]</span>
       <span class="n">pnt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_pnt</span><span class="p">,</span>
       <span class="n">vec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_vec</span><span class="p">,</span>
-      <span class="n">geomgroup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_geomgroup</span><span class="p">,</span>  <span class="c1"># type: ignore[arg-type]</span>
+      <span class="n">geomgroup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_geomgroup</span><span class="p">,</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
       <span class="n">flg_static</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
       <span class="n">bodyexclude</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_bodyexclude</span><span class="p">,</span>
       <span class="n">dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_dist</span><span class="p">,</span>
@@ -1153,6 +1153,7 @@ document.write(`
     <span class="c1"># Transform ray directions (per-ray).</span>
     <span class="n">world_rays</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bij,nj-&gt;bni&quot;</span><span class="p">,</span> <span class="n">rot_mat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_directions</span><span class="p">)</span>
 
+    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ray_pnt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ray_vec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="n">pnt_torch</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">to_torch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_pnt</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_envs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_rays</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
     <span class="n">vec_torch</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">to_torch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_vec</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_envs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_rays</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
     <span class="n">pnt_torch</span><span class="o">.</span><span class="n">copy_</span><span class="p">(</span><span class="n">world_origins</span><span class="p">)</span>
@@ -1164,6 +1165,7 @@ document.write(`
     <span class="k">else</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">_raycast_direct</span><span class="p">()</span>
 
+    <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ray_dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ray_normal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_distances</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">to_torch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_dist</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_normals_w</span> <span class="o">=</span> <span class="n">wp</span><span class="o">.</span><span class="n">to_torch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ray_normal</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_envs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_rays</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_distances</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_distances</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">max_distance</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>

@@ -169,7 +169,7 @@
           
           
           
-          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
         </li>
         <li class="nav-item">
           
@@ -574,6 +574,8 @@ document.write(`
         <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.__init__">(mjlab.sensor.RayCastSensorCfg method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.__init__">(mjlab.sensor.RayCastSensorCfg.VizCfg method)</a>
+</li>
+        <li><a href="source/api/sensor.html#mjlab.sensor.Sensor.__init__">(mjlab.sensor.Sensor method)</a>
 </li>
         <li><a href="source/api/sensor.html#mjlab.sensor.SensorCfg.__init__">(mjlab.sensor.SensorCfg method)</a>
 </li>
@@ -1021,12 +1023,6 @@ document.write(`
       <ul>
         <li><a href="source/api/entity.html#mjlab.entity.EntityData.data">(mjlab.entity.EntityData attribute)</a>
 </li>
-        <li><a href="source/api/sensor.html#mjlab.sensor.BuiltinSensor.data">(mjlab.sensor.BuiltinSensor property)</a>
-</li>
-        <li><a href="source/api/sensor.html#mjlab.sensor.ContactSensor.data">(mjlab.sensor.ContactSensor property)</a>
-</li>
-        <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensor.data">(mjlab.sensor.RayCastSensor property)</a>
-</li>
         <li><a href="source/api/sensor.html#mjlab.sensor.Sensor.data">(mjlab.sensor.Sensor property)</a>
 </li>
         <li><a href="source/api/sim.html#mjlab.sim.Simulation.data">(mjlab.sim.Simulation property)</a>
@@ -1068,14 +1064,14 @@ document.write(`
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.default_root_state">default_root_state (mjlab.entity.EntityData attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/actuator.html#mjlab.actuator.DelayedActuatorCfg.delay_hold_prob">delay_hold_prob (mjlab.actuator.DelayedActuatorCfg attribute)</a>
 
       <ul>
         <li><a href="source/api/managers.html#mjlab.managers.ObservationTermCfg.delay_hold_prob">(mjlab.managers.ObservationTermCfg attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/actuator.html#mjlab.actuator.DelayedActuatorCfg.delay_max_lag">delay_max_lag (mjlab.actuator.DelayedActuatorCfg attribute)</a>
 
       <ul>
@@ -1829,6 +1825,8 @@ document.write(`
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.MujocoCfg">MujocoCfg (class in mjlab.sim)</a>
 </li>
+      <li><a href="source/api/sim.html#mjlab.sim.MujocoCfg.multiccd">multiccd (mjlab.sim.MujocoCfg attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1851,7 +1849,11 @@ document.write(`
         <li><a href="source/api/sensor.html#mjlab.sensor.SensorCfg.name">(mjlab.sensor.SensorCfg attribute)</a>
 </li>
       </ul></li>
+      <li><a href="source/api/managers.html#mjlab.managers.ObservationGroupCfg.nan_check_per_term">nan_check_per_term (mjlab.managers.ObservationGroupCfg attribute)</a>
+</li>
       <li><a href="source/api/sim.html#mjlab.sim.SimulationCfg.nan_guard">nan_guard (mjlab.sim.SimulationCfg attribute)</a>
+</li>
+      <li><a href="source/api/managers.html#mjlab.managers.ObservationGroupCfg.nan_policy">nan_policy (mjlab.managers.ObservationGroupCfg attribute)</a>
 </li>
       <li><a href="source/api/sim.html#mjlab.sim.SimulationCfg.nconmax">nconmax (mjlab.sim.SimulationCfg attribute)</a>
 </li>
@@ -1871,10 +1873,10 @@ document.write(`
 </li>
       <li><a href="source/api/sensor.html#mjlab.sensor.RayCastSensorCfg.VizCfg.normal_length">normal_length (mjlab.sensor.RayCastSensorCfg.VizCfg attribute)</a>
 </li>
-      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.normals_w">normals_w (mjlab.sensor.RayCastData attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/api/sensor.html#mjlab.sensor.RayCastData.normals_w">normals_w (mjlab.sensor.RayCastData attribute)</a>
+</li>
       <li><a href="source/api/managers.html#mjlab.managers.NullCommandManager">NullCommandManager (class in mjlab.managers)</a>
 </li>
       <li><a href="source/api/managers.html#mjlab.managers.NullCurriculumManager">NullCurriculumManager (class in mjlab.managers)</a>
@@ -2539,10 +2541,10 @@ document.write(`
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.write_joint_position">write_joint_position() (mjlab.entity.EntityData method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.write_joint_position_to_sim">write_joint_position_to_sim() (mjlab.entity.Entity method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.write_joint_state">write_joint_state() (mjlab.entity.EntityData method)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.write_joint_state_to_sim">write_joint_state_to_sim() (mjlab.entity.Entity method)</a>
@@ -2554,6 +2556,10 @@ document.write(`
       <li><a href="source/api/entity.html#mjlab.entity.EntityData.write_mocap_pose">write_mocap_pose() (mjlab.entity.EntityData method)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.write_mocap_pose_to_sim">write_mocap_pose_to_sim() (mjlab.entity.Entity method)</a>
+</li>
+      <li><a href="source/api/entity.html#mjlab.entity.EntityData.write_root_com_velocity">write_root_com_velocity() (mjlab.entity.EntityData method)</a>
+</li>
+      <li><a href="source/api/entity.html#mjlab.entity.Entity.write_root_com_velocity_to_sim">write_root_com_velocity_to_sim() (mjlab.entity.Entity method)</a>
 </li>
       <li><a href="source/api/entity.html#mjlab.entity.Entity.write_root_link_pose_to_sim">write_root_link_pose_to_sim() (mjlab.entity.Entity method)</a>
 </li>

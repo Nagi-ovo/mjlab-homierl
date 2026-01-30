@@ -169,7 +169,7 @@
           
           
           
-          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
         </li>
         <li class="nav-item">
           
@@ -406,7 +406,7 @@ document.write(`
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
@@ -504,7 +504,21 @@ document.write(`
   <span class="n">flatten_history_dim</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="w">  </span><span class="sd">&quot;&quot;&quot;Whether to flatten history into the observation dimension. If True,</span>
 <span class="sd">  observations have shape ``(num_envs, obs_dim * history_length)``. If False,</span>
-<span class="sd">  shape is ``(num_envs, history_length, obs_dim)``.&quot;&quot;&quot;</span></div>
+<span class="sd">  shape is ``(num_envs, history_length, obs_dim)``.&quot;&quot;&quot;</span>
+
+  <span class="n">nan_policy</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;disabled&quot;</span><span class="p">,</span> <span class="s2">&quot;warn&quot;</span><span class="p">,</span> <span class="s2">&quot;sanitize&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;disabled&quot;</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;NaN/Inf handling policy for observations in this group.</span>
+
+<span class="sd">  - &#39;disabled&#39;: No checks (default, fastest)</span>
+<span class="sd">  - &#39;warn&#39;: Log warning with term name and env IDs, then sanitize (debugging)</span>
+<span class="sd">  - &#39;sanitize&#39;: Silent sanitization to 0.0 like reward manager (safe for production)</span>
+<span class="sd">  - &#39;error&#39;: Raise ValueError on NaN/Inf (strict development mode)</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">nan_check_per_term</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;If True, check each observation term individually to identify NaN source.</span>
+<span class="sd">  If False, check only the final concatenated output (faster but less informative).</span>
+<span class="sd">  Only applies when nan_policy != &#39;disabled&#39;.&quot;&quot;&quot;</span></div>
 
 
 
@@ -667,6 +681,50 @@ document.write(`
     <span class="k">return</span> <span class="p">{}</span></div>
 
 
+  <span class="k">def</span><span class="w"> </span><span class="nf">_check_and_handle_nans</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="nb">str</span>
+  <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check for NaN/Inf and handle according to policy.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      tensor: Observation tensor to check.</span>
+<span class="sd">      context: Context string for error/warning messages (e.g., &quot;policy/base_lin_vel&quot;).</span>
+<span class="sd">      policy: NaN handling policy (&quot;disabled&quot;, &quot;warn&quot;, &quot;sanitize&quot;, &quot;error&quot;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The tensor, potentially sanitized depending on policy.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      ValueError: If policy is &quot;error&quot; and NaN/Inf detected.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;disabled&quot;</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">tensor</span>
+
+    <span class="n">has_nan</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+    <span class="n">has_inf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">has_nan</span> <span class="ow">or</span> <span class="n">has_inf</span><span class="p">):</span>
+      <span class="k">return</span> <span class="n">tensor</span>
+
+    <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span>
+      <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">nan_env_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;NaN/Inf detected in observation &#39;</span><span class="si">{</span><span class="n">context</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;for environments: </span><span class="si">{</span><span class="n">nan_env_ids</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+      <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;warn&quot;</span><span class="p">:</span>
+      <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">nan_env_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+      <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;[ObservationManager] NaN/Inf in &#39;</span><span class="si">{</span><span class="n">context</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;(envs: </span><span class="si">{</span><span class="n">nan_env_ids</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="si">}</span><span class="s2">). Sanitizing to 0.&quot;</span>
+      <span class="p">)</span>
+
+    <span class="c1"># Sanitize (applies to both &quot;warn&quot; and &quot;sanitize&quot; policies).</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">nan</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">posinf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">neginf</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
 <div class="viewcode-block" id="ObservationManager.compute">
 <a class="viewcode-back" href="../../../source/api/managers.html#mjlab.managers.ObservationManager.compute">[docs]</a>
   <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span>
@@ -690,6 +748,7 @@ document.write(`
   <span class="k">def</span><span class="w"> </span><span class="nf">compute_group</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">update_history</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
   <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="n">group_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="n">group_name</span><span class="p">]</span>
     <span class="n">group_term_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group_obs_term_names</span><span class="p">[</span><span class="n">group_name</span><span class="p">]</span>
     <span class="n">group_obs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">obs_terms</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span>
@@ -707,6 +766,13 @@ document.write(`
         <span class="n">scale</span> <span class="o">=</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">scale</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
         <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+
+      <span class="c1"># Check for NaN/Inf before delay/history buffers (per-term checking).</span>
+      <span class="k">if</span> <span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_check_per_term</span> <span class="ow">and</span> <span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_policy</span> <span class="o">!=</span> <span class="s2">&quot;disabled&quot;</span><span class="p">:</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_handle_nans</span><span class="p">(</span>
+          <span class="n">obs</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">group_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">term_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_policy</span>
+        <span class="p">)</span>
+
       <span class="k">if</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">delay_max_lag</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">delay_buffer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group_obs_term_delay_buffer</span><span class="p">[</span><span class="n">group_name</span><span class="p">][</span><span class="n">term_name</span><span class="p">]</span>
         <span class="n">delay_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
@@ -722,10 +788,30 @@ document.write(`
           <span class="n">group_obs</span><span class="p">[</span><span class="n">term_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">circular_buffer</span><span class="o">.</span><span class="n">buffer</span>
       <span class="k">else</span><span class="p">:</span>
         <span class="n">group_obs</span><span class="p">[</span><span class="n">term_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span>
+
+    <span class="c1"># Final NaN check for non-per-term checking.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_check_per_term</span> <span class="ow">and</span> <span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_policy</span> <span class="o">!=</span> <span class="s2">&quot;disabled&quot;</span><span class="p">:</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group_obs_concatenate</span><span class="p">[</span><span class="n">group_name</span><span class="p">]:</span>
+        <span class="c1"># Will check after concatenation below.</span>
+        <span class="k">pass</span>
+      <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">term_name</span> <span class="ow">in</span> <span class="n">group_obs</span><span class="p">:</span>
+          <span class="n">group_obs</span><span class="p">[</span><span class="n">term_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_handle_nans</span><span class="p">(</span>
+            <span class="n">group_obs</span><span class="p">[</span><span class="n">term_name</span><span class="p">],</span>
+            <span class="n">context</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">group_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">term_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">policy</span><span class="o">=</span><span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_policy</span><span class="p">,</span>
+          <span class="p">)</span>
+
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group_obs_concatenate</span><span class="p">[</span><span class="n">group_name</span><span class="p">]:</span>
-      <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
         <span class="nb">list</span><span class="p">(</span><span class="n">group_obs</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_group_obs_concatenate_dim</span><span class="p">[</span><span class="n">group_name</span><span class="p">]</span>
       <span class="p">)</span>
+      <span class="c1"># Final check for concatenated result (non-per-term checking).</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_check_per_term</span> <span class="ow">and</span> <span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_policy</span> <span class="o">!=</span> <span class="s2">&quot;disabled&quot;</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_and_handle_nans</span><span class="p">(</span>
+          <span class="n">result</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="n">group_cfg</span><span class="o">.</span><span class="n">nan_policy</span>
+        <span class="p">)</span>
+      <span class="k">return</span> <span class="n">result</span>
     <span class="k">return</span> <span class="n">group_obs</span></div>
 
 

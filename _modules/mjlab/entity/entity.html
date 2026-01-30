@@ -169,7 +169,7 @@
           
           
           
-          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
         </li>
         <li class="nav-item">
           
@@ -1123,16 +1123,36 @@ document.write(`
     <span class="n">root_velocity</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">env_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
   <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the root velocity into the simulation. Like `write_root_state_to_sim()`</span>
-<span class="sd">    but only sets linear and angular velocity.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the root link (body origin) velocity into the simulation. Like</span>
+<span class="sd">    `write_root_state_to_sim()` but only sets linear and angular velocity.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      root_velocity: Tensor of shape (N, 6) where N is the number of environments.</span>
-<span class="sd">        Contains linear velocity (3) and angular velocity (3), both in world frame.</span>
+<span class="sd">        Contains linear velocity (3) at body origin and angular velocity (3),</span>
+<span class="sd">        both in world frame.</span>
 <span class="sd">      env_ids: Optional tensor or slice specifying which environments to set. If</span>
 <span class="sd">        None, all environments are set.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">write_root_velocity</span><span class="p">(</span><span class="n">root_velocity</span><span class="p">,</span> <span class="n">env_ids</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Entity.write_root_com_velocity_to_sim">
+<a class="viewcode-back" href="../../../source/api/entity.html#mjlab.entity.Entity.write_root_com_velocity_to_sim">[docs]</a>
+  <span class="k">def</span><span class="w"> </span><span class="nf">write_root_com_velocity_to_sim</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">root_velocity</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">env_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+  <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the root COM velocity into the simulation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      root_velocity: Tensor of shape (N, 6) where N is the number of environments.</span>
+<span class="sd">        Contains linear velocity (3) at COM and angular velocity (3),</span>
+<span class="sd">        both in world frame.</span>
+<span class="sd">      env_ids: Optional tensor or slice specifying which environments to set. If</span>
+<span class="sd">        None, all environments are set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">write_root_com_velocity</span><span class="p">(</span><span class="n">root_velocity</span><span class="p">,</span> <span class="n">env_ids</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Entity.write_joint_state_to_sim">

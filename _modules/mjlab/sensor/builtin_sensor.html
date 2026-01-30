@@ -169,7 +169,7 @@
           
           
           
-          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
         </li>
         <li class="nav-item">
           
@@ -686,6 +686,9 @@ document.write(`
 <span class="sd">  Can add a new sensor to the spec, or wrap an existing sensor from entity XML.</span>
 <span class="sd">  Returns raw MuJoCo sensordata as torch.Tensor with shape depending on sensor type</span>
 <span class="sd">  (e.g., accelerometer: (N, 3), framequat: (N, 4)).</span>
+
+<span class="sd">  Note: Caching provides minimal benefit here since data access is just a tensor</span>
+<span class="sd">  slice view into MuJoCo&#39;s sensordata buffer.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BuiltinSensor.__init__">
@@ -693,6 +696,7 @@ document.write(`
   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">BuiltinSensorCfg</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
   <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">cfg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">name</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">cfg</span><span class="p">:</span> <span class="n">BuiltinSensorCfg</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">cfg</span>
@@ -764,8 +768,7 @@ document.write(`
     <span class="bp">self</span><span class="o">.</span><span class="n">_data_view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">sensordata</span><span class="p">[:,</span> <span class="n">start</span> <span class="p">:</span> <span class="n">start</span> <span class="o">+</span> <span class="n">dim</span><span class="p">]</span></div>
 
 
-  <span class="nd">@property</span>
-  <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+  <span class="k">def</span><span class="w"> </span><span class="nf">_compute_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_view</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_view</span></div>
 

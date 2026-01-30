@@ -169,7 +169,7 @@
           
           
           
-          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-0.1.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
         </li>
         <li class="nav-item">
           
@@ -530,6 +530,26 @@ document.write(`
     <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">qvel</span><span class="p">[</span><span class="n">env_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">free_joint_v_adr</span><span class="p">]</span> <span class="o">=</span> <span class="n">velocity_qvel</span></div>
 
 
+<div class="viewcode-block" id="EntityData.write_root_com_velocity">
+<a class="viewcode-back" href="../../../source/api/entity.html#mjlab.entity.EntityData.write_root_com_velocity">[docs]</a>
+  <span class="k">def</span><span class="w"> </span><span class="nf">write_root_com_velocity</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">velocity</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">env_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+  <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_fixed_base</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot write root COM velocity for fixed-base entity.&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">velocity</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROOT_VEL_DIM</span>
+
+    <span class="n">env_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_env_ids</span><span class="p">(</span><span class="n">env_ids</span><span class="p">)</span>
+    <span class="n">com_offset_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">body_ipos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
+    <span class="n">quat_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">qpos</span><span class="p">[</span><span class="n">env_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">free_joint_q_adr</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">7</span><span class="p">]]</span>
+    <span class="n">com_offset_w</span> <span class="o">=</span> <span class="n">quat_apply</span><span class="p">(</span><span class="n">quat_w</span><span class="p">,</span> <span class="n">com_offset_b</span><span class="p">[</span><span class="n">env_ids</span><span class="p">])</span>
+    <span class="n">lin_vel_com</span> <span class="o">=</span> <span class="n">velocity</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">ang_vel_w</span> <span class="o">=</span> <span class="n">velocity</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">:]</span>
+    <span class="n">lin_vel_link</span> <span class="o">=</span> <span class="n">lin_vel_com</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">ang_vel_w</span><span class="p">,</span> <span class="n">com_offset_w</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">link_velocity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">lin_vel_link</span><span class="p">,</span> <span class="n">ang_vel_w</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">write_root_velocity</span><span class="p">(</span><span class="n">link_velocity</span><span class="p">,</span> <span class="n">env_ids</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="EntityData.write_joint_state">
 <a class="viewcode-back" href="../../../source/api/entity.html#mjlab.entity.EntityData.write_joint_state">[docs]</a>
   <span class="k">def</span><span class="w"> </span><span class="nf">write_joint_state</span><span class="p">(</span>
@@ -657,14 +677,14 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">root_link_pose_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Root link pose in simulation world frame. Shape (num_envs, 7).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Root link pose in world frame. Shape (num_envs, 7).&quot;&quot;&quot;</span>
     <span class="n">pos_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xpos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>  <span class="c1"># (num_envs, 3)</span>
     <span class="n">quat_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xquat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>  <span class="c1"># (num_envs, 4)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">pos_w</span><span class="p">,</span> <span class="n">quat_w</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (num_envs, 7)</span>
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">root_link_vel_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Root link velocity in simulation world frame. Shape (num_envs, 6).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Root link velocity in world frame. Shape (num_envs, 6).&quot;&quot;&quot;</span>
     <span class="c1"># NOTE: Equivalently, can read this from qvel[:6] but the angular part</span>
     <span class="c1"># will be in body frame and needs to be rotated to world frame.</span>
     <span class="c1"># Note also that an extra forward() call might be required to make</span>
@@ -676,7 +696,7 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">root_com_pose_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Root center-of-mass pose in simulation world frame. Shape (num_envs, 7).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Root center-of-mass pose in world frame. Shape (num_envs, 7).&quot;&quot;&quot;</span>
     <span class="n">pos_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xipos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
     <span class="n">quat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xquat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
     <span class="n">body_iquat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">body_iquat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
@@ -697,14 +717,14 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">body_link_pose_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body link pose in simulation world frame. Shape (num_envs, num_bodies, 7).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body link pose in world frame. Shape (num_envs, num_bodies, 7).&quot;&quot;&quot;</span>
     <span class="n">pos_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xpos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">body_ids</span><span class="p">]</span>
     <span class="n">quat_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xquat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">body_ids</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">pos_w</span><span class="p">,</span> <span class="n">quat_w</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">body_link_vel_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body link velocity in simulation world frame. Shape (num_envs, num_bodies, 6).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body link velocity in world frame. Shape (num_envs, num_bodies, 6).&quot;&quot;&quot;</span>
     <span class="c1"># NOTE: Equivalent sensor is framelinvel/frameangvel with objtype=&quot;xbody&quot;.</span>
     <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xpos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">body_ids</span><span class="p">]</span>  <span class="c1"># (num_envs, num_bodies, 3)</span>
     <span class="n">subtree_com</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">subtree_com</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
@@ -713,7 +733,7 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">body_com_pose_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body center-of-mass pose in simulation world frame. Shape (num_envs, num_bodies, 7).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body center-of-mass pose in world frame. Shape (num_envs, num_bodies, 7).&quot;&quot;&quot;</span>
     <span class="n">pos_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xipos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">body_ids</span><span class="p">]</span>
     <span class="n">quat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xquat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">body_ids</span><span class="p">]</span>
     <span class="n">body_iquat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">body_iquat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">body_ids</span><span class="p">]</span>
@@ -722,7 +742,7 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">body_com_vel_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body center-of-mass velocity in simulation world frame. Shape (num_envs, num_bodies, 6).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Body center-of-mass velocity in world frame. Shape (num_envs, num_bodies, 6).&quot;&quot;&quot;</span>
     <span class="c1"># NOTE: Equivalent sensor is framelinvel/frameangvel with objtype=&quot;body&quot;.</span>
     <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">xipos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">body_ids</span><span class="p">]</span>
     <span class="n">subtree_com</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">subtree_com</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
@@ -738,7 +758,7 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">geom_pose_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Geom pose in simulation world frame. Shape (num_envs, num_geoms, 7).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Geom pose in world frame. Shape (num_envs, num_geoms, 7).&quot;&quot;&quot;</span>
     <span class="n">pos_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">geom_xpos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">geom_ids</span><span class="p">]</span>
     <span class="n">xmat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">geom_xmat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">geom_ids</span><span class="p">]</span>
     <span class="n">quat_w</span> <span class="o">=</span> <span class="n">quat_from_matrix</span><span class="p">(</span><span class="n">xmat</span><span class="p">)</span>
@@ -746,7 +766,7 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">geom_vel_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Geom velocity in simulation world frame. Shape (num_envs, num_geoms, 6).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Geom velocity in world frame. Shape (num_envs, num_geoms, 6).&quot;&quot;&quot;</span>
     <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">geom_xpos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">geom_ids</span><span class="p">]</span>
     <span class="n">body_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">geom_bodyid</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">geom_ids</span><span class="p">]</span>  <span class="c1"># (num_geoms,)</span>
     <span class="n">subtree_com</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">subtree_com</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
@@ -757,7 +777,7 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">site_pose_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Site pose in simulation world frame. Shape (num_envs, num_sites, 7).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Site pose in world frame. Shape (num_envs, num_sites, 7).&quot;&quot;&quot;</span>
     <span class="n">pos_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">site_xpos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">site_ids</span><span class="p">]</span>
     <span class="n">mat_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">site_xmat</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">site_ids</span><span class="p">]</span>
     <span class="n">quat_w</span> <span class="o">=</span> <span class="n">quat_from_matrix</span><span class="p">(</span><span class="n">mat_w</span><span class="p">)</span>
@@ -765,7 +785,7 @@ document.write(`
 
   <span class="nd">@property</span>
   <span class="k">def</span><span class="w"> </span><span class="nf">site_vel_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Site velocity in simulation world frame. Shape (num_envs, num_sites, 6).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Site velocity in world frame. Shape (num_envs, num_sites, 6).&quot;&quot;&quot;</span>
     <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">site_xpos</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">site_ids</span><span class="p">]</span>
     <span class="n">body_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">site_bodyid</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">site_ids</span><span class="p">]</span>  <span class="c1"># (num_sites,)</span>
     <span class="n">subtree_com</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">subtree_com</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">indexing</span><span class="o">.</span><span class="n">root_body_id</span><span class="p">]</span>
