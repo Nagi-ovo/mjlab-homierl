@@ -227,6 +227,23 @@
 </ul>
 </details></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough (English)</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../walkthrough_en/index.html">Developer Walkthrough (Research &amp; Development)</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/overview.html">Architecture Overview: mjlab in One Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/quickstart.html">Quickstart: The Shortest Dev Loop (Train / Play / Modify Tasks)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/project_layout.html">Code Map: Where Should You Change Things?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/manager_based_env.html">Key Class 1: ManagerBasedRlEnv (Lifecycle and Data Flow)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/managers_and_terms.html">Key Class 2: Managers + Terms (IsaacLab-like Core Abstractions)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/rewards_and_terminations.html">Rewards and Terminations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/tasks_velocity_g1.html">Example 1: Velocity Tracking (Unitree G1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/tasks_tracking_g1.html">Example 2: Motion Tracking / Imitation (Unitree G1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/tasks_homie_h1.html">Example 3: Homie — Mixed Motion and Disturbances (Unitree H1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/how_to_add_g1_task.html">How to Add a New G1 RL Task (From Zero to Trainable)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/debugging_perf.html">Debugging &amp; Performance: Stay Stable and Fast</a></li>
+</ul>
+</details></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough（中文）</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Code Walkthrough（面向科研开发，上手 + 深入）</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
@@ -467,7 +484,7 @@ document.write(`
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#baseline">0) 先把能跑的 baseline 跑通</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dummy-agent-mdp">1) 用 dummy agent 做“MDP 体检”（强烈建议）</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#velocity-tracking">2) 最常见的修改点在哪里（velocity / tracking）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#velocity-tracking-homie">2) 最常见的修改点在哪里（velocity / tracking / homie）</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cfg-cli">3) 任务 cfg 是怎么被 “cli 覆盖” 的？</a></li>
 </ul>
             </nav>
@@ -507,6 +524,19 @@ uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </spa
 uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span>Mjlab-Tracking-Flat-Unitree-G1<span class="w"> </span>--wandb-run-path<span class="w"> </span>your-org/mjlab/run-id
 </pre></div>
 </div>
+<p>homie（Unitree H1，混合 velocity + squat + 扰动）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 训练：H1 更重、更复杂，建议先从较少的 num-envs 开始</span>
+uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </span>Mjlab-Homie-Unitree-H1<span class="w"> </span>--env.scene.num-envs<span class="w"> </span><span class="m">2048</span>
+
+<span class="c1"># play：从 W&amp;B 拉 checkpoint（或指定 --checkpoint-file）</span>
+uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span>Mjlab-Homie-Unitree-H1<span class="w"> </span>--wandb-run-path<span class="w"> </span>your-org/mjlab/run-id
+</pre></div>
+</div>
+<p>Homie 也提供了一个可选的“带夹爪”版本（额外挂载 Robotiq 2F85，并加入 policy-free 的夹爪随机动作）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </span>Mjlab-Homie-Unitree-H1-with_hands<span class="w"> </span>--env.scene.num-envs<span class="w"> </span><span class="m">2048</span>
+uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span>Mjlab-Homie-Unitree-H1-with_hands<span class="w"> </span>--wandb-run-path<span class="w"> </span>your-org/mjlab/run-id
+</pre></div>
+</div>
 </section>
 <section id="dummy-agent-mdp">
 <h2>1) 用 dummy agent 做“MDP 体检”（强烈建议）<a class="headerlink" href="#dummy-agent-mdp" title="Link to this heading">#</a></h2>
@@ -521,6 +551,14 @@ uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span
 <span class="w">  </span>--registry-name<span class="w"> </span>your-org/motions/motion-name
 </pre></div>
 </div>
+<p>Homie 任务的 dummy agent 不需要额外参数（它没有 tracking 的 motion registry 依赖）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span>Mjlab-Homie-Unitree-H1<span class="w"> </span>--agent<span class="w"> </span>zero
+uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span>Mjlab-Homie-Unitree-H1<span class="w"> </span>--agent<span class="w"> </span>random
+
+<span class="c1"># 带夹爪版本也一样（夹爪动作是 policy-free 的 0 维 action）</span>
+uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span>Mjlab-Homie-Unitree-H1-with_hands<span class="w"> </span>--agent<span class="w"> </span>random
+</pre></div>
+</div>
 <p>你在这一步要看什么？</p>
 <ul class="simple">
 <li><p><strong>能否稳定跑步</strong>：是否有 NaN/Inf（必要时打开 NaN guard，见 <a class="reference internal" href="debugging_perf.html#walkthrough-debugging-perf"><span class="std std-ref">调试与性能：让你“稳”且“快”</span></a>）。</p></li>
@@ -528,8 +566,8 @@ uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span
 <li><p><strong>reward 是否“有信号”</strong>：看 viewer / logger（extras 里会有 metrics）。</p></li>
 </ul>
 </section>
-<section id="velocity-tracking">
-<h2>2) 最常见的修改点在哪里（velocity / tracking）<a class="headerlink" href="#velocity-tracking" title="Link to this heading">#</a></h2>
+<section id="velocity-tracking-homie">
+<h2>2) 最常见的修改点在哪里（velocity / tracking / homie）<a class="headerlink" href="#velocity-tracking-homie" title="Link to this heading">#</a></h2>
 <p>这两个任务都采用“ <strong>base env cfg + robot-specific override</strong> ”的模式：</p>
 <ul class="simple">
 <li><p>base cfg（任务定义）：</p>
@@ -544,6 +582,17 @@ uv<span class="w"> </span>run<span class="w"> </span>play<span class="w"> </span
 <li><p>tracking：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/tracking/config/g1/env_cfgs.py</span></code></p></li>
 </ul>
 </li>
+</ul>
+<p>Homie 也遵循同样的结构（base cfg + H1 override）：</p>
+<ul class="simple">
+<li><p>base cfg（任务定义）：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/homie_env_cfg.py::make_homie_env_cfg</span></code></p></li>
+<li><p>h1 override（填空式覆盖）：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/env_cfgs.py::unitree_h1_homie_env_cfg</span></code></p></li>
+</ul>
+<p>如果你要改 Homie（强烈建议先看 <a class="reference internal" href="tasks_homie_h1.html#walkthrough-task-homie-h1"><span class="std std-ref">实例三：Homie —— 混合运动与干扰（Unitree H1）</span></a>），最常改的是：</p>
+<ul class="simple">
+<li><p><strong>动作拆分与缩放</strong>：策略只控下肢；上身/夹爪是 policy-free action（见 H1 override）。</p></li>
+<li><p><strong>命令与 env grouping</strong>：哪些环境在走、哪些在蹲、哪些在站（<code class="docutils literal notranslate"><span class="pre">mdp.assign_homie_env_groups</span></code>）。</p></li>
+<li><p><strong>干扰/随机化</strong>：push、手部负载、摩擦随机化等（<code class="docutils literal notranslate"><span class="pre">events</span></code>）。</p></li>
 </ul>
 <p>建议你按下面顺序迭代（最快见效）：</p>
 <ul class="simple">
@@ -621,7 +670,7 @@ uv<span class="w"> </span>run<span class="w"> </span>train<span class="w"> </spa
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#baseline">0) 先把能跑的 baseline 跑通</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dummy-agent-mdp">1) 用 dummy agent 做“MDP 体检”（强烈建议）</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#velocity-tracking">2) 最常见的修改点在哪里（velocity / tracking）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#velocity-tracking-homie">2) 最常见的修改点在哪里（velocity / tracking / homie）</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cfg-cli">3) 任务 cfg 是怎么被 “cli 覆盖” 的？</a></li>
 </ul>
   </nav></div>

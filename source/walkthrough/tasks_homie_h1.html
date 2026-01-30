@@ -227,6 +227,23 @@
 </ul>
 </details></li>
 </ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough (English)</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../walkthrough_en/index.html">Developer Walkthrough (Research &amp; Development)</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/overview.html">Architecture Overview: mjlab in One Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/quickstart.html">Quickstart: The Shortest Dev Loop (Train / Play / Modify Tasks)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/project_layout.html">Code Map: Where Should You Change Things?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/manager_based_env.html">Key Class 1: ManagerBasedRlEnv (Lifecycle and Data Flow)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/managers_and_terms.html">Key Class 2: Managers + Terms (IsaacLab-like Core Abstractions)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/rewards_and_terminations.html">Rewards and Terminations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/tasks_velocity_g1.html">Example 1: Velocity Tracking (Unitree G1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/tasks_tracking_g1.html">Example 2: Motion Tracking / Imitation (Unitree G1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/tasks_homie_h1.html">Example 3: Homie — Mixed Motion and Disturbances (Unitree H1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/how_to_add_g1_task.html">How to Add a New G1 RL Task (From Zero to Trainable)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough_en/debugging_perf.html">Debugging &amp; Performance: Stay Stable and Fast</a></li>
+</ul>
+</details></li>
+</ul>
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough（中文）</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Code Walkthrough（面向科研开发，上手 + 深入）</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
@@ -465,15 +482,18 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#make-homie-env-cfg">任务骨架：make_homie_env_cfg</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upperbodyposeaction-policy-free">核心特性：UpperBodyPoseAction (Policy-Free)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">课程学习：让干扰逐渐增强</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#make-homie-env-cfg-base-cfg">任务骨架：make_homie_env_cfg（base cfg）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#env-grouping-vec-env">Env Grouping：一套 vec env 并行训练三种“子任务”</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-unitree-h1-homie-env-cfg">H1 覆盖：unitree_h1_homie_env_cfg</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upperbodyposeaction-policy-free-0-action">核心特性：UpperBodyPoseAction（policy-free，上身 0 维 action）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">课程学习：让干扰逐渐增强</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rewards-terminations">Rewards &amp; Terminations：混合任务的平衡艺术</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">1) 奖励设计：多任务解耦</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">2) 终止条件：松耦合</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">1) 奖励设计：多任务解耦</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">2) 终止条件：松耦合</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-h1-constants">H1 机器人覆盖与 H1 Constants</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#with-hands-policy-free">with_hands：带夹爪版本（policy-free）</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#homie">总结：为什么参考 Homie？</a></li>
 </ul>
             </nav>
@@ -488,21 +508,34 @@ document.write(`
                   
   <section id="homie-unitree-h1">
 <span id="walkthrough-task-homie-h1"></span><h1>实例三：Homie —— 混合运动与干扰（Unitree H1）<a class="headerlink" href="#homie-unitree-h1" title="Link to this heading">#</a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1</span></code> 是一个综合性更强的任务，它结合了 <strong>速度追踪 (Velocity)</strong> 、 <strong>蹲起 (Squat)</strong> 以及 <strong>上身随机干扰</strong> 。</p>
-<p>这个任务的核心设计思想是： <strong>缩小策略的动作空间，将其集中在下肢控制上，而将上身作为“随时间变化的平滑扰动”。</strong> 这能让策略在面对复杂的身体姿态变化时，依然保持下肢行走的鲁棒性。</p>
-<section id="make-homie-env-cfg">
-<h2>任务骨架：make_homie_env_cfg<a class="headerlink" href="#make-homie-env-cfg" title="Link to this heading">#</a></h2>
+<p>Homie 是一个综合性更强的任务，它结合了 <strong>速度追踪 (Velocity)</strong>、<strong>蹲起 (Squat)</strong> 以及 <strong>上身随机干扰</strong>。</p>
+<p>目前提供两个 task id：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1</span></code>：标准版本。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>：额外挂载 Robotiq 2F85 夹爪（包含 policy-free 的夹爪随机动作）。</p></li>
+</ul>
+<p>这个任务的核心设计思想是：<strong>缩小策略的动作空间，将其集中在下肢控制上，而将上身（以及可选的夹爪）作为“随时间变化的平滑扰动”。</strong> 这能让策略在面对复杂的身体姿态变化时，依然保持下肢行走的鲁棒性。</p>
+<section id="make-homie-env-cfg-base-cfg">
+<h2>任务骨架：make_homie_env_cfg（base cfg）<a class="headerlink" href="#make-homie-env-cfg-base-cfg" title="Link to this heading">#</a></h2>
 <p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/homie_env_cfg.py</span></code></p>
-<p>与之前的任务不同，Homie 默认支持两个命令生成器：</p>
+<p>与之前的任务不同，Homie 默认支持两个命令生成器，并且都支持 <a href="#id1"><span class="problematic" id="id2">**</span></a>按 env group 进行 gating**（见下文的 Env Grouping）：</p>
 <ol class="arabic simple">
 <li><p><strong>twist</strong> (<code class="docutils literal notranslate"><span class="pre">UniformVelocityCommand</span></code>)：控制前后、左右平移速度及转向速度。</p></li>
 <li><p><strong>height</strong> (<code class="docutils literal notranslate"><span class="pre">RelativeHeightCommand</span></code>)：控制骨盆相对于脚部的相对高度（实现蹲起动作）。</p></li>
 </ol>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/tasks/homie/homie_env_cfg.py</span>
 <span class="n">commands</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;twist&quot;</span><span class="p">:</span> <span class="n">UniformVelocityCommandCfg</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="s2">&quot;twist&quot;</span><span class="p">:</span> <span class="n">UniformVelocityCommandCfg</span><span class="p">(</span>
+        <span class="o">...</span><span class="p">,</span>
+        <span class="n">active_env_group</span><span class="o">=</span><span class="s2">&quot;velocity&quot;</span><span class="p">,</span>
+        <span class="n">rel_standing_envs</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span>
+        <span class="n">avoid_consecutive_standing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">),</span>
     <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">RelativeHeightCommandCfg</span><span class="p">(</span>
         <span class="n">entity_name</span><span class="o">=</span><span class="s2">&quot;robot&quot;</span><span class="p">,</span>
+        <span class="n">active_env_group</span><span class="o">=</span><span class="s2">&quot;squat&quot;</span><span class="p">,</span>
+        <span class="c1"># Smooth height-command transitions (avoid step changes at resampling).</span>
+        <span class="n">interp_rate</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
         <span class="n">foot_site_names</span><span class="o">=</span><span class="p">(),</span> <span class="c1"># 由 robot override 填充</span>
         <span class="n">ranges</span><span class="o">=</span><span class="n">RelativeHeightCommandCfg</span><span class="o">.</span><span class="n">Ranges</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
     <span class="p">),</span>
@@ -510,28 +543,82 @@ document.write(`
 </pre></div>
 </div>
 </section>
-<section id="upperbodyposeaction-policy-free">
-<h2>核心特性：UpperBodyPoseAction (Policy-Free)<a class="headerlink" href="#upperbodyposeaction-policy-free" title="Link to this heading">#</a></h2>
+<section id="env-grouping-vec-env">
+<h2>Env Grouping：一套 vec env 并行训练三种“子任务”<a class="headerlink" href="#env-grouping-vec-env" title="Link to this heading">#</a></h2>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/mdp/curriculums.py::assign_homie_env_groups</span></code></p>
+<p>Homie 通过 <code class="docutils literal notranslate"><span class="pre">env_group</span></code> 把一批并行环境拆成 3 组（mask），并在 <code class="docutils literal notranslate"><span class="pre">commands</span></code> / <code class="docutils literal notranslate"><span class="pre">rewards</span></code> / <code class="docutils literal notranslate"><span class="pre">curriculum</span></code> 里用这些组名做 gating：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">squat</span></code>：约 20%（<code class="docutils literal notranslate"><span class="pre">set_x</span> <span class="pre">&lt;</span> <span class="pre">1/5</span></code>），主要学习高度命令（蹲起）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">standing</span></code>：约 13.3%（<code class="docutils literal notranslate"><span class="pre">1/5</span> <span class="pre">&lt;=</span> <span class="pre">set_x</span> <span class="pre">&lt;=</span> <span class="pre">1/3</span></code>），主要学习“稳站”与抗扰。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">velocity</span></code>：约 66.7%（<code class="docutils literal notranslate"><span class="pre">set_x</span> <span class="pre">&gt;</span> <span class="pre">1/3</span></code>），主要学习速度追踪（行走/跑步）。</p></li>
+</ul>
+<p>这些组的作用要点：</p>
+<ul class="simple">
+<li><p><strong>命令 gating</strong>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">twist</span></code> 的 <code class="docutils literal notranslate"><span class="pre">active_env_group=&quot;velocity&quot;</span></code>：非 velocity 组的环境被强制 <a href="#id3"><span class="problematic" id="id4">``</span></a>twist=0``（站立）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">height</span></code> 的 <code class="docutils literal notranslate"><span class="pre">active_env_group=&quot;squat&quot;</span></code>：非 squat 组的环境会被设置为 <a href="#id5"><span class="problematic" id="id6">``</span></a>inactive_height``（由 robot override 设定），避免 height 命令“干扰”走路环境。</p></li>
+</ul>
+</li>
+<li><p><strong>奖励 gating</strong>：很多 reward term 都带有 <code class="docutils literal notranslate"><span class="pre">env_group</span></code>，用于只在某些组里激活（例如：站立稳定项、蹲起相关的几何约束等）。</p></li>
+</ul>
+</section>
+<section id="h1-unitree-h1-homie-env-cfg">
+<h2>H1 覆盖：unitree_h1_homie_env_cfg<a class="headerlink" href="#h1-unitree-h1-homie-env-cfg" title="Link to this heading">#</a></h2>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/env_cfgs.py::unitree_h1_homie_env_cfg</span></code></p>
+<p>Homie 的实现模式依然是 “<strong>base cfg + robot-specific override</strong>”。H1 override 主要做了这些事：</p>
+<ul class="simple">
+<li><p><strong>切平地 + 关闭地形课程</strong>：把 terrain 切成 plane，同时移除 <code class="docutils literal notranslate"><span class="pre">terrain_levels</span></code> curriculum。</p></li>
+<li><p><strong>动作拆分</strong>：策略只控制下肢（髋/膝/踝）；上身用 policy-free action 生成平滑扰动（见下一节）。</p></li>
+<li><p><strong>命令与脚部几何绑定</strong>：为 height 命令填入 <code class="docutils literal notranslate"><span class="pre">foot_site_names</span></code>，并设置 squat/standing 的高度范围与 <code class="docutils literal notranslate"><span class="pre">inactive_height</span></code>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">height_cmd.ranges.height</span> <span class="pre">=</span> <span class="pre">(0.4,</span> <span class="pre">0.98)</span></code></p></li>
+<li><p><a href="#id7"><span class="problematic" id="id8">``</span></a>height_cmd.inactive_height = 0.98``（非 squat 组保持稳定站立高度）</p></li>
+</ul>
+</li>
+<li><p><strong>传感器与接触惩罚</strong>：加入 <code class="docutils literal notranslate"><span class="pre">self_collision</span></code> 与 <code class="docutils literal notranslate"><span class="pre">hip_knee_ground_contact</span></code> 接触传感器，并把 <code class="docutils literal notranslate"><span class="pre">hip_knee_contact</span></code> 奖励项连上线。</p></li>
+<li><p><strong>脚底“平行”奖励落地</strong>：为 <code class="docutils literal notranslate"><span class="pre">feet_ground_parallel</span></code> / <code class="docutils literal notranslate"><span class="pre">feet_parallel</span></code> 填入 H1 的脚底四角 sites（<code class="docutils literal notranslate"><span class="pre">*_foot_fi/fo/ri/ro</span></code>），并对右脚 sites 做了重排以匹配左右脚局部坐标系。</p></li>
+<li><p><strong>干扰与随机化</strong>：用外力脉冲的方式 push 机器人，并在 reset 时对手部施加 0–5kg 的等效下压力（<code class="docutils literal notranslate"><span class="pre">hand_load</span></code>）。</p></li>
+<li><p><strong>可选夹爪版本</strong>：<code class="docutils literal notranslate"><span class="pre">hands=True</span></code> 时挂载 2F85，并加入 policy-free 的 <code class="docutils literal notranslate"><span class="pre">gripper</span></code> 动作 + interval 采样事件（见后文）。</p></li>
+</ul>
+</section>
+<section id="upperbodyposeaction-policy-free-0-action">
+<h2>核心特性：UpperBodyPoseAction（policy-free，上身 0 维 action）<a class="headerlink" href="#upperbodyposeaction-policy-free-0-action" title="Link to this heading">#</a></h2>
 <p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/env_cfgs.py</span></code></p>
-<p>这是 Homie 任务最独特的抽象。在 <code class="docutils literal notranslate"><span class="pre">actions</span></code> 字典中，除了策略控制的 <code class="docutils literal notranslate"><span class="pre">joint_pos</span></code>，还有一个 <code class="docutils literal notranslate"><span class="pre">upper_body_pose</span></code>：</p>
+<p>这是 Homie 任务最独特的抽象。在 <code class="docutils literal notranslate"><span class="pre">actions</span></code> 字典中，除了策略控制的 <code class="docutils literal notranslate"><span class="pre">joint_pos</span></code>，还有一个 <a href="#id9"><span class="problematic" id="id10">``</span></a>upper_body_pose``（策略侧 action dim = 0）：</p>
 <ul class="simple">
 <li><p><strong>零动作维度</strong> ：它在策略侧的维度为 0，不增加神经网络的输出负担。</p></li>
 <li><p><strong>平滑差值</strong> ：它内部维护一个目标姿态，每步通过 <code class="docutils literal notranslate"><span class="pre">torch.lerp</span></code> 向其靠近。</p></li>
-<li><p><strong>定时重采样</strong> ：通过 <code class="docutils literal notranslate"><span class="pre">EventTermCfg</span></code> 定期采样新的上身随机姿态。</p></li>
+<li><p><strong>定时重采样</strong> ：通过 <code class="docutils literal notranslate"><span class="pre">EventTermCfg</span></code> 定期采样新的上身随机姿态（H1 默认每 2s 重采样一次）。</p></li>
+<li><p><strong>速度限幅（可选）</strong> ：通过 <code class="docutils literal notranslate"><span class="pre">max_speed_rad_s</span></code> 对每步目标变化做 rate limit，避免上身“抽搐式”扰动。</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 上身动作配置（Policy-Free）</span>
 <span class="n">cfg</span><span class="o">.</span><span class="n">actions</span><span class="p">[</span><span class="s2">&quot;upper_body_pose&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">UpperBodyPoseActionCfg</span><span class="p">(</span>
     <span class="n">entity_name</span><span class="o">=</span><span class="s2">&quot;robot&quot;</span><span class="p">,</span>
     <span class="n">joint_names</span><span class="o">=</span><span class="n">upper_body_joint_expr</span><span class="p">,</span>
     <span class="n">interp_rate</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">max_speed_rad_s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
     <span class="n">target_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">),</span>
-    <span class="n">initial_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="c1"># 初始无动作，随课程增加</span>
+    <span class="n">initial_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="c1"># 训练时初始无动作，随课程增加（play 直接给 1.0）</span>
+    <span class="n">use_sampled_ratio</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># interval 事件：定期采样新的上身目标（目标范围更大，但会被 joint limit + ratio clamp）</span>
+<span class="n">cfg</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="s2">&quot;upper_body_random_targets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">EventTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">_sample_upper_body_targets_with_curriculum</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;interval&quot;</span><span class="p">,</span>
+    <span class="n">interval_range_s</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;action_name&quot;</span><span class="p">:</span> <span class="s2">&quot;upper_body_pose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;target_range&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+        <span class="s2">&quot;start_step&quot;</span><span class="p">:</span> <span class="n">step_threshold</span><span class="p">,</span>
+    <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </section>
-<section id="id1">
-<h2>课程学习：让干扰逐渐增强<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<section id="id11">
+<h2>课程学习：让干扰逐渐增强<a class="headerlink" href="#id11" title="Link to this heading">#</a></h2>
 <p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/mdp/curriculums.py</span></code></p>
 <p>为了防止训练初期扰动太大导致无法收敛，Homie 引入了 <code class="docutils literal notranslate"><span class="pre">upper_body_action_curriculum</span></code>：</p>
 <ul class="simple">
@@ -546,6 +633,8 @@ document.write(`
         <span class="s2">&quot;reward_name&quot;</span><span class="p">:</span> <span class="s2">&quot;track_linear_velocity&quot;</span><span class="p">,</span>
         <span class="s2">&quot;success_threshold&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
         <span class="s2">&quot;increment&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">&quot;max_ratio&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;start_step&quot;</span><span class="p">:</span> <span class="n">step_threshold</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
@@ -554,25 +643,27 @@ document.write(`
 <section id="rewards-terminations">
 <h2>Rewards &amp; Terminations：混合任务的平衡艺术<a class="headerlink" href="#rewards-terminations" title="Link to this heading">#</a></h2>
 <p>Homie 任务需要在“行走”和“蹲起”两个目标之间寻找平衡，同时忽略上身干扰。</p>
-<section id="id2">
-<h3>1) 奖励设计：多任务解耦<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<section id="id12">
+<h3>1) 奖励设计：多任务解耦<a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>按环境分组 (Env Grouping)</strong> ：</p>
 <ul>
-<li><p>并不是所有环境都在做同一个任务。 <code class="docutils literal notranslate"><span class="pre">track_linear_velocity</span></code> 奖励只对 <code class="docutils literal notranslate"><span class="pre">velocity</span></code> 组的环境起强作用。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">track_height</span></code> (<code class="docutils literal notranslate"><span class="pre">track_relative_height</span></code>) 奖励则只对 <code class="docutils literal notranslate"><span class="pre">squat</span></code> 和 <code class="docutils literal notranslate"><span class="pre">standing</span></code> 组的环境有效。</p></li>
+<li><p>并不是所有环境都在做同一个任务。很多奖励通过 <code class="docutils literal notranslate"><span class="pre">env_group=...</span></code> 做 gating。</p></li>
+<li><p>例如：H1 override 会额外加入 <code class="docutils literal notranslate"><span class="pre">track_*_standing</span></code>，专门让 standing 组更“稳”。</p></li>
 </ul>
 </li>
 <li><p><strong>对抗干扰的正则项</strong> ：</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">knee_deviation_reward</span></code> : 在蹲起过程中，惩罚膝盖相对于脚尖的水平偏移，引导出合理的蹲姿。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">upright</span></code> : 强力维持躯干直立，这是抵消上身随机摆动干扰的关键。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feet_ground_parallel</span></code> / <code class="docutils literal notranslate"><span class="pre">feet_parallel</span></code> : 约束脚底与地面/左右脚之间的相对姿态（需要机器人侧填入脚底 corner sites）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hip_knee_contact</span></code> / <code class="docutils literal notranslate"><span class="pre">self_collisions</span></code> : 将“摔倒/自碰撞/膝触地”等问题更多放进 reward 里处理，而不是过早终止。</p></li>
 </ul>
 </li>
 </ul>
 </section>
-<section id="id3">
-<h3>2) 终止条件：松耦合<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<section id="id13">
+<h3>2) 终止条件：松耦合<a class="headerlink" href="#id13" title="Link to this heading">#</a></h3>
 <ul class="simple">
 <li><p><strong>放宽姿态限制</strong> ：</p>
 <ul>
@@ -602,6 +693,15 @@ document.write(`
         <span class="n">H1_ACTION_SCALE</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">a</span><span class="o">.</span><span class="n">effort_limit</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">stiffness</span>
 </pre></div>
 </div>
+</section>
+<section id="with-hands-policy-free">
+<h2>with_hands：带夹爪版本（policy-free）<a class="headerlink" href="#with-hands-policy-free" title="Link to this heading">#</a></h2>
+<p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/__init__.py</span></code> 与 <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/env_cfgs.py</span></code></p>
+<p>如果你选择 <code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>：</p>
+<ul class="simple">
+<li><p>机器人侧会通过 <code class="docutils literal notranslate"><span class="pre">get_h1_robot_cfg(hands=...)</span></code> 挂载 2F85（默认配置见 <code class="docutils literal notranslate"><span class="pre">_default_hands_cfg</span></code>）。</p></li>
+<li><p>环境侧会添加一个 policy-free 的 <code class="docutils literal notranslate"><span class="pre">gripper</span></code> action（0 维），并用 interval event 定期采样夹爪目标（类似上身动作的思路）。</p></li>
+</ul>
 </section>
 <section id="homie">
 <h2>总结：为什么参考 Homie？<a class="headerlink" href="#homie" title="Link to this heading">#</a></h2>
@@ -659,15 +759,18 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#make-homie-env-cfg">任务骨架：make_homie_env_cfg</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upperbodyposeaction-policy-free">核心特性：UpperBodyPoseAction (Policy-Free)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">课程学习：让干扰逐渐增强</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#make-homie-env-cfg-base-cfg">任务骨架：make_homie_env_cfg（base cfg）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#env-grouping-vec-env">Env Grouping：一套 vec env 并行训练三种“子任务”</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-unitree-h1-homie-env-cfg">H1 覆盖：unitree_h1_homie_env_cfg</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#upperbodyposeaction-policy-free-0-action">核心特性：UpperBodyPoseAction（policy-free，上身 0 维 action）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">课程学习：让干扰逐渐增强</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rewards-terminations">Rewards &amp; Terminations：混合任务的平衡艺术</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">1) 奖励设计：多任务解耦</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">2) 终止条件：松耦合</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">1) 奖励设计：多任务解耦</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">2) 终止条件：松耦合</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-h1-constants">H1 机器人覆盖与 H1 Constants</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#with-hands-policy-free">with_hands：带夹爪版本（policy-free）</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#homie">总结：为什么参考 Homie？</a></li>
 </ul>
   </nav></div>

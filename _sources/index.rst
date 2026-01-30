@@ -83,6 +83,12 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 2
+   :caption: Developer Walkthrough (English)
+
+   source/walkthrough_en/index
+
+.. toctree::
+   :maxdepth: 2
    :caption: Developer Walkthrough（中文）
 
    source/walkthrough/index

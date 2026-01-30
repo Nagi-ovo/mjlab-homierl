@@ -1,0 +1,825 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Example 3: Homie — Mixed Motion and Disturbances (Unitree H1) &#8212; mjlab Documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../../_static/twemoji.css" />
+    <link rel="stylesheet" type="text/css" href="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/css/all.min.css?v=53359634" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../_static/documentation_options.js?v=9eb32ce0"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js"></script>
+    <script src="../../_static/twemoji.js"></script>
+    <script src="/home/runner/work/mjlab-homierl/mjlab-homierl/.venv/lib/python3.13/site-packages/sphinxcontrib/icon/node_modules/@fortawesome/fontawesome-free/js/all.min.js?v=ec35c6c9"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'source/walkthrough_en/tasks_homie_h1';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="How to Add a New G1 RL Task (From Zero to Trainable)" href="how_to_add_g1_task.html" />
+    <link rel="prev" title="Example 2: Motion Tracking / Imitation (Unitree G1)" href="tasks_tracking_g1.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+    <meta name="docbuild:last-update" content="Jan 30, 2026"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">The mjlab Documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><ul class="navbar-icon-links"
+    aria-label="Quick Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/mujocolab/mjlab" title="mjlab" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/badge/mjlab-1.0.0-silver.svg" class="icon-link-image" alt="mjlab"/></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" title="Stars" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="https://img.shields.io/github/stars/mujocolab/mjlab?color=fedcba" class="icon-link-image" alt="Stars"/></a>
+        </li>
+</ul></div>
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../migration_isaac_lab.html">Migrating from Isaac Lab</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">About the Project</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../motivation.html">Why mjlab?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ &amp; Troubleshooting</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/index.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/envs.html">mjlab.envs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/scene.html">mjlab.scene</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/sim.html">mjlab.sim</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/entity.html">mjlab.entity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/actuator.html">mjlab.actuator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/sensor.html">mjlab.sensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/managers.html">mjlab.managers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/terrains.html">mjlab.terrains</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough (English)</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Developer Walkthrough (Research &amp; Development)</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="overview.html">Architecture Overview: mjlab in One Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html">Quickstart: The Shortest Dev Loop (Train / Play / Modify Tasks)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_layout.html">Code Map: Where Should You Change Things?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manager_based_env.html">Key Class 1: ManagerBasedRlEnv (Lifecycle and Data Flow)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="managers_and_terms.html">Key Class 2: Managers + Terms (IsaacLab-like Core Abstractions)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rewards_and_terminations.html">Rewards and Terminations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_velocity_g1.html">Example 1: Velocity Tracking (Unitree G1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tasks_tracking_g1.html">Example 2: Motion Tracking / Imitation (Unitree G1)</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Example 3: Homie — Mixed Motion and Disturbances (Unitree H1)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="how_to_add_g1_task.html">How to Add a New G1 RL Task (From Zero to Trainable)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debugging_perf.html">Debugging &amp; Performance: Stay Stable and Fast</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Developer Walkthrough（中文）</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../walkthrough/index.html">Code Walkthrough（面向科研开发，上手 + 深入）</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/overview.html">架构总览：一张图看懂 mjlab</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/quickstart.html">快速上手：最短开发闭环（训练 / Play / 改任务）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/project_layout.html">代码地图：你应该去哪里改东西？</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/manager_based_env.html">重点类一：ManagerBasedRlEnv（环境生命周期与数据流）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/managers_and_terms.html">重点类二：Managers + Terms（isaaclab-like 的核心抽象）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/rewards_and_terminations.html">奖励函数与终止条件 (Rewards and Terminations)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/tasks_velocity_g1.html">实例一：Velocity Tracking（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/tasks_tracking_g1.html">实例二：Motion Tracking / Imitation（Unitree G1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/tasks_homie_h1.html">实例三：Homie —— 混合运动与干扰（Unitree H1）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/how_to_add_g1_task.html">如何新增一个 G1 RL 任务（从 0 到可训练）</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../walkthrough/debugging_perf.html">调试与性能：让你“稳”且“快”</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../randomization.html">Domain Randomization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nan_guard.html">NaN Guard</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../observation.html">Observation History and Delay</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../actuators.html">Actuators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sensors.html">Sensors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../raycast_sensor.html">RayCast Sensor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributed_training.html">Distributed Training</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-source-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Source repositories">
+    <i class="fab fa-github"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab" target="_blank"
+   class="btn btn-sm btn-source-repository-button dropdown-item"
+   title="Source repository"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="btn__text-container">Repository</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/edit/main/docs/source/walkthrough_en/tasks_homie_h1.rst" target="_blank"
+   class="btn btn-sm btn-source-edit-button dropdown-item"
+   title="Suggest edit"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-pencil-alt"></i>
+  </span>
+<span class="btn__text-container">Suggest edit</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li><a href="https://github.com/mujocolab/mjlab/issues/new?title=Issue%20on%20page%20%2Fsource/walkthrough_en/tasks_homie_h1.html&body=Your%20issue%20content%20here." target="_blank"
+   class="btn btn-sm btn-source-issues-button dropdown-item"
+   title="Open an issue"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="btn__text-container">Open issue</span>
+</a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../../_sources/source/walkthrough_en/tasks_homie_h1.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Example 3: Homie — Mixed Motion and Disturbances (Unitree H1)</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#task-skeleton-make-homie-env-cfg-base-cfg">Task skeleton: make_homie_env_cfg (base cfg)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#env-grouping-train-three-subtasks-in-one-vectorized-env">Env grouping: train three “subtasks” in one vectorized env</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-override-unitree-h1-homie-env-cfg">H1 override: unitree_h1_homie_env_cfg</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-feature-upperbodyposeaction-policy-free-0-dim-action">Core feature: UpperBodyPoseAction (policy-free, 0-dim action)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#curriculum-gradually-increase-disturbance-strength">Curriculum: gradually increase disturbance strength</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rewards-terminations-balancing-mixed-objectives">Rewards &amp; terminations: balancing mixed objectives</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rewards-decouple-objectives-via-env-groups">1) Rewards: decouple objectives via env groups</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminations-looser-coupling">2) Terminations: looser coupling</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-override-and-h1-constants">H1 override and H1 constants</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#with-hands-gripper-variant-policy-free">with_hands: gripper variant (policy-free)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-homie-is-a-good-reference">Why Homie is a good reference</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="example-3-homie-mixed-motion-and-disturbances-unitree-h1">
+<span id="walkthrough-en-task-homie-h1"></span><h1>Example 3: Homie — Mixed Motion and Disturbances (Unitree H1)<a class="headerlink" href="#example-3-homie-mixed-motion-and-disturbances-unitree-h1" title="Link to this heading">#</a></h1>
+<p>Homie is a more “composite” task that mixes <strong>velocity tracking</strong>, <strong>squatting (height control)</strong>, and <strong>upper-body random disturbances</strong>.</p>
+<p>Two task ids are provided:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1</span></code>: the default version.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>: mounts Robotiq 2F85 grippers (and adds policy-free random gripper motion).</p></li>
+</ul>
+<p>The core idea is:
+<strong>reduce the policy action space to the lower body, and treat the upper body (and optional grippers) as smooth, time-varying disturbances.</strong>
+This helps the policy keep robust leg locomotion under changing body poses.</p>
+<section id="task-skeleton-make-homie-env-cfg-base-cfg">
+<h2>Task skeleton: make_homie_env_cfg (base cfg)<a class="headerlink" href="#task-skeleton-make-homie-env-cfg-base-cfg" title="Link to this heading">#</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/homie_env_cfg.py</span></code></p>
+<p>Homie provides two command generators, both supporting env-group gating:</p>
+<ol class="arabic simple">
+<li><p><strong>twist</strong> (<code class="docutils literal notranslate"><span class="pre">UniformVelocityCommand</span></code>): target base linear (x/y) and yaw velocities.</p></li>
+<li><p><strong>height</strong> (<code class="docutils literal notranslate"><span class="pre">RelativeHeightCommand</span></code>): target pelvis height relative to feet (squat motion).</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab/tasks/homie/homie_env_cfg.py</span>
+<span class="n">commands</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;twist&quot;</span><span class="p">:</span> <span class="n">UniformVelocityCommandCfg</span><span class="p">(</span>
+        <span class="o">...</span><span class="p">,</span>
+        <span class="n">active_env_group</span><span class="o">=</span><span class="s2">&quot;velocity&quot;</span><span class="p">,</span>
+        <span class="n">rel_standing_envs</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span>
+        <span class="n">avoid_consecutive_standing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">RelativeHeightCommandCfg</span><span class="p">(</span>
+        <span class="n">entity_name</span><span class="o">=</span><span class="s2">&quot;robot&quot;</span><span class="p">,</span>
+        <span class="n">active_env_group</span><span class="o">=</span><span class="s2">&quot;squat&quot;</span><span class="p">,</span>
+        <span class="c1"># Smooth height-command transitions (avoid step changes at resampling).</span>
+        <span class="n">interp_rate</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+        <span class="n">foot_site_names</span><span class="o">=</span><span class="p">(),</span> <span class="c1"># filled by robot override</span>
+        <span class="n">ranges</span><span class="o">=</span><span class="n">RelativeHeightCommandCfg</span><span class="o">.</span><span class="n">Ranges</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
+    <span class="p">),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="env-grouping-train-three-subtasks-in-one-vectorized-env">
+<h2>Env grouping: train three “subtasks” in one vectorized env<a class="headerlink" href="#env-grouping-train-three-subtasks-in-one-vectorized-env" title="Link to this heading">#</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/mdp/curriculums.py::assign_homie_env_groups</span></code></p>
+<p>Homie partitions the vectorized env into three env groups (masks), and uses the group names in <code class="docutils literal notranslate"><span class="pre">commands</span></code> / <code class="docutils literal notranslate"><span class="pre">rewards</span></code> / <code class="docutils literal notranslate"><span class="pre">curriculum</span></code> for gating:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">squat</span></code>: ~20% (<code class="docutils literal notranslate"><span class="pre">set_x</span> <span class="pre">&lt;</span> <span class="pre">1/5</span></code>), focuses on height commands (squatting).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">standing</span></code>: ~13.3% (<code class="docutils literal notranslate"><span class="pre">1/5</span> <span class="pre">&lt;=</span> <span class="pre">set_x</span> <span class="pre">&lt;=</span> <span class="pre">1/3</span></code>), focuses on “stand still” stability under disturbances.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">velocity</span></code>: ~66.7% (<code class="docutils literal notranslate"><span class="pre">set_x</span> <span class="pre">&gt;</span> <span class="pre">1/3</span></code>), focuses on velocity tracking (walking/running).</p></li>
+</ul>
+<p>Two key takeaways:</p>
+<ul class="simple">
+<li><p><strong>Command gating</strong>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">twist</span></code> has <code class="docutils literal notranslate"><span class="pre">active_env_group=&quot;velocity&quot;</span></code>: non-velocity envs are forced to <code class="docutils literal notranslate"><span class="pre">twist=0</span></code> (standing).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">height</span></code> has <code class="docutils literal notranslate"><span class="pre">active_env_group=&quot;squat&quot;</span></code>: non-squat envs are set to <code class="docutils literal notranslate"><span class="pre">inactive_height</span></code> (filled by robot override), avoiding height commands “confusing” walking envs.</p></li>
+</ul>
+</li>
+<li><p><strong>Reward gating</strong>: many reward terms specify <code class="docutils literal notranslate"><span class="pre">env_group=...</span></code> to only activate on some groups (e.g., standing stabilization terms, squat-only geometric constraints).</p></li>
+</ul>
+</section>
+<section id="h1-override-unitree-h1-homie-env-cfg">
+<h2>H1 override: unitree_h1_homie_env_cfg<a class="headerlink" href="#h1-override-unitree-h1-homie-env-cfg" title="Link to this heading">#</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/env_cfgs.py::unitree_h1_homie_env_cfg</span></code></p>
+<p>Homie still follows <strong>base cfg + robot-specific override</strong>. The H1 override mainly:</p>
+<ul class="simple">
+<li><p><strong>Switches to plane terrain and disables terrain curriculum</strong> (remove <code class="docutils literal notranslate"><span class="pre">terrain_levels</span></code>).</p></li>
+<li><p><strong>Splits actions</strong>: policy controls legs (hip/knee/ankle); upper-body motion is generated by a policy-free action (next section).</p></li>
+<li><p><strong>Binds commands to H1 foot geometry</strong>: fill <code class="docutils literal notranslate"><span class="pre">foot_site_names</span></code> for the height command, and set squat/standing ranges + <code class="docutils literal notranslate"><span class="pre">inactive_height</span></code>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">height_cmd.ranges.height</span> <span class="pre">=</span> <span class="pre">(0.4,</span> <span class="pre">0.98)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">height_cmd.inactive_height</span> <span class="pre">=</span> <span class="pre">0.98</span></code> (keep a stable standing height outside squat envs)</p></li>
+</ul>
+</li>
+<li><p><strong>Adds sensors and contact penalties</strong>: adds <code class="docutils literal notranslate"><span class="pre">self_collision</span></code> and <code class="docutils literal notranslate"><span class="pre">hip_knee_ground_contact</span></code> sensors, and wires the <code class="docutils literal notranslate"><span class="pre">hip_knee_contact</span></code> reward term.</p></li>
+<li><p><strong>Configures feet “parallel” rewards</strong>: fills H1 foot corner sites (<code class="docutils literal notranslate"><span class="pre">*_foot_fi/fo/ri/ro</span></code>) for <code class="docutils literal notranslate"><span class="pre">feet_ground_parallel</span></code> / <code class="docutils literal notranslate"><span class="pre">feet_parallel</span></code> and reorders right-foot sites to match left/right local frames.</p></li>
+<li><p><strong>Adds disturbances/randomization</strong>: step-scheduled external pushes, and a reset-time constant downward hand load (0–5kg equivalent, <code class="docutils literal notranslate"><span class="pre">hand_load</span></code>).</p></li>
+<li><p><strong>Optional with_hands version</strong>: when <code class="docutils literal notranslate"><span class="pre">hands=True</span></code>, mounts 2F85 and adds a policy-free <code class="docutils literal notranslate"><span class="pre">gripper</span></code> action with interval resampling (see below).</p></li>
+</ul>
+</section>
+<section id="core-feature-upperbodyposeaction-policy-free-0-dim-action">
+<h2>Core feature: UpperBodyPoseAction (policy-free, 0-dim action)<a class="headerlink" href="#core-feature-upperbodyposeaction-policy-free-0-dim-action" title="Link to this heading">#</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/env_cfgs.py</span></code></p>
+<p>Besides the policy-controlled <code class="docutils literal notranslate"><span class="pre">joint_pos</span></code> action, H1 Homie adds <code class="docutils literal notranslate"><span class="pre">upper_body_pose</span></code> (policy action dim = 0):</p>
+<ul class="simple">
+<li><p><strong>0 policy dims</strong>: does not increase the neural network output size.</p></li>
+<li><p><strong>Smooth interpolation</strong>: maintains an internal pose target and moves toward it via <code class="docutils literal notranslate"><span class="pre">torch.lerp</span></code> each step.</p></li>
+<li><p><strong>Periodic resampling</strong>: an <code class="docutils literal notranslate"><span class="pre">EventTermCfg</span></code> periodically samples a new goal pose (default: every 2 seconds).</p></li>
+<li><p><strong>Optional rate limiting</strong>: <code class="docutils literal notranslate"><span class="pre">max_speed_rad_s</span></code> clamps per-step target changes to avoid overly abrupt motion.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Upper-body action config (policy-free)</span>
+<span class="n">cfg</span><span class="o">.</span><span class="n">actions</span><span class="p">[</span><span class="s2">&quot;upper_body_pose&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">UpperBodyPoseActionCfg</span><span class="p">(</span>
+    <span class="n">entity_name</span><span class="o">=</span><span class="s2">&quot;robot&quot;</span><span class="p">,</span>
+    <span class="n">joint_names</span><span class="o">=</span><span class="n">upper_body_joint_expr</span><span class="p">,</span>
+    <span class="n">interp_rate</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">max_speed_rad_s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">target_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">),</span>
+    <span class="n">initial_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># training starts at 0; play mode uses 1.0</span>
+    <span class="n">use_sampled_ratio</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Interval event: resample goals (range is larger but clamped by joint limits + ratio)</span>
+<span class="n">cfg</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="s2">&quot;upper_body_random_targets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">EventTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">_sample_upper_body_targets_with_curriculum</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;interval&quot;</span><span class="p">,</span>
+    <span class="n">interval_range_s</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;action_name&quot;</span><span class="p">:</span> <span class="s2">&quot;upper_body_pose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;target_range&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+        <span class="s2">&quot;start_step&quot;</span><span class="p">:</span> <span class="n">step_threshold</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="curriculum-gradually-increase-disturbance-strength">
+<h2>Curriculum: gradually increase disturbance strength<a class="headerlink" href="#curriculum-gradually-increase-disturbance-strength" title="Link to this heading">#</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/mdp/curriculums.py</span></code></p>
+<p>To avoid overwhelming early training, Homie uses <code class="docutils literal notranslate"><span class="pre">upper_body_action_curriculum</span></code>:</p>
+<ul class="simple">
+<li><p><strong>Performance-coupled</strong>: when the average <code class="docutils literal notranslate"><span class="pre">track_linear_velocity</span></code> reward exceeds a threshold (e.g., 0.8), increase disturbance amplitude.</p></li>
+<li><p><strong>Linear growth</strong>: ratio increases from 0 to 1.0.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cfg</span><span class="o">.</span><span class="n">curriculum</span><span class="p">[</span><span class="s2">&quot;upper_body_action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CurriculumTermCfg</span><span class="p">(</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">upper_body_action_curriculum</span><span class="p">,</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;action_name&quot;</span><span class="p">:</span> <span class="s2">&quot;upper_body_pose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;reward_name&quot;</span><span class="p">:</span> <span class="s2">&quot;track_linear_velocity&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;success_threshold&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+        <span class="s2">&quot;increment&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">&quot;max_ratio&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">&quot;start_step&quot;</span><span class="p">:</span> <span class="n">step_threshold</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="rewards-terminations-balancing-mixed-objectives">
+<h2>Rewards &amp; terminations: balancing mixed objectives<a class="headerlink" href="#rewards-terminations-balancing-mixed-objectives" title="Link to this heading">#</a></h2>
+<p>Homie needs to balance “walk” and “squat” objectives while being robust to upper-body disturbances.</p>
+<section id="rewards-decouple-objectives-via-env-groups">
+<h3>1) Rewards: decouple objectives via env groups<a class="headerlink" href="#rewards-decouple-objectives-via-env-groups" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Env-group gating</strong>:</p>
+<ul>
+<li><p>many reward terms use <code class="docutils literal notranslate"><span class="pre">env_group=...</span></code> so they only apply to some groups</p></li>
+<li><p>H1 override adds extra standing stabilization (<code class="docutils literal notranslate"><span class="pre">track_*_standing</span></code>) to reduce residual sway in <code class="docutils literal notranslate"><span class="pre">standing</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Regularizers for robustness</strong>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">knee_deviation_reward</span></code>: penalize knee lateral deviation during squat, encouraging reasonable squatting posture</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">upright</span></code>: keep the torso upright (critical for resisting upper-body disturbances)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">feet_ground_parallel</span></code> / <code class="docutils literal notranslate"><span class="pre">feet_parallel</span></code>: constrain feet orientation vs ground / between feet (requires per-robot corner site config)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hip_knee_contact</span></code> / <code class="docutils literal notranslate"><span class="pre">self_collisions</span></code>: penalize “bad contacts” via rewards instead of terminating too early</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="terminations-looser-coupling">
+<h3>2) Terminations: looser coupling<a class="headerlink" href="#terminations-looser-coupling" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Relaxed posture limits</strong>: H1 has larger motion ranges and disturbances; <code class="docutils literal notranslate"><span class="pre">fell_over</span></code> thresholds are typically less strict than smaller robots.</p></li>
+<li><p><strong>Self-collision handling</strong>: Homie prefers to keep training signal via reward penalties rather than immediate termination for large-range motion.</p></li>
+</ul>
+</section>
+</section>
+<section id="h1-override-and-h1-constants">
+<h2>H1 override and H1 constants<a class="headerlink" href="#h1-override-and-h1-constants" title="Link to this heading">#</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab/asset_zoo/robots/unitree_h1/h1_constants.py</span></code></p>
+<p>Homie uses H1-specific actuator parameters heavily:</p>
+<ul class="simple">
+<li><p><strong>Multiple actuator groups</strong>: H1 is split into <code class="docutils literal notranslate"><span class="pre">HIP_KNEE</span></code>, <code class="docutils literal notranslate"><span class="pre">ANKLE_TORSO</span></code>, and <code class="docutils literal notranslate"><span class="pre">ARM</span></code> groups with different stiffness/damping.</p></li>
+<li><p><strong>Automatic action scale</strong>: per-joint scaling computed from actuator <code class="docutils literal notranslate"><span class="pre">effort_limit</span> <span class="pre">/</span> <span class="pre">stiffness</span></code>.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute action scale automatically</span>
+<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">H1_ARTICULATION</span><span class="o">.</span><span class="n">actuators</span><span class="p">:</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">target_names_expr</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">H1_ACTION_SCALE</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">a</span><span class="o">.</span><span class="n">effort_limit</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">stiffness</span>
+</pre></div>
+</div>
+</section>
+<section id="with-hands-gripper-variant-policy-free">
+<h2>with_hands: gripper variant (policy-free)<a class="headerlink" href="#with-hands-gripper-variant-policy-free" title="Link to this heading">#</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/__init__.py</span></code> and <code class="docutils literal notranslate"><span class="pre">src/mjlab/tasks/homie/config/h1/env_cfgs.py</span></code></p>
+<p>If you choose <code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>:</p>
+<ul class="simple">
+<li><p>The robot config mounts 2F85 via <code class="docutils literal notranslate"><span class="pre">get_h1_robot_cfg(hands=...)</span></code> (default mount config: <code class="docutils literal notranslate"><span class="pre">_default_hands_cfg</span></code>).</p></li>
+<li><p>The env adds a policy-free <code class="docutils literal notranslate"><span class="pre">gripper</span></code> action (0-dim) and an interval event that resamples gripper targets periodically (similar spirit to the upper-body action).</p></li>
+</ul>
+</section>
+<section id="why-homie-is-a-good-reference">
+<h2>Why Homie is a good reference<a class="headerlink" href="#why-homie-is-a-good-reference" title="Link to this heading">#</a></h2>
+<p>Homie is a great reference if you want to build tasks with:</p>
+<ol class="arabic simple">
+<li><p><strong>Mixed objectives</strong>: velocity tracking + height control in one setup.</p></li>
+<li><p><strong>Partial actuation</strong>: policy controls only part of the body; the rest follows scripted / random targets.</p></li>
+<li><p><strong>Curriculum beyond domain params</strong>: dynamically changing action behavior (not just friction/mass randomization).</p></li>
+</ol>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="tasks_tracking_g1.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Example 2: Motion Tracking / Imitation (Unitree G1)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="how_to_add_g1_task.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How to Add a New G1 RL Task (From Zero to Trainable)</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#task-skeleton-make-homie-env-cfg-base-cfg">Task skeleton: make_homie_env_cfg (base cfg)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#env-grouping-train-three-subtasks-in-one-vectorized-env">Env grouping: train three “subtasks” in one vectorized env</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-override-unitree-h1-homie-env-cfg">H1 override: unitree_h1_homie_env_cfg</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-feature-upperbodyposeaction-policy-free-0-dim-action">Core feature: UpperBodyPoseAction (policy-free, 0-dim action)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#curriculum-gradually-increase-disturbance-strength">Curriculum: gradually increase disturbance strength</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rewards-terminations-balancing-mixed-objectives">Rewards &amp; terminations: balancing mixed objectives</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rewards-decouple-objectives-via-env-groups">1) Rewards: decouple objectives via env groups</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#terminations-looser-coupling">2) Terminations: looser coupling</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h1-override-and-h1-constants">H1 override and H1 constants</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#with-hands-gripper-variant-policy-free">with_hands: gripper variant (policy-free)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-homie-is-a-good-reference">Why Homie is a good reference</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By The mjlab Developers
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, The mjlab Developers.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    <p class="last-updated">
+  Last updated on Jan 30, 2026.
+  <br/>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
