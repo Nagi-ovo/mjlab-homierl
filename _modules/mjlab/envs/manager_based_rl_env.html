@@ -55,7 +55,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="Feb 04, 2026"/>
+    <meta name="docbuild:last-update" content="Feb 10, 2026"/>
   </head>
   
   
@@ -783,6 +783,38 @@ document.write(`
 
     <span class="c1"># Reset envs that terminated/timed-out and log the episode info.</span>
     <span class="n">reset_env_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_buf</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">as_tuple</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Provide pre-reset &quot;terminal&quot; critic observations for algorithms that need</span>
+    <span class="c1"># the next-state observation from the terminating transition (e.g., HIMPPO).</span>
+    <span class="n">critic_group_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_manager</span><span class="o">.</span><span class="n">group_obs_dim</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;critic&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,))</span>
+    <span class="n">critic_dim_flat</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">critic_group_dim</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">prod</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+    <span class="n">termination_critic_obs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">critic_dim_flat</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reset_env_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="n">critic_terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_manager</span><span class="o">.</span><span class="n">active_terms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;critic&quot;</span><span class="p">,</span> <span class="p">[])</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">critic_terms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">term_name</span> <span class="o">=</span> <span class="n">critic_terms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">term_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_manager</span><span class="o">.</span><span class="n">get_term_cfg</span><span class="p">(</span><span class="s2">&quot;critic&quot;</span><span class="p">,</span> <span class="n">term_name</span><span class="p">)</span>
+        <span class="c1"># Compute the current one-step critic observation (no noise since</span>
+        <span class="c1"># enable_corruption=False for critic group).</span>
+        <span class="n">current_critic_one_step</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">term_cfg</span><span class="o">.</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">history_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+          <span class="n">circular</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_manager</span><span class="o">.</span><span class="n">_group_obs_term_history_buffer</span><span class="p">[</span><span class="s2">&quot;critic&quot;</span><span class="p">][</span><span class="n">term_name</span><span class="p">]</span>
+          <span class="n">hist</span> <span class="o">=</span> <span class="n">circular</span><span class="o">.</span><span class="n">buffer</span>  <span class="c1"># (B, H, D), oldest-&gt;newest</span>
+          <span class="k">if</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">history_length</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">new_hist</span> <span class="o">=</span> <span class="n">current_critic_one_step</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+          <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_hist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">hist</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:],</span> <span class="n">current_critic_one_step</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+          <span class="n">current_critic_full</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">new_hist</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_envs</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">term_cfg</span><span class="o">.</span><span class="n">flatten_history_dim</span> <span class="k">else</span> <span class="n">new_hist</span>
+          <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+          <span class="n">current_critic_full</span> <span class="o">=</span> <span class="n">current_critic_one_step</span>
+        <span class="n">termination_critic_obs</span> <span class="o">=</span> <span class="n">current_critic_full</span><span class="p">[</span><span class="n">reset_env_ids</span><span class="p">]</span>
+
+    <span class="c1"># Always populate these keys to avoid stale tensors across steps.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">extras</span><span class="p">[</span><span class="s2">&quot;termination_env_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reset_env_ids</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">extras</span><span class="p">[</span><span class="s2">&quot;termination_critic_obs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">termination_critic_obs</span>
+
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reset_env_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">_reset_idx</span><span class="p">(</span><span class="n">reset_env_ids</span><span class="p">)</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">write_data_to_sim</span><span class="p">()</span>
@@ -1005,7 +1037,7 @@ By The mjlab Developers
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on Feb 04, 2026.
+  Last updated on Feb 10, 2026.
   <br/>
 </p>
   </div>
