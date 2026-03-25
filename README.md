@@ -1,5 +1,7 @@
 # mjlab-homierl
 
+[Screencast from 2026-03-25 19-53-04.webm](https://github.com/user-attachments/assets/a401ea12-95c9-4aec-a6dd-0c6c99aa47aa)
+
 `mjlab-homierl` is an external `mjlab` task package for reproducing the lower-body
 locomotion part of HOMIE on Unitree H1. It follows the standard `anymal_c_velocity`
 style layout: the repository only contains custom tasks, assets, and the HIMPPO
