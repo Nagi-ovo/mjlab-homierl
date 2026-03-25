@@ -48,7 +48,7 @@ div.sphinxsidebarwrapper {
 
 div.sphinxsidebar {
     float: left;
-    width: 270px;
+    width: 230px;
     margin-left: -100%;
     font-size: 90%;
     word-wrap: break-word;
@@ -211,7 +211,7 @@ table.modindextable td {
 /* -- general body styles --------------------------------------------------- */
 
 div.body {
-    min-width: 360px;
+    min-width: inherit;
     max-width: 800px;
 }
 
