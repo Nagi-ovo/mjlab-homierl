@@ -5,6 +5,9 @@ locomotion part of HOMIE on Unitree H1. It follows the standard `anymal_c_veloci
 style layout: the repository only contains custom tasks, assets, and the HIMPPO
 training stack, while the core simulator/runtime comes from upstream `mjlab`.
 
+This repository targets the lower-body locomotion RL portion of
+[HOMIE: Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit](https://arxiv.org/abs/2502.13013).
+
 ## Structure
 
 ```text
@@ -22,6 +25,15 @@ src/mjlab_homierl/
 
 ## Install
 
+Clone the repository first:
+
+```bash
+git clone https://github.com/Nagi-ovo/mjlab-homierl.git
+cd mjlab-homierl
+```
+
+For GPU training and playback:
+
 ```bash
 uv sync --extra cu128
 ```
@@ -30,6 +42,12 @@ For CPU-only setups:
 
 ```bash
 uv sync --extra cpu
+```
+
+For local docs builds:
+
+```bash
+uv sync --extra docs
 ```
 
 This package depends on upstream `mjlab>=1.2.0,<1.3.0` and registers tasks through
@@ -41,6 +59,10 @@ the `mjlab.tasks` entry-point group.
 - `Mjlab-Homie-Unitree-H1-with_hands`
 
 ## Usage
+
+Pretrained locomotion checkpoints are available at
+[Hugging Face](https://huggingface.co/Nagi-ovo/HOMIERL-loco) if you want to skip
+training and go straight to playback.
 
 List available environments:
 
@@ -55,11 +77,38 @@ uv run train Mjlab-Homie-Unitree-H1 --env.scene.num-envs 4096
 uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
 ```
 
+Multi-GPU training is also supported by the upstream CLI:
+
+```bash
+uv run train Mjlab-Homie-Unitree-H1 \
+  --gpu-ids 0 1 \
+  --env.scene.num-envs 4096
+
+uv run train Mjlab-Homie-Unitree-H1-with_hands \
+  --gpu-ids 0 1 \
+  --env.scene.num-envs 4096
+```
+
 Play:
 
 ```bash
 uv run play Mjlab-Homie-Unitree-H1 --checkpoint-file /path/to/model.pt --viewer viser
 uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint-file /path/to/model.pt --viewer viser
+```
+
+More explicit playback examples:
+
+```bash
+uv run play Mjlab-Homie-Unitree-H1 \
+  --checkpoint-file /path/to/model.pt \
+  --num-envs 30 \
+  --viewer viser
+
+uv run play Mjlab-Homie-Unitree-H1-with_hands \
+  --checkpoint-file /path/to/model.pt \
+  --num-envs 30 \
+  --viewer viser \
+  --device cuda:0
 ```
 
 Sanity-check the MDP before training:
@@ -83,4 +132,18 @@ uv run play Mjlab-Homie-Unitree-H1 --agent random
 
 ```bash
 uv run infer-homie-lowerbody --help
+```
+
+## Development
+
+Run the package regression tests:
+
+```bash
+uv run pytest tests -q
+```
+
+Build the docs locally:
+
+```bash
+uv run --extra docs sphinx-build docs docs/_build
 ```
