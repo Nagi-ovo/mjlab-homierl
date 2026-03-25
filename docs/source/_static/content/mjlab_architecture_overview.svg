@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820">
+  <defs>
+    <style>
+      .bg { fill: #fbfbf7; }
+      .title { font: 700 22px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #111; }
+      .h { font: 700 16px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #111; }
+      .t { font: 400 14px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; fill: #111; }
+      .mono { font: 500 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; fill: #111; }
+      .box { fill: #fffef8; stroke: #111; stroke-width: 2.2; rx: 14; }
+      .box2 { fill: #f7fbff; stroke: #111; stroke-width: 2.2; rx: 14; }
+      .box3 { fill: #f8fff6; stroke: #111; stroke-width: 2.2; rx: 14; }
+      .sub { fill: #ffffff; stroke: #111; stroke-width: 1.8; rx: 12; }
+      .arrow { stroke: #111; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#mEnd); }
+      .darrow { stroke: #111; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 7 6; marker-end: url(#mEnd); }
+    </style>
+    <marker id="mEnd" markerWidth="12" markerHeight="12" refX="10.5" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#111"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1400" height="820"/>
+  <text class="title" x="40" y="48">mjlab 架构总览（manager-based RL env，IsaacLab-like API）</text>
+
+  <!-- Left: Task package -->
+  <rect class="box" x="40" y="90" width="360" height="680" rx="16"/>
+  <text class="h" x="62" y="122">Task package（科研人员主要修改处）</text>
+  <text class="mono" x="62" y="150">src/mjlab/tasks/&lt;task&gt;/</text>
+
+  <rect class="sub" x="62" y="175" width="316" height="90" rx="12"/>
+  <text class="h" x="78" y="205">&lt;task&gt;_env_cfg.py</text>
+  <text class="t" x="78" y="228">定义 base MDP：obs/actions/</text>
+  <text class="t" x="78" y="248">commands/events/rewards/…</text>
+
+  <rect class="sub" x="62" y="285" width="316" height="110" rx="12"/>
+  <text class="h" x="78" y="315">mdp/</text>
+  <text class="t" x="78" y="338">任务专用 terms（函数/类）</text>
+  <text class="t" x="78" y="358">复用 envs/mdp 的通用组件</text>
+
+  <rect class="sub" x="62" y="415" width="316" height="130" rx="12"/>
+  <text class="h" x="78" y="445">config/g1/</text>
+  <text class="t" x="78" y="468">robot override：实体、传感器、</text>
+  <text class="t" x="78" y="488">SceneEntityCfg names、权重、play mode</text>
+  <text class="t" x="78" y="508">并在 __init__.py 注册 task_id</text>
+
+  <rect class="sub" x="62" y="565" width="316" height="80" rx="12"/>
+  <text class="h" x="78" y="595">registry.py</text>
+  <text class="t" x="78" y="618">register_mjlab_task / load_env_cfg</text>
+
+  <rect class="sub" x="62" y="665" width="316" height="82" rx="12"/>
+  <text class="h" x="78" y="695">rl/ (可选)</text>
+  <text class="t" x="78" y="718">自定义 runner / exporter（ONNX）</text>
+
+  <!-- Middle: Scripts + Env -->
+  <rect class="box2" x="440" y="90" width="520" height="220" rx="16"/>
+  <text class="h" x="462" y="122">Entry points</text>
+  <text class="mono" x="462" y="150">src/mjlab/scripts/train.py / play.py</text>
+  <rect class="sub" x="462" y="170" width="476" height="118" rx="12"/>
+  <text class="t" x="482" y="198">1) import mjlab.tasks → 自动导入并注册所有 task_id</text>
+  <text class="t" x="482" y="220">2) load_env_cfg / load_rl_cfg（deepcopy 防止污染）</text>
+  <text class="t" x="482" y="242">3) 构建 ManagerBasedRlEnv(cfg, device)</text>
+  <text class="t" x="482" y="264">4) 包装成 RslRlVecEnvWrapper → rsl_rl runner</text>
+
+  <rect class="box3" x="440" y="340" width="520" height="430" rx="16"/>
+  <text class="h" x="462" y="372">Core: ManagerBasedRlEnv</text>
+  <text class="mono" x="462" y="398">src/mjlab/envs/manager_based_rl_env.py</text>
+
+  <!-- Scene + Sim -->
+  <rect class="sub" x="462" y="420" width="230" height="132" rx="12"/>
+  <text class="h" x="478" y="450">Scene</text>
+  <text class="mono" x="478" y="472">src/mjlab/scene/scene.py</text>
+  <text class="t" x="478" y="496">terrain + entities + sensors</text>
+  <text class="t" x="478" y="516">MjSpec → MjModel</text>
+
+  <rect class="sub" x="708" y="420" width="230" height="132" rx="12"/>
+  <text class="h" x="724" y="450">Simulation</text>
+  <text class="mono" x="724" y="472">src/mjlab/sim/sim.py</text>
+  <text class="t" x="724" y="496">MuJoCo + MuJoCo-Warp</text>
+  <text class="t" x="724" y="516">CUDA graphs / NaN guard</text>
+
+  <!-- Managers -->
+  <rect class="sub" x="462" y="570" width="476" height="180" rx="12"/>
+  <text class="h" x="478" y="600">Managers（MDP 拆分）</text>
+  <text class="mono" x="478" y="622">src/mjlab/managers/*</text>
+  <text class="t" x="478" y="646">Event → (expand_model_fields) → Command → Action → Obs → Termination → Reward → Curriculum</text>
+  <text class="t" x="478" y="670">term 调用统一：term(env, **params)，可为函数或类（stateful）</text>
+  <text class="t" x="478" y="694">SceneEntityCfg 在 env 初始化时 resolve（names → ids）</text>
+
+  <!-- Right: RL stack -->
+  <rect class="box" x="1000" y="90" width="360" height="680" rx="16"/>
+  <text class="h" x="1022" y="122">RL stack（训练/部署接口）</text>
+
+  <rect class="sub" x="1022" y="150" width="316" height="90" rx="12"/>
+  <text class="h" x="1038" y="180">RslRlVecEnvWrapper</text>
+  <text class="mono" x="1038" y="202">src/mjlab/rl/vecenv_wrapper.py</text>
+  <text class="t" x="1038" y="224">VecEnv 适配 + clip actions</text>
+
+  <rect class="sub" x="1022" y="260" width="316" height="130" rx="12"/>
+  <text class="h" x="1038" y="290">rsl_rl OnPolicyRunner / PPO</text>
+  <text class="t" x="1038" y="314">policy(obs) → action</text>
+  <text class="t" x="1038" y="336">learn() 与 log/save/export</text>
+  <text class="t" x="1038" y="358">（velocity/tracking 可导出 ONNX）</text>
+
+  <rect class="sub" x="1022" y="410" width="316" height="125" rx="12"/>
+  <text class="h" x="1038" y="440">Policy inference</text>
+  <text class="t" x="1038" y="464">obs(policy group) → actor</text>
+  <text class="t" x="1038" y="486">obs(critic group) → critic</text>
+  <text class="t" x="1038" y="508">action → env</text>
+
+  <rect class="sub" x="1022" y="555" width="316" height="120" rx="12"/>
+  <text class="h" x="1038" y="585">View / Debug</text>
+  <text class="mono" x="1038" y="607">src/mjlab/viewer/*</text>
+  <text class="t" x="1038" y="631">native viewer / viser + debug vis</text>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M 400 220 L 440 220"/>
+  <path class="arrow" d="M 700 310 L 700 340"/>
+  <path class="arrow" d="M 960 220 L 1000 220"/>
+
+  <!-- Dataflow arrows: obs -> policy -> action -->
+  <path class="darrow" d="M 938 660 L 1022 472"/>
+  <text class="mono" x="952" y="610">obs</text>
+  <path class="darrow" d="M 1022 500 L 960 520"/>
+  <text class="mono" x="980" y="510">action</text>
+
+  <!-- Managers internal hint arrows -->
+  <path class="arrow" d="M 692 486 L 708 486"/>
+  <text class="mono" x="650" y="474">write → step</text>
+</svg>
+
+

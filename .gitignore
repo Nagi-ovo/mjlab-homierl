@@ -1,0 +1,25 @@
+wandb/
+logs/
+onnx/
+videos/
+__pycache__/
+.pytest_cache/
+MUJOCO_LOG.TXT
+debug.py
+.vscode/
+*.ipynb_checkpoints/
+motions/
+*_rerun*
+artifacts/
+.venv/
+.cache/
+render_robots.py
+benchmark_results/
+
+# Documentation outputs.
+**/_build/*
+**/generated/*
+
+bigym/
+legged_gym/
+rsl_rl/
