@@ -48,6 +48,7 @@ dev = [
 [project.optional-dependencies]
 cu128 = ["torch>=2.7.0"]
 cpu = ["torch>=2.7.0"]
+docs = ["sphinx>=8,<10"]
 
 [tool.uv]
 conflicts = [
