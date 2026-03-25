@@ -1,80 +1,81 @@
 .. _walkthrough-overview:
 
-架构总览：一张图看懂 mjlab
-=========================
+架构总览：外部包如何挂到 mjlab 上
+============================================================
 
-.. figure:: ../_static/content/mjlab_architecture_overview.svg
-   :width: 100%
-   :alt: mjlab architecture overview
-
-这张图对应的“最重要一句话”
---------------------------
-
-**mjlab 的核心是一个 manager-based RL 环境：**
-
-- ``Scene``：把 **MuJoCo 资产/传感器/地形** 组织成可批量并行（num_envs）的场景，并负责把 entity 状态写入仿真。
-- ``Simulation``：用 MuJoCo + MuJoCo-Warp 在 GPU 上跑 physics（step/forward/reset），并提供 CUDA graph / NaN guard 等底层能力。
-- ``Managers``：把一个任务拆成 **actions / observations / rewards / terminations / commands / events / curriculum** 这些可组合模块。
-
-你可以把它理解成：**环境本体很薄，绝大多数“任务逻辑”都在 managers 的 terms 里。**
-
-从 task id 到训练循环：端到端链路
+这一页最重要的一句话
 --------------------------------
 
-1. **Task 注册** （把 env_cfg / rl_cfg 放进 registry）
+**``mjlab-homierl`` 现在不再是框架本体，而是一个挂在上游 ``mjlab`` 上的外部任务包。**
 
-   - 路径：``src/mjlab/tasks/<task>/config/<robot>/__init__.py``
-   - API：``src/mjlab/tasks/registry.py::register_mjlab_task``
+- 上游 ``mjlab`` 负责 ``ManagerBasedRlEnv``、manager、scene、simulation、
+  CLI 入口和 viewer。
+- 这个仓库负责 HOMIE 的 env cfg、H1 / 2F85 资产、HIMPPO runner，以及包内
+  的测试和文档。
 
-2. **训练入口** （从 registry 取 cfg，构建 env + runner）
+这也是为什么很多旧路径 ``src/mjlab/...`` 在当前仓库里已经不存在了。
 
-   - 路径：``src/mjlab/scripts/train.py``
-   - 关键调用：``load_env_cfg()`` → ``ManagerBasedRlEnv(cfg=..., device=...)`` → ``RslRlVecEnvWrapper`` → ``rsl_rl.OnPolicyRunner``
+从 task id 到训练循环：端到端链路
+------------------------------------------------------------
 
-3. **环境 step** （action → physics → terminations/rewards → events/commands → observations）
+1. **Task 注册**
 
-   - 路径：``src/mjlab/envs/manager_based_rl_env.py::ManagerBasedRlEnv.step``
+   - 当前仓库路径：``src/mjlab_homierl/__init__.py``
+   - 使用的 API：``mjlab.tasks.registry.register_mjlab_task``
+   - 作用：通过 ``mjlab.tasks`` entry point 注册
+     ``Mjlab-Homie-Unitree-H1`` 和 ``Mjlab-Homie-Unitree-H1-with_hands``
 
-4. **任务逻辑的落点** （mdp 组件）
+2. **train / play 入口**
 
-   - 路径：``src/mjlab/envs/mdp/*`` （通用） + ``src/mjlab/tasks/<task>/mdp/*`` （任务专用）
-   - 在 cfg 里以 ``RewardTermCfg(func=..., params=...)`` / ``ObservationTermCfg(func=..., ...)`` 形式被 managers 调用
+   - CLI 仍然来自上游 ``mjlab``：``uv run train ...``、``uv run play ...``
+   - CLI 会读取注册好的 env cfg / rl cfg，构建 ``ManagerBasedRlEnv``，再实例化
+     对应 runner
 
-一眼看懂的“数据流/控制流”
-------------------------
+3. **本包内的任务组装**
+
+   - base HOMIE cfg：``src/mjlab_homierl/homie_env_cfg.py``
+   - H1 与 with_hands override：``src/mjlab_homierl/env_cfgs.py``
+   - 任务专用 MDP term：``src/mjlab_homierl/mdp/*``
+   - 自定义 runner：``src/mjlab_homierl/rl/runner.py``
+
+4. **运行时分工**
+
+   - 训练时使用带 actor/critic 观测的 HIMPPO
+   - play 时如果 env 去掉了 critic 组，就走 HOMIE 自己的 actor-only
+     inference path
+
+一眼看懂的控制流
+------------------------------------------------------------
 
 .. code-block:: text
 
+   uv run train/play -> 上游 mjlab CLI
+     |
+     v
+   task registry entry -> env cfg + rl cfg + runner class
+     |
+     v
+   ManagerBasedRlEnv(cfg=...) + RslRlVecEnvWrapper
+     |
+     v
+   HomieHimOnPolicyRunner
+     |
+     v
    policy(obs) -> action
      |
      v
-   ActionManager.process_action / apply_action
+   上游 env step:
+     ActionManager -> Simulation -> Managers -> observations / rewards / resets
      |
      v
-   for decimation steps:
-     Scene.write_data_to_sim -> Simulation.step -> Scene.update
-     |
-     v
-   TerminationManager.compute  -> reset mask
-   RewardManager.compute(dt)   -> reward
-   (if any reset) -> _reset_idx -> Event(reset) -> Managers.reset(...)
-     |
-     v
-   CommandManager.compute(dt)
-   EventManager.apply(interval, dt)
-   ObservationManager.compute(update_history=True)
-     |
-     v
-   return obs, reward, terminated, truncated, extras
+   train loop 或 viewer loop
 
 建议从哪些文件开始读
 --------------------
 
-- **环境生命周期 + manager 加载顺序**：``src/mjlab/envs/manager_based_rl_env.py``
-- **manager/term 的基类与“函数 vs 类 term”机制**：``src/mjlab/managers/manager_base.py`` + ``src/mjlab/managers/*_manager.py``
-- **SceneEntityCfg（延迟绑定：名字 → ids）**：``src/mjlab/managers/scene_entity_config.py``
-- **两个 g1 任务**：
-
-  - velocity：``src/mjlab/tasks/velocity/velocity_env_cfg.py`` + ``src/mjlab/tasks/velocity/config/g1/env_cfgs.py``
-  - tracking：``src/mjlab/tasks/tracking/tracking_env_cfg.py`` + ``src/mjlab/tasks/tracking/config/g1/env_cfgs.py``
-
+- **包入口与 task 注册**：``src/mjlab_homierl/__init__.py``
+- **base HOMIE task cfg**：``src/mjlab_homierl/homie_env_cfg.py``
+- **H1 task override 与 play 行为**：``src/mjlab_homierl/env_cfgs.py``
+- **资产与手部挂载逻辑**：``src/mjlab_homierl/robots/unitree_h1/h1_constants.py``
+- **如果你需要看框架内部**：去安装后的上游 ``mjlab`` 包里看
+  ``mjlab.envs``、``mjlab.managers``、``mjlab.scene``、``mjlab.sim``

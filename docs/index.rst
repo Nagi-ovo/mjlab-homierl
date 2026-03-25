@@ -1,85 +1,37 @@
-Welcome to mjlab!
-=================
+Welcome to mjlab-homierl
+========================
 
-.. figure:: source/_static/mjlab-banner.jpg
-   :width: 100%
-   :alt: mjlab
+``mjlab-homierl`` is an external ``mjlab`` task package for the Unitree H1
+HOMIE locomotion setup. This repository no longer vendors the full framework:
+upstream ``mjlab`` provides the manager-based environment core, CLI, viewer, and
+simulation stack, while this package contributes HOMIE-specific task configs,
+assets, and the HIMPPO runner.
 
-What is mjlab?
-==============
+What lives in this repository
+=============================
 
-**mjlab = Isaac Lab's API + MuJoCo's simplicity + GPU acceleration**
+- Two registered tasks: ``Mjlab-Homie-Unitree-H1`` and
+  ``Mjlab-Homie-Unitree-H1-with_hands``
+- The external package under ``src/mjlab_homierl/``
+- H1 and Robotiq 2F85 assets used by HOMIE
+- A package-local HIMPPO runner and ONNX export path
+- Focused regression tests for task registration, env configs, RL configs, and
+  H1 asset assembly
 
-We took Isaac Lab's proven manager-based architecture and RL abstractions,
-then built them directly on MuJoCo Warp. No translation layers, no Omniverse
-overhead. Just fast, transparent physics.
+Relationship to upstream mjlab
+==============================
 
-You can try mjlab *without installing anything* by using `uvx`:
+- ``uv run train ...`` and ``uv run play ...`` come from the installed
+  ``mjlab`` package
+- Tasks are discovered through the ``mjlab.tasks`` entry-point group
+- Framework internals such as ``ManagerBasedRlEnv``, managers, scene, and
+  simulation are upstream concerns, not part of this repo anymore
 
-.. code-block:: bash
-
-   # Install uv if you haven't already
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-
-   # Run the mjlab demo (no local installation needed)
-   uvx --from mjlab \
-       --with "mujoco-warp @ git+https://github.com/google-deepmind/mujoco_warp@7c20a44bfed722e6415235792a1b247ea6b6a6d3" \
-       demo
-
-If this runs, your setup is compatible with mjlab *for evaluation*.
-
-License & citation
-==================
-
-mjlab is licensed under the Apache License, Version 2.0.
-Please refer to the `LICENSE file <https://github.com/mujocolab/mjlab/blob/main/LICENSE/>`_ for details.
-
-If you use mjlab in your research, we would appreciate a citation:
-
-.. code-block:: bibtex
-
-    @software{Zakka_Mjlab_Isaac_Lab_2025,
-        author = {Zakka, Kevin and Yi, Brent and Liao, Qiayuan and Le Lay, Louis},
-        license = {Apache-2.0},
-        month = sep,
-        title = {{mjlab: Isaac Lab API, powered by MuJoCo-Warp, for RL and robotics research.}},
-        url = {https://github.com/mujocolab/mjlab},
-        version = {0.1.0},
-        year = {2025}
-    }
-
-Acknowledgments
-===============
-
-mjlab would not exist without the excellent work of the Isaac Lab team, whose API design
-and abstractions mjlab builds upon.
-
-Thanks also to the MuJoCo Warp team — especially Erik Frey and Taylor Howell — for
-answering our questions, giving helpful feedback, and implementing features based
-on our requests countless times.
+Install and day-to-day command examples live in the repository ``README.md`` at
+the project root.
 
 Table of Contents
 =================
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Getting Started
-
-   source/installation
-   source/migration_isaac_lab
-
-.. toctree::
-   :maxdepth: 1
-   :caption: About the Project
-
-   source/motivation
-   source/faq
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
-
-   source/api/index
 
 .. toctree::
    :maxdepth: 2
@@ -92,15 +44,3 @@ Table of Contents
    :caption: Developer Walkthrough（中文）
 
    source/walkthrough/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Core Concepts
-
-   source/randomization
-   source/nan_guard
-   source/observation
-   source/actuators
-   source/sensors
-   source/raycast_sensor
-   source/distributed_training

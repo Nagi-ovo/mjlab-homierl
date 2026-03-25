@@ -1,37 +1,32 @@
 .. _developer-walkthrough-en:
 
-Developer Walkthrough (Research & Development)
-==============================================
+Developer Walkthrough (External HOMIE Package)
+============================================================
 
-The goal of this walkthrough is to help new contributors build a reliable mental model of the codebase in **1–2 hours**, and start modifying / creating manager-based RL tasks with confidence.
+This walkthrough explains the refactored ``mjlab-homierl`` layout: what still
+lives upstream in ``mjlab``, what now lives in this repository, and where to
+change HOMIE-specific behavior without confusing package-local code with
+framework internals.
 
 What you will learn here
------------------------
+-------------------------
 
-- **Architecture overview**: how ``ManagerBasedRlEnv = Scene + Simulation + Managers`` fits together (data flow + control flow).
-- **The manager-based API**: design philosophy, extension points, and how **rewards** / **terminations** are configured.
-- **Task development workflow**: how to build a task in mjlab (dict-based cfg), similar to Isaac Lab’s manager-based tasks.
-- **Task deep-dives (G1/H1)**: a guided tour of ``tasks/velocity``, ``tasks/tracking``, and ``tasks/homie`` (cfg / MDP / training entrypoints).
+- **Package boundaries**: which pieces are in upstream ``mjlab`` vs this repo.
+- **Code navigation**: where HOMIE env cfg, assets, MDP terms, and HIMPPO live.
+- **Task deep-dive**: how the H1 HOMIE task is assembled, including the
+  ``with_hands`` variant and play-time overrides.
 
 Recommended reading order
 -------------------------
 
-If this is your first time reading the code, follow the order below (overview → env lifecycle → managers/terms → task examples → build your own).
-
-If you already know Isaac Lab well, you can jump to ``managers_and_terms`` and then compare the task chapters with the code directly.
+If this is your first time reading the refactored repository, follow the order
+below. The pages are intentionally package-specific instead of trying to mirror
+all upstream ``mjlab`` framework docs.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents
 
    overview
-   quickstart
    project_layout
-   manager_based_env
-   managers_and_terms
-   rewards_and_terminations
-   tasks_velocity_g1
-   tasks_tracking_g1
    tasks_homie_h1
-   how_to_add_g1_task
-   debugging_perf

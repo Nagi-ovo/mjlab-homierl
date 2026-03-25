@@ -1,7 +1,7 @@
 .. _walkthrough-task-homie-h1:
 
 实例三：Homie —— 混合运动与干扰（Unitree H1）
-==========================================
+============================================================
 
 Homie 是一个综合性更强的任务，它结合了 **速度追踪 (Velocity)**、**蹲起 (Squat)** 以及 **上身随机干扰**。
 
@@ -12,19 +12,29 @@ Homie 是一个综合性更强的任务，它结合了 **速度追踪 (Velocity)
 
 这个任务的核心设计思想是：**缩小策略的动作空间，将其集中在下肢控制上，而将上身（以及可选的夹爪）作为“随时间变化的平滑扰动”。** 这能让策略在面对复杂的身体姿态变化时，依然保持下肢行走的鲁棒性。
 
+任务注册
+------------------------------------------------------------
+
+路径：``src/mjlab_homierl/__init__.py``
+
+这个外部包通过 ``mjlab.tasks.registry.register_mjlab_task`` 注册两个 task id。
+其中 play env 不是另一套任务，而是同一个 H1 override 在 ``play=True`` 下的
+轻量化配置。
+
 任务骨架：make_homie_env_cfg（base cfg）
---------------------------------------
+------------------------------------------------------------
 
-路径：``src/mjlab/tasks/homie/homie_env_cfg.py``
+路径：``src/mjlab_homierl/homie_env_cfg.py``
 
-与之前的任务不同，Homie 默认支持两个命令生成器，并且都支持 **按 env group 进行 gating**（见下文的 Env Grouping）：
+与之前的任务不同，Homie 默认支持两个命令生成器，并且都支持 **按 env group
+进行 gating** (见下文的 Env Grouping)：
 
 1. **twist** (``UniformVelocityCommand``)：控制前后、左右平移速度及转向速度。
 2. **height** (``RelativeHeightCommand``)：控制骨盆相对于脚部的相对高度（实现蹲起动作）。
 
 .. code-block:: python
 
-   # file: src/mjlab/tasks/homie/homie_env_cfg.py
+   # file: src/mjlab_homierl/homie_env_cfg.py
    commands = {
        "twist": UniformVelocityCommandCfg(
            ...,
@@ -43,9 +53,9 @@ Homie 是一个综合性更强的任务，它结合了 **速度追踪 (Velocity)
    }
 
 Env Grouping：一套 vec env 并行训练三种“子任务”
-----------------------------------------------
+------------------------------------------------------------
 
-路径：``src/mjlab/tasks/homie/mdp/curriculums.py::assign_homie_env_groups``
+路径：``src/mjlab_homierl/mdp/curriculums.py::assign_homie_env_groups``
 
 Homie 通过 ``env_group`` 把一批并行环境拆成 3 组（mask），并在 ``commands`` / ``rewards`` / ``curriculum`` 里用这些组名做 gating：
 
@@ -57,36 +67,42 @@ Homie 通过 ``env_group`` 把一批并行环境拆成 3 组（mask），并在 
 
 - **命令 gating**：
 
-  - ``twist`` 的 ``active_env_group="velocity"``：非 velocity 组的环境被强制 ``twist=0``（站立）。
-  - ``height`` 的 ``active_env_group="squat"``：非 squat 组的环境会被设置为 ``inactive_height``（由 robot override 设定），避免 height 命令“干扰”走路环境。
+  - ``twist`` 的 ``active_env_group="velocity"``：非 velocity 组的环境被强制
+    ``twist=0`` (站立)。
+  - ``height`` 的 ``active_env_group="squat"``：非 squat 组的环境会被设置为
+    ``inactive_height`` (由 robot override 设定)，避免 height 命令“干扰”走路环境。
 
 - **奖励 gating**：很多 reward term 都带有 ``env_group``，用于只在某些组里激活（例如：站立稳定项、蹲起相关的几何约束等）。
 
 H1 覆盖：unitree_h1_homie_env_cfg
---------------------------------
+------------------------------------------------------------
 
-路径：``src/mjlab/tasks/homie/config/h1/env_cfgs.py::unitree_h1_homie_env_cfg``
+路径：``src/mjlab_homierl/env_cfgs.py::unitree_h1_homie_env_cfg``
 
 Homie 的实现模式依然是 “**base cfg + robot-specific override**”。H1 override 主要做了这些事：
 
 - **切平地 + 关闭地形课程**：把 terrain 切成 plane，同时移除 ``terrain_levels`` curriculum。
+- **CCD 保持平地任务默认值**：``cfg.sim.mujoco.ccd_iterations = 50``。
 - **动作拆分**：策略只控制下肢（髋/膝/踝）；上身用 policy-free action 生成平滑扰动（见下一节）。
 - **命令与脚部几何绑定**：为 height 命令填入 ``foot_site_names``，并设置 squat/standing 的高度范围与 ``inactive_height``：
 
   - ``height_cmd.ranges.height = (0.4, 0.98)``
-  - ``height_cmd.inactive_height = 0.98``（非 squat 组保持稳定站立高度）
+  - ``height_cmd.inactive_height = 0.98`` (非 squat 组保持稳定站立高度)
 
 - **传感器与接触惩罚**：加入 ``self_collision`` 与 ``hip_knee_ground_contact`` 接触传感器，并把 ``hip_knee_contact`` 奖励项连上线。
 - **脚底“平行”奖励落地**：为 ``feet_ground_parallel`` / ``feet_parallel`` 填入 H1 的脚底四角 sites（``*_foot_fi/fo/ri/ro``），并对右脚 sites 做了重排以匹配左右脚局部坐标系。
 - **干扰与随机化**：用外力脉冲的方式 push 机器人，并在 reset 时对手部施加 0–5kg 的等效下压力（``hand_load``）。
 - **可选夹爪版本**：``hands=True`` 时挂载 2F85，并加入 policy-free 的 ``gripper`` 动作 + interval 采样事件（见后文）。
+- **play override**：``play=True`` 时会移除 critic observation、rewards 和
+  curriculum，同时关掉 push / hand-load 扰动，让 viewer 播放更轻。
 
 核心特性：UpperBodyPoseAction（policy-free，上身 0 维 action）
-------------------------------------------------------------
+----------------------------------------------------------------------------
 
-路径：``src/mjlab/tasks/homie/config/h1/env_cfgs.py``
+路径：``src/mjlab_homierl/env_cfgs.py``
 
-这是 Homie 任务最独特的抽象。在 ``actions`` 字典中，除了策略控制的 ``joint_pos``，还有一个 ``upper_body_pose``（策略侧 action dim = 0）：
+这是 Homie 任务最独特的抽象。在 ``actions`` 字典中，除了策略控制的
+``joint_pos``，还有一个 ``upper_body_pose`` (策略侧 action dim = 0)：
 
 *   **零动作维度** ：它在策略侧的维度为 0，不增加神经网络的输出负担。
 *   **平滑差值** ：它内部维护一个目标姿态，每步通过 ``torch.lerp`` 向其靠近。
@@ -119,9 +135,9 @@ Homie 的实现模式依然是 “**base cfg + robot-specific override**”。H1
    )
 
 课程学习：让干扰逐渐增强
-----------------------
+------------------------------------------------------------
 
-路径：``src/mjlab/tasks/homie/mdp/curriculums.py``
+路径：``src/mjlab_homierl/mdp/curriculums.py``
 
 为了防止训练初期扰动太大导致无法收敛，Homie 引入了 ``upper_body_action_curriculum``：
 
@@ -144,12 +160,12 @@ Homie 的实现模式依然是 “**base cfg + robot-specific override**”。H1
    )
 
 Rewards & Terminations：混合任务的平衡艺术
-----------------------------------------
+------------------------------------------------------------
 
 Homie 任务需要在“行走”和“蹲起”两个目标之间寻找平衡，同时忽略上身干扰。
 
 1) 奖励设计：多任务解耦
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *   **按环境分组 (Env Grouping)** ：
 
@@ -163,7 +179,7 @@ Homie 任务需要在“行走”和“蹲起”两个目标之间寻找平衡�
     *   ``hip_knee_contact`` / ``self_collisions`` : 将“摔倒/自碰撞/膝触地”等问题更多放进 reward 里处理，而不是过早终止。
 
 2) 终止条件：松耦合
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 *   **放宽姿态限制** ：
 
@@ -173,9 +189,9 @@ Homie 任务需要在“行走”和“蹲起”两个目标之间寻找平衡�
     *   对于大范围运动，Homie 会添加特殊的 ``self_collision_cost`` 奖励项而不是直接终止，给予策略"试错"的空间。
 
 H1 机器人覆盖与 H1 Constants
----------------------------
+------------------------------------------------------------
 
-路径：``src/mjlab/asset_zoo/robots/unitree_h1/h1_constants.py``
+路径：``src/mjlab_homierl/robots/unitree_h1/h1_constants.py``
 
 由于 H1 的电机规格与 G1 不同，Homie 任务深度使用了 ``h1_constants.py`` 中的参数：
 
@@ -191,17 +207,28 @@ H1 机器人覆盖与 H1 Constants
            H1_ACTION_SCALE[n] = 0.25 * a.effort_limit / a.stiffness
 
 with_hands：带夹爪版本（policy-free）
------------------------------------
+------------------------------------------------------------
 
-路径：``src/mjlab/tasks/homie/config/h1/__init__.py`` 与 ``src/mjlab/tasks/homie/config/h1/env_cfgs.py``
+路径：``src/mjlab_homierl/env_cfgs.py`` 与 ``src/mjlab_homierl/robots/unitree_h1/h1_constants.py``
 
 如果你选择 ``Mjlab-Homie-Unitree-H1-with_hands``：
 
 - 机器人侧会通过 ``get_h1_robot_cfg(hands=...)`` 挂载 2F85（默认配置见 ``_default_hands_cfg``）。
 - 环境侧会添加一个 policy-free 的 ``gripper`` action（0 维），并用 interval event 定期采样夹爪目标（类似上身动作的思路）。
+- 手部碰撞默认关闭。对 HOMIE 来说，夹爪是扰动附件，不是 manipulation 接触器；这样可以避免 locomotion 任务里 MuJoCo CCD 被手部接触对耗尽。
+
+play 时 runner 的行为
+------------------------------------------------------------
+
+路径：``src/mjlab_homierl/rl/runner.py``
+
+官方 ``mjlab`` 的 ``play`` 默认会先构造完整 runner，但 HOMIE 额外实现了
+inference-only 路径。当 play env 不再提供 ``critic`` observation group 时，
+``HomieHimOnPolicyRunner`` 会只构造 actor 网络，并按 key 过滤 checkpoint 里
+的权重完成加载。
 
 总结：为什么参考 Homie？
-----------------------
+------------------------------------------------------------
 
 如果你想开发以下功能的任务，Homie 是最好的参考：
 

@@ -1,79 +1,86 @@
 .. _walkthrough-en-overview:
 
-Architecture Overview: mjlab in One Diagram
-==========================================
-
-.. figure:: ../_static/content/mjlab_architecture_overview.svg
-   :width: 100%
-   :alt: mjlab architecture overview
+Architecture Overview: External Package on Top of mjlab
+================================================================
 
 The one sentence that matters most
----------------------------------
+-----------------------------------
 
-**mjlab is a manager-based RL environment:**
+**``mjlab-homierl`` is not the framework anymore; it is a task package that plugs into upstream ``mjlab``.**
 
-- ``Scene``: organizes **MuJoCo assets / sensors / terrains** into a vectorized scene (``num_envs``), and handles writing entity state into the simulator.
-- ``Simulation``: runs MuJoCo + MuJoCo-Warp physics on GPU (step/forward/reset), and provides low-level features like CUDA graphs and NaN guards.
-- ``Managers``: decomposes a task into composable modules: **actions / observations / rewards / terminations / commands / events / curriculum**.
+- Upstream ``mjlab`` still owns ``ManagerBasedRlEnv``, managers, scene,
+  simulation, CLI entrypoints, and viewer integrations.
+- This repository owns HOMIE-specific env cfgs, H1 / 2F85 assets, the HIMPPO
+  runner, and package-local tests and docs.
 
-Intuition: the “environment shell” is thin; most task logic lives in manager terms.
+This distinction matters because many old paths from the vendored codebase no
+longer exist here under ``src/mjlab/...``.
 
 From task id to the training loop (end-to-end)
 ----------------------------------------------
 
-1. **Register a task** (put ``env_cfg`` / ``rl_cfg`` into the registry)
+1. **Task registration**
 
-   - Path: ``src/mjlab/tasks/<task>/config/<robot>/__init__.py``
-   - API: ``src/mjlab/tasks/registry.py::register_mjlab_task``
+   - Path in this repo: ``src/mjlab_homierl/__init__.py``
+   - API used: ``mjlab.tasks.registry.register_mjlab_task``
+   - Result: upstream ``mjlab`` discovers
+     ``Mjlab-Homie-Unitree-H1`` and ``Mjlab-Homie-Unitree-H1-with_hands`` via
+     the ``mjlab.tasks`` entry-point group
 
-2. **Training entrypoint** (load cfg from registry, build env + runner)
+2. **Train / play entrypoint**
 
-   - Path: ``src/mjlab/scripts/train.py``
-   - Key chain: ``load_env_cfg()`` → ``ManagerBasedRlEnv(cfg=..., device=...)`` → ``RslRlVecEnvWrapper`` → ``rsl_rl.OnPolicyRunner``
+   - CLI comes from upstream ``mjlab``: ``uv run train ...`` and
+     ``uv run play ...``
+   - The CLI loads the registered env cfg / rl cfg, constructs
+     ``ManagerBasedRlEnv``, wraps it, and instantiates the configured runner
 
-3. **Environment step** (action → physics → terminations/rewards → events/commands → observations)
+3. **Package-local task assembly**
 
-   - Path: ``src/mjlab/envs/manager_based_rl_env.py::ManagerBasedRlEnv.step``
+   - Base HOMIE config: ``src/mjlab_homierl/homie_env_cfg.py``
+   - H1 and with-hands overrides: ``src/mjlab_homierl/env_cfgs.py``
+   - Task-specific MDP terms: ``src/mjlab_homierl/mdp/*``
+   - Custom runner: ``src/mjlab_homierl/rl/runner.py``
 
-4. **Where task logic lives** (MDP components)
+4. **Runtime split**
 
-   - Path: ``src/mjlab/envs/mdp/*`` (generic) + ``src/mjlab/tasks/<task>/mdp/*`` (task-specific)
-   - Used by managers via ``RewardTermCfg(func=..., params=...)`` / ``ObservationTermCfg(func=..., ...)`` in cfg
+   - Training uses HIMPPO with both actor and critic observations
+   - Play can use a HOMIE-specific actor-only inference path when the play env
+     strips the critic group
 
-A readable “data flow / control flow” sketch
---------------------------------------------
+A readable control-flow sketch
+------------------------------
 
 .. code-block:: text
 
+   uv run train/play -> upstream mjlab CLI
+     |
+     v
+   task registry entry -> env cfg + rl cfg + runner class
+     |
+     v
+   ManagerBasedRlEnv(cfg=...) + RslRlVecEnvWrapper
+     |
+     v
+   HomieHimOnPolicyRunner
+     |
+     v
    policy(obs) -> action
      |
      v
-   ActionManager.process_action / apply_action
+   upstream env step:
+     ActionManager -> Simulation -> Managers -> observations / rewards / resets
      |
      v
-   for decimation steps:
-     Scene.write_data_to_sim -> Simulation.step -> Scene.update
-     |
-     v
-   TerminationManager.compute  -> reset mask
-   RewardManager.compute(dt)   -> reward
-   (if any reset) -> _reset_idx -> Event(reset) -> Managers.reset(...)
-     |
-     v
-   CommandManager.compute(dt)
-   EventManager.apply(interval, dt)
-   ObservationManager.compute(update_history=True)
-     |
-     v
-   return obs, reward, terminated, truncated, extras
+   train loop or viewer loop
 
 Where to start reading code
 ---------------------------
 
-- **Env lifecycle + manager loading order**: ``src/mjlab/envs/manager_based_rl_env.py``
-- **Manager / term bases + “function vs class term” mechanics**: ``src/mjlab/managers/manager_base.py`` + ``src/mjlab/managers/*_manager.py``
-- **SceneEntityCfg (late binding: names → ids)**: ``src/mjlab/managers/scene_entity_config.py``
-- **Two G1 tasks**:
-
-  - velocity: ``src/mjlab/tasks/velocity/velocity_env_cfg.py`` + ``src/mjlab/tasks/velocity/config/g1/env_cfgs.py``
-  - tracking: ``src/mjlab/tasks/tracking/tracking_env_cfg.py`` + ``src/mjlab/tasks/tracking/config/g1/env_cfgs.py``
+- **Package entrypoint + task registration**: ``src/mjlab_homierl/__init__.py``
+- **Base HOMIE task config**: ``src/mjlab_homierl/homie_env_cfg.py``
+- **H1 task overrides and play behavior**: ``src/mjlab_homierl/env_cfgs.py``
+- **Assets and hand attachment logic**:
+  ``src/mjlab_homierl/robots/unitree_h1/h1_constants.py``
+- **If you need framework internals**: inspect the installed upstream ``mjlab``
+  package, especially ``mjlab.envs``, ``mjlab.managers``, ``mjlab.scene``, and
+  ``mjlab.sim``

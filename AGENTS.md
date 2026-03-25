@@ -1,82 +1,122 @@
-# Agent Guide (HOMIE) — `src/mjlab/**`
+# Agent Guide — `mjlab-homierl`
 
 ## Scope
 
-- This guide applies to everything under `src/mjlab/**`.
-- Default to editing only `src/mjlab/**` unless the user explicitly asks otherwise.
-- Prefer reusing existing runnable entrypoints under `src/mjlab/scripts/` instead of writing new glue code.
+- This guide applies to the whole `mjlab-homierl` repository.
+- The package is an external `mjlab` task extension. The source of truth is under
+  `src/mjlab_homierl/**`, not `src/mjlab/**`.
+- Default to small, local edits. Do not vendor or modify upstream `mjlab` unless
+  the user explicitly asks for it.
 
-## Project Shape (what lives where)
+## Project Shape
 
-- `mjlab/envs/`: MuJoCo RL env core (`ManagerBasedRlEnv`, `ManagerBasedRlEnvCfg`) and shared MDP utilities.
-- `mjlab/tasks/`: Task registry + task-specific configs/MDP terms.
-- `mjlab/rl/`: RSL-RL wrappers, runner configs, exporters.
-- `mjlab/scripts/`: CLI entrypoints (`train.py`, `play.py`, `list_envs.py`, `demo.py`).
-- `mjlab/viewer/`: Viewer backends (`NativeMujocoViewer`, `ViserPlayViewer`).
+- `src/mjlab_homierl/__init__.py`
+  - Registers task IDs at import time.
+- `src/mjlab_homierl/homie_env_cfg.py`
+  - Base HOMIE environment config factory.
+- `src/mjlab_homierl/env_cfgs.py`
+  - Unitree H1 and H1-with-hands task overrides.
+  - This is the main place to change play-mode behavior, sensors, rewards, and
+    robot/task wiring.
+- `src/mjlab_homierl/rl_cfg.py`
+  - HIMPPO runner config.
+- `src/mjlab_homierl/mdp/`
+  - HOMIE-specific observations, rewards, terminations, curriculum, and
+    command sampling.
+- `src/mjlab_homierl/rl/`
+  - Custom runner, HIMPPO implementation, ONNX export.
+- `src/mjlab_homierl/robots/`
+  - H1 and Robotiq assets/constants.
+- `src/mjlab_homierl/scripts/`
+  - Standalone helpers such as the lower-body inference script.
+- `tests/`
+  - Package-local regression tests only.
 
-## Task Registry (how tasks become runnable)
+## Registration And Entry Points
 
-- Tasks are registered via `mjlab.tasks.registry.register_mjlab_task(...)`.
-- Registration happens at import-time, typically from `mjlab/tasks/**/config/**/__init__.py`.
-- `import mjlab.tasks` recursively imports task packages via `mjlab.utils.lab_api.tasks.importer.import_packages`,
-  with a blacklist of package-name substrings: `["utils", ".mdp"]`.
-  - Put registration code in `config/` packages (not in `mdp/`).
-  - Keep import-time side effects limited to registration (avoid starting sims, allocating GPU memory, etc.).
+- This repo does not ship the `mjlab` framework itself.
+- Task discovery happens through the `mjlab.tasks` entry-point declared in
+  `pyproject.toml`, which points to `mjlab_homierl`.
+- Importing `mjlab_homierl` runs task registration in
+  `src/mjlab_homierl/__init__.py`.
+- Registered task IDs:
+  - `Mjlab-Homie-Unitree-H1`
+  - `Mjlab-Homie-Unitree-H1-with_hands`
 
-## HOMIE / HOMIR task (this repo focus)
+## Where To Change Behavior
 
-### Registered task IDs
+- Change task structure or default task parameters:
+  - `src/mjlab_homierl/env_cfgs.py`
+- Change shared/base HOMIE config:
+  - `src/mjlab_homierl/homie_env_cfg.py`
+- Change HIMPPO algorithm or inference behavior:
+  - `src/mjlab_homierl/rl/himppo/`
+  - `src/mjlab_homierl/rl/runner.py`
+- Change robot assets, mounting, or collision setup:
+  - `src/mjlab_homierl/robots/unitree_h1/h1_constants.py`
+  - `src/mjlab_homierl/robots/robotiq_2f85/`
+- Change exported policy / ONNX behavior:
+  - `src/mjlab_homierl/rl/exporter.py`
 
-- `Mjlab-Homie-Unitree-H1`
-- `Mjlab-Homie-Unitree-H1-with_hands`
+## Important Runtime Notes
 
-### Where to change behavior
+- Use `uv` for install, tests, training, and play.
+- Prefer GPU on Linux/NVIDIA:
+  - `uv sync --extra cu128`
+- CPU-only fallback:
+  - `uv sync --extra cpu`
+- Common commands:
+  - `uv run list_envs`
+  - `uv run train <TaskID> ...`
+  - `uv run play <TaskID> --checkpoint-file /path/to/model.pt ...`
+  - `uv run pytest tests/test_registration.py tests/test_env_cfgs.py tests/test_rl_cfg.py tests/test_h1_assets.py -q`
 
-- Base env config factory: `mjlab/tasks/homie/homie_env_cfg.py`
-- Robot-specific overrides: `mjlab/tasks/homie/config/h1/env_cfgs.py`
-- PPO runner config: `mjlab/tasks/homie/config/h1/rl_cfg.py`
-- MDP terms (obs/reward/termination/curriculum): `mjlab/tasks/homie/mdp/`
-- Custom runner: `mjlab/tasks/homie/rl/runner.py`
-  - When logging to W&B, it exports an ONNX policy and attaches metadata on each save.
+## HOMIE-Specific Notes
 
-### Shape-sensitive code
+- `with_hands` keeps the hands for mass/kinematics, but default HOMIE task
+  config disables hand collision geoms because locomotion does not need hand
+  contact and leaving them enabled creates heavy collision overhead.
+- Play mode is intentionally lighter than training:
+  - rewards are stripped
+  - curriculum is stripped
+  - actor corruption is disabled
+  - HOMIE uses a custom actor-only inference path in
+    `src/mjlab_homierl/rl/runner.py`, so play envs do not need critic
+    observations
+- If you change play-mode observation layout, also verify
+  `HomieHimOnPolicyRunner` still supports inference-only initialization.
 
-- If you change HOMIE observation/action shapes, also update any dependent utilities.
-  - Example: `mjlab/scripts/infer_h1_with_hands_lowerbody_policy.py` currently expects `obs_dim=97`, `act_dim=10`
-    for the shipped `homie_rl.pt`.
+## Shape-Sensitive Code
 
-## Common CLI workflows (from `src/mjlab/scripts/`)
+- HOMIE HIMPPO assumes one actor group and one critic group during training.
+  The inference-only play path assumes exactly one actor group.
+- If you change HOMIE observation packing or history length, review:
+  - `src/mjlab_homierl/rl/himppo/actor_critic.py`
+  - `src/mjlab_homierl/rl/himppo/algorithm.py`
+  - `src/mjlab_homierl/rl/runner.py`
+- The standalone helper
+  `src/mjlab_homierl/scripts/infer_h1_with_hands_lowerbody_policy.py`
+  hardcodes a separate checkpoint format (`obs_dim=97`, `act_dim=10`). If the
+  target checkpoint format changes, update that script explicitly.
 
-- Use `uv run` from repo root for all CLI workflows.
-- If `uv run` fails due to cache permissions, set `UV_CACHE_DIR=.uv-cache` (repo-local) or pass `--cache-dir .uv-cache`.
-- List registered tasks: `uv run python -m mjlab.scripts.list_envs`
-  - Filter: `uv run python -m mjlab.scripts.list_envs --keyword homie`
-- Train (RSL-RL): `uv run python -m mjlab.scripts.train <TaskID> [flags...]`
-  - Multi-GPU is handled internally via `torchrunx` when `CUDA_VISIBLE_DEVICES` exposes >1 GPU.
-- Play: `uv run python -m mjlab.scripts.play <TaskID> [flags...]`
-  - Trained policy: use `--wandb-run-path ...` or `--checkpoint-file ...`
-  - Debug policies: `--agent zero` or `--agent random`
-- Tracking demo (downloads a checkpoint + motion): `uv run python -m mjlab.scripts.demo`
+## Testing And Validation
 
-### Tracking tasks (motion files)
+- For config/registration edits, run:
+  - `uv run pytest tests/test_registration.py tests/test_env_cfgs.py tests/test_rl_cfg.py -q`
+- For robot/collision edits, also run:
+  - `uv run pytest tests/test_h1_assets.py -q`
+- For play-performance work, separate env cost from viewer cost:
+  - headless `ManagerBasedRlEnv` / `RslRlVecEnvWrapper` stepping tells you if the
+    environment is slow
+  - `viser` `CAPPED` can still happen occasionally from browser/render jitter
+    even if headless RT is above `1.0x`
 
-- Some tracking tasks require a motion file.
-  - Train: either set `--registry-name ...` (download artifact) or override `--env.commands.motion.motion-file ...`.
-  - Play: use `--motion-file ...` for local, or `--wandb-run-path ...` so the motion artifact can be resolved.
+## Style
 
-## Rendering / Headless notes
-
-- `train.py` sets `MUJOCO_GL=egl` and (multi-GPU) sets `MUJOCO_EGL_DEVICE_ID` from `LOCAL_RANK`.
-- `play.py` uses `viewer="auto"`:
-  - picks `native` when a display is available (`DISPLAY`/`WAYLAND_DISPLAY`)
-  - otherwise defaults to `viser` (headless-friendly)
-- For offscreen video, `--video` uses `render_mode="rgb_array"` internally.
-
-## Code style (match existing code)
-
-- Keep formatting consistent with this tree: 2-space indentation, explicit type hints, dataclasses for configs.
-- Prefer small, local changes; don’t refactor unrelated modules.
-- When adding a new task:
-  1. Add `mjlab/tasks/<task>/config/<robot>/__init__.py` that calls `register_mjlab_task`.
-  2. Provide `env_cfg(...)`, `play_env_cfg(...)`, and `rl_cfg(...)` factories.
-  3. Verify it shows up in `mjlab.scripts.list_envs`.
+- Match the repo's existing style:
+  - 2-space indentation
+  - explicit type hints
+  - dataclasses for configs
+- Prefer targeted edits over broad refactors.
+- Keep new guidance aligned with the current external-package structure. If the
+  package layout changes again, update this file in the same change.
