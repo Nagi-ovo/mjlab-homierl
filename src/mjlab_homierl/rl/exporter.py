@@ -1,5 +1,7 @@
 import copy
 import os
+import subprocess
+from pathlib import Path
 
 import torch
 import torch.nn.functional as F
@@ -111,10 +113,65 @@ def export_homie_policy_as_onnx(
   policy_exporter.export(path, filename)
 
 
+def _train_repo_commit() -> str:
+  """Git commit of this training repo at export time (provenance)."""
+  try:
+    return (
+      subprocess.run(
+        ["git", "-C", str(Path(__file__).resolve().parent), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        timeout=5.0,
+        check=True,
+      ).stdout.strip()
+      or "unknown"
+    )
+  except Exception:
+    return "unknown"
+
+
+def homie_extra_metadata(env: ManagerBasedRlEnv) -> dict:
+  """HOMIE-specific ONNX metadata beyond mjlab's base fields.
+
+  Everything a downstream controller plugin needs to run the policy without
+  hardcoding conventions: the paired init keyframe base height, the height
+  command semantics, the observation scaling/layout, and training provenance.
+  """
+  metadata: dict = {"train_repo_commit": _train_repo_commit()}
+
+  # Init keyframe: joint pose (base metadata `default_joint_pos`) and base
+  # height must travel as a pair.
+  robot_cfg = env.cfg.scene.entities["robot"]
+  init_state = robot_cfg.init_state
+  if init_state is not None and init_state.pos is not None:
+    metadata["init_base_height"] = float(init_state.pos[2])
+
+  # Height command semantics (relative pelvis height above the lowest foot).
+  try:
+    height_cfg = env.command_manager.get_term("height").cfg
+    metadata["height_command_range"] = list(height_cfg.ranges.height)
+    metadata["standing_height"] = float(height_cfg.standing_height)
+  except KeyError:
+    pass
+
+  # Observation scaling and layout of the flattened actor history.
+  obs_term_cfg = env.observation_manager.get_term_cfg("actor", "him_obs")
+  obs_scales = obs_term_cfg.params.get("obs_scales")
+  if obs_scales is not None:
+    for key, value in obs_scales.items():
+      metadata[f"obs_scale_{key}"] = float(value)
+  history_length = max(1, int(obs_term_cfg.history_length))
+  metadata["obs_history_length"] = history_length
+  actor_dim = env.observation_manager.group_obs_dim["actor"][0]
+  metadata["num_one_step_obs"] = int(actor_dim) // history_length
+
+  return metadata
+
+
 def attach_onnx_metadata(
   env: ManagerBasedRlEnv, run_path: str, path: str, filename="policy.onnx"
 ) -> None:
-  """Attach homie-specific metadata to ONNX model.
+  """Attach base + HOMIE-specific metadata to an exported ONNX model.
 
   Args:
     env: The RL environment.
@@ -123,5 +180,6 @@ def attach_onnx_metadata(
     filename: Name of the ONNX file.
   """
   onnx_path = os.path.join(path, filename)
-  metadata = get_base_metadata(env, run_path)  # Homie has no extra metadata.
+  metadata = get_base_metadata(env, run_path)
+  metadata.update(homie_extra_metadata(env))
   attach_metadata_to_onnx(onnx_path, metadata)
