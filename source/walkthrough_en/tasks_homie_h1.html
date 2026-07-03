@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Example 3: Homie — Mixed Motion and Disturbances (Unitree H1) &#8212; mjlab-homierl Documentation</title>
+    <title>Example 3: Homie — Mixed Motion and Disturbances (Unitree G1 / H1) &#8212; mjlab-homierl Documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
@@ -34,229 +34,104 @@
 
           <div class="body" role="main">
             
-  <section id="example-3-homie-mixed-motion-and-disturbances-unitree-h1">
-<span id="walkthrough-en-task-homie-h1"></span><h1>Example 3: Homie — Mixed Motion and Disturbances (Unitree H1)<a class="headerlink" href="#example-3-homie-mixed-motion-and-disturbances-unitree-h1" title="Link to this heading">¶</a></h1>
-<p>Homie is a more “composite” task that mixes <strong>velocity tracking</strong>, <strong>squatting (height control)</strong>, and <strong>upper-body random disturbances</strong>.</p>
-<p>Two task ids are provided:</p>
+  <section id="example-3-homie-mixed-motion-and-disturbances-unitree-g1-h1">
+<span id="walkthrough-en-task-homie-h1"></span><h1>Example 3: Homie — Mixed Motion and Disturbances (Unitree G1 / H1)<a class="headerlink" href="#example-3-homie-mixed-motion-and-disturbances-unitree-g1-h1" title="Link to this heading">¶</a></h1>
+<p>Homie mixes <strong>velocity tracking</strong>, <strong>squatting (height control)</strong>,
+<strong>standing</strong>, and <strong>upper-body random disturbances</strong>. The implementation
+follows the OpenHomie reference (<code class="docutils literal notranslate"><span class="pre">HomieRL/legged_gym</span></code>): reward set, command
+sampling, and curriculum.</p>
+<p>Three task ids are provided:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1</span></code>: the default version.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>: mounts Robotiq 2F85 grippers (and adds policy-free random gripper motion).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1</span></code>: the OpenHomie robot (29 dof, 12 lower-body actions).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1</span></code>: the H1 port (19 dof, 10 lower-body actions).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>: H1 with Robotiq 2F85 grippers
+(policy-free random gripper motion and randomized hand payload).</p></li>
 </ul>
-<p>The core idea is:
-<strong>reduce the policy action space to the lower body, and treat the upper body (and optional grippers) as smooth, time-varying disturbances.</strong>
-This helps the policy keep robust leg locomotion under changing body poses.</p>
+<p>The core idea: <strong>reduce the policy action space to the lower body, and treat
+the upper body (and optional grippers) as smooth, time-varying disturbances.</strong></p>
 <section id="task-registration">
 <h2>Task registration<a class="headerlink" href="#task-registration" title="Link to this heading">¶</a></h2>
 <p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/__init__.py</span></code></p>
-<p>The external package registers both task ids through
-<code class="docutils literal notranslate"><span class="pre">mjlab.tasks.registry.register_mjlab_task</span></code>. The registered play env uses the
-same H1 override, but with <code class="docutils literal notranslate"><span class="pre">play=True</span></code> so the task can switch into a lighter
-inference-oriented configuration.</p>
+<p>Three task ids are registered via <code class="docutils literal notranslate"><span class="pre">mjlab.tasks.registry.register_mjlab_task</span></code>.
+The play env is the same config with <code class="docutils literal notranslate"><span class="pre">play=True</span></code> (critic observations,
+rewards, and curriculum stripped; upper-body motion at full range).</p>
 </section>
-<section id="task-skeleton-make-homie-env-cfg-base-cfg">
-<h2>Task skeleton: make_homie_env_cfg (base cfg)<a class="headerlink" href="#task-skeleton-make-homie-env-cfg-base-cfg" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/homie_env_cfg.py</span></code></p>
-<p>Homie provides two command generators, both supporting env-group gating:</p>
-<ol class="arabic simple">
-<li><p><strong>twist</strong> (<code class="docutils literal notranslate"><span class="pre">UniformVelocityCommand</span></code>): target base linear (x/y) and yaw velocities.</p></li>
-<li><p><strong>height</strong> (<code class="docutils literal notranslate"><span class="pre">RelativeHeightCommand</span></code>): target pelvis height relative to feet (squat motion).</p></li>
-</ol>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># file: src/mjlab_homierl/homie_env_cfg.py</span>
-<span class="n">commands</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;twist&quot;</span><span class="p">:</span> <span class="n">UniformVelocityCommandCfg</span><span class="p">(</span>
-        <span class="o">...</span><span class="p">,</span>
-        <span class="n">active_env_group</span><span class="o">=</span><span class="s2">&quot;velocity&quot;</span><span class="p">,</span>
-        <span class="n">rel_standing_envs</span><span class="o">=</span><span class="mf">1.0</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span>
-        <span class="n">avoid_consecutive_standing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="p">),</span>
-    <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="n">RelativeHeightCommandCfg</span><span class="p">(</span>
-        <span class="n">entity_name</span><span class="o">=</span><span class="s2">&quot;robot&quot;</span><span class="p">,</span>
-        <span class="n">active_env_group</span><span class="o">=</span><span class="s2">&quot;squat&quot;</span><span class="p">,</span>
-        <span class="c1"># Smooth height-command transitions (avoid step changes at resampling).</span>
-        <span class="n">interp_rate</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
-        <span class="n">foot_site_names</span><span class="o">=</span><span class="p">(),</span> <span class="c1"># filled by robot override</span>
-        <span class="n">ranges</span><span class="o">=</span><span class="n">RelativeHeightCommandCfg</span><span class="o">.</span><span class="n">Ranges</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)),</span>
-    <span class="p">),</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="env-grouping-train-three-subtasks-in-one-vectorized-env">
-<h2>Env grouping: train three “subtasks” in one vectorized env<a class="headerlink" href="#env-grouping-train-three-subtasks-in-one-vectorized-env" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/mdp/curriculums.py::assign_homie_env_groups</span></code></p>
-<p>Homie partitions the vectorized env into three env groups (masks), and uses the group names in <code class="docutils literal notranslate"><span class="pre">commands</span></code> / <code class="docutils literal notranslate"><span class="pre">rewards</span></code> / <code class="docutils literal notranslate"><span class="pre">curriculum</span></code> for gating:</p>
+<section id="three-mode-command-sampling">
+<h2>Three-mode command sampling<a class="headerlink" href="#three-mode-command-sampling" title="Link to this heading">¶</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/mdp/velocity_command.py</span></code></p>
+<p>Commands resample every 4 s. Each environment draws one of three mutually
+exclusive modes (the OpenHomie scheme):</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">squat</span></code>: ~20% (<code class="docutils literal notranslate"><span class="pre">set_x</span> <span class="pre">&lt;</span> <span class="pre">1/5</span></code>), focuses on height commands (squatting).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">standing</span></code>: ~13.3% (<code class="docutils literal notranslate"><span class="pre">1/5</span> <span class="pre">&lt;=</span> <span class="pre">set_x</span> <span class="pre">&lt;=</span> <span class="pre">1/3</span></code>), focuses on “stand still” stability under disturbances.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">velocity</span></code>: ~66.7% (<code class="docutils literal notranslate"><span class="pre">set_x</span> <span class="pre">&gt;</span> <span class="pre">1/3</span></code>), focuses on velocity tracking (walking/running).</p></li>
+<li><p><strong>squat</strong> (p = 1/3): zero twist, random relative-height target;</p></li>
+<li><p><strong>walk</strong> (p = 1/2): random twist (x ∈ [-0.8, 1.2], y ∈ [-0.5, 0.5],
+yaw ∈ [-0.8, 0.8]), standing-height target;</p></li>
+<li><p><strong>stand</strong> (p = 1/6): zero twist, standing-height target.</p></li>
 </ul>
-<p>Two key takeaways:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">twist</span></code> command samples the mode and exposes it via its <code class="docutils literal notranslate"><span class="pre">mode</span></code>
+attribute; the <code class="docutils literal notranslate"><span class="pre">height</span></code> command (<code class="docutils literal notranslate"><span class="pre">RelativeHeightCommand</span></code>, pelvis height
+above the lowest foot site) couples to it. Both commands must share the same
+resampling interval, and <code class="docutils literal notranslate"><span class="pre">twist</span></code> must precede <code class="docutils literal notranslate"><span class="pre">height</span></code> in the commands
+dict.</p>
+<p>Height ranges scale with the robot: G1 stands at 0.78 m and squats down to
+0.28 m; H1 stands at 0.98 m and squats to 0.4 m. A set of “standing only”
+reward terms (hip/ankle deviation, feet_parallel, stand_still, …) are gated
+on the commanded height being near the standing height.</p>
+</section>
+<section id="reward-set">
+<h2>Reward set<a class="headerlink" href="#reward-set" title="Link to this heading">¶</a></h2>
+<p>Paths: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/homie_env_cfg.py</span></code> (weights),
+<code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/mdp/rewards.py</span></code> (implementations)</p>
+<p>Terms and weights follow OpenHomie’s G1 config: split x/y velocity tracking
+(1.5 / 1.0), yaw tracking (2.0, σ²=0.25), height tracking <code class="docutils literal notranslate"><span class="pre">exp(-4|err|)</span></code>
+(2.0), hip/ankle deviation (-0.2 / -0.5), knee-driven squatting (-0.75), the
+full joint regularization suite (torques, power, velocity, acceleration, soft
+limits), and the feet terms (air time, no-fly, clearance, slip, stumble,
+contact forces, contact momentum, sole parallelism, feet parallel, lateral
+distances).</p>
+<p>Intentional deviations from OpenHomie:</p>
 <ul class="simple">
-<li><p><strong>Command gating</strong>:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">twist</span></code> has <code class="docutils literal notranslate"><span class="pre">active_env_group=&quot;velocity&quot;</span></code>: non-velocity envs are forced to <code class="docutils literal notranslate"><span class="pre">twist=0</span></code> (standing).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">height</span></code> has <code class="docutils literal notranslate"><span class="pre">active_env_group=&quot;squat&quot;</span></code>: non-squat envs are set to <code class="docutils literal notranslate"><span class="pre">inactive_height</span></code> (filled by robot override), avoiding height commands “confusing” walking envs.</p></li>
-</ul>
-</li>
-<li><p><strong>Reward gating</strong>: many reward terms specify <code class="docutils literal notranslate"><span class="pre">env_group=...</span></code> to only activate on some groups (e.g., standing stabilization terms, squat-only geometric constraints).</p></li>
+<li><p>IsaacGym’s torso-contact termination is replaced by contact penalties plus a
+torso-contact termination on G1, with additional self-collision and
+hip/knee ground-contact penalties.</p></li>
+<li><p>The fall-over termination threshold matches the original
+(<code class="docutils literal notranslate"><span class="pre">asin(0.8)</span> <span class="pre">≈</span> <span class="pre">53°</span></code>).</p></li>
 </ul>
 </section>
-<section id="h1-override-unitree-h1-homie-env-cfg">
-<h2>H1 override: unitree_h1_homie_env_cfg<a class="headerlink" href="#h1-override-unitree-h1-homie-env-cfg" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/env_cfgs.py::unitree_h1_homie_env_cfg</span></code></p>
-<p>Homie still follows <strong>base cfg + robot-specific override</strong>. The H1 override mainly:</p>
-<ul class="simple">
-<li><p><strong>Switches to plane terrain and disables terrain curriculum</strong> (remove <code class="docutils literal notranslate"><span class="pre">terrain_levels</span></code>).</p></li>
-<li><p><strong>Keeps MuJoCo CCD at the flat-task default</strong>: <code class="docutils literal notranslate"><span class="pre">cfg.sim.mujoco.ccd_iterations</span> <span class="pre">=</span> <span class="pre">50</span></code>.</p></li>
-<li><p><strong>Splits actions</strong>: policy controls legs (hip/knee/ankle); upper-body motion is generated by a policy-free action (next section).</p></li>
-<li><p><strong>Binds commands to H1 foot geometry</strong>: fill <code class="docutils literal notranslate"><span class="pre">foot_site_names</span></code> for the height command, and set squat/standing ranges + <code class="docutils literal notranslate"><span class="pre">inactive_height</span></code>:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">height_cmd.ranges.height</span> <span class="pre">=</span> <span class="pre">(0.4,</span> <span class="pre">0.98)</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">height_cmd.inactive_height</span> <span class="pre">=</span> <span class="pre">0.98</span></code> (keep a stable standing height outside squat envs)</p></li>
-</ul>
-</li>
-<li><p><strong>Adds sensors and contact penalties</strong>: adds <code class="docutils literal notranslate"><span class="pre">self_collision</span></code> and <code class="docutils literal notranslate"><span class="pre">hip_knee_ground_contact</span></code> sensors, and wires the <code class="docutils literal notranslate"><span class="pre">hip_knee_contact</span></code> reward term.</p></li>
-<li><p><strong>Configures feet “parallel” rewards</strong>: fills H1 foot corner sites (<code class="docutils literal notranslate"><span class="pre">*_foot_fi/fo/ri/ro</span></code>) for <code class="docutils literal notranslate"><span class="pre">feet_ground_parallel</span></code> / <code class="docutils literal notranslate"><span class="pre">feet_parallel</span></code> and reorders right-foot sites to match left/right local frames.</p></li>
-<li><p><strong>Adds disturbances/randomization</strong>: step-scheduled external pushes, and a reset-time constant downward hand load (0–5kg equivalent, <code class="docutils literal notranslate"><span class="pre">hand_load</span></code>).</p></li>
-<li><p><strong>Optional with_hands version</strong>: when <code class="docutils literal notranslate"><span class="pre">hands=True</span></code>, mounts 2F85 and adds a
-policy-free <code class="docutils literal notranslate"><span class="pre">gripper</span></code> action with interval resampling (see below).</p></li>
-<li><p><strong>Play override</strong>: when <code class="docutils literal notranslate"><span class="pre">play=True</span></code>, the env removes critic observations,
-rewards, and curriculum, and disables push / hand-load disturbances so viewer
-playback stays responsive.</p></li>
-</ul>
+<section id="upper-body-disturbance-and-curriculum">
+<h2>Upper-body disturbance and curriculum<a class="headerlink" href="#upper-body-disturbance-and-curriculum" title="Link to this heading">¶</a></h2>
+<p>Paths: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/mdp/actions.py</span></code>, <code class="docutils literal notranslate"><span class="pre">mdp/curriculums.py</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">UpperBodyPoseAction</span></code> contributes zero policy dimensions. Every 1 s (a
+global interval event), upper-body goal poses are resampled for all
+environments: amplitudes come from a truncated-exponential transform of the
+curriculum ratio (heavily biased toward small motions early on), the direction
+is a fair coin between each joint’s lower/upper hard limit (so amplitudes are
+proportional to joint range), and the target is reached by linear
+interpolation over one interval.</p>
+<p>Curriculum advancement matches OpenHomie: the check runs only when
+<code class="docutils literal notranslate"><span class="pre">common_step_counter</span></code> is a multiple of the max episode length; if the
+episode-average raw forward-velocity tracking reward is ≥ 0.8, the global
+ratio increases by 0.05.</p>
 </section>
-<section id="core-feature-upperbodyposeaction-policy-free-0-dim-action">
-<h2>Core feature: UpperBodyPoseAction (policy-free, 0-dim action)<a class="headerlink" href="#core-feature-upperbodyposeaction-policy-free-0-dim-action" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/env_cfgs.py</span></code></p>
-<p>Besides the policy-controlled <code class="docutils literal notranslate"><span class="pre">joint_pos</span></code> action, H1 Homie adds <code class="docutils literal notranslate"><span class="pre">upper_body_pose</span></code> (policy action dim = 0):</p>
-<ul class="simple">
-<li><p><strong>0 policy dims</strong>: does not increase the neural network output size.</p></li>
-<li><p><strong>Smooth interpolation</strong>: maintains an internal pose target and moves toward it via <code class="docutils literal notranslate"><span class="pre">torch.lerp</span></code> each step.</p></li>
-<li><p><strong>Periodic resampling</strong>: an <code class="docutils literal notranslate"><span class="pre">EventTermCfg</span></code> periodically samples a new goal pose (default: every 2 seconds).</p></li>
-<li><p><strong>Optional rate limiting</strong>: <code class="docutils literal notranslate"><span class="pre">max_speed_rad_s</span></code> clamps per-step target changes to avoid overly abrupt motion.</p></li>
-</ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Upper-body action config (policy-free)</span>
-<span class="n">cfg</span><span class="o">.</span><span class="n">actions</span><span class="p">[</span><span class="s2">&quot;upper_body_pose&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">UpperBodyPoseActionCfg</span><span class="p">(</span>
-    <span class="n">entity_name</span><span class="o">=</span><span class="s2">&quot;robot&quot;</span><span class="p">,</span>
-    <span class="n">joint_names</span><span class="o">=</span><span class="n">upper_body_joint_expr</span><span class="p">,</span>
-    <span class="n">interp_rate</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
-    <span class="n">max_speed_rad_s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-    <span class="n">target_range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">),</span>
-    <span class="n">initial_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># training starts at 0; play mode uses 1.0</span>
-    <span class="n">use_sampled_ratio</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="c1"># Interval event: resample goals (range is larger but clamped by joint limits + ratio)</span>
-<span class="n">cfg</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="s2">&quot;upper_body_random_targets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">EventTermCfg</span><span class="p">(</span>
-    <span class="n">func</span><span class="o">=</span><span class="n">_sample_upper_body_targets_with_curriculum</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;interval&quot;</span><span class="p">,</span>
-    <span class="n">interval_range_s</span><span class="o">=</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
-    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;action_name&quot;</span><span class="p">:</span> <span class="s2">&quot;upper_body_pose&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;target_range&quot;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
-        <span class="s2">&quot;start_step&quot;</span><span class="p">:</span> <span class="n">step_threshold</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">)</span>
-</pre></div>
-</div>
+<section id="domain-randomization">
+<h2>Domain randomization<a class="headerlink" href="#domain-randomization" title="Link to this heading">¶</a></h2>
+<p>All randomization uses mjlab-native <code class="docutils literal notranslate"><span class="pre">dr.*</span></code> events: PD gains ×[0.9, 1.1]
+(per reset), link masses ×[0.8, 1.2], torso payload +[-2, 5] kg, CoM offset,
+encoder bias, foot friction, a global horizontal push every 4 s
+(Δv ≤ 0.5 m/s), and randomized joint poses / root velocities at reset.
+OpenHomie’s per-step torque injection has no mjlab equivalent and is
+approximated by PD-gain randomization and encoder bias.</p>
 </section>
-<section id="curriculum-gradually-increase-disturbance-strength">
-<h2>Curriculum: gradually increase disturbance strength<a class="headerlink" href="#curriculum-gradually-increase-disturbance-strength" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/mdp/curriculums.py</span></code></p>
-<p>To avoid overwhelming early training, Homie uses <code class="docutils literal notranslate"><span class="pre">upper_body_action_curriculum</span></code>:</p>
-<ul class="simple">
-<li><p><strong>Performance-coupled</strong>: when the average <code class="docutils literal notranslate"><span class="pre">track_linear_velocity</span></code> reward exceeds a threshold (e.g., 0.8), increase disturbance amplitude.</p></li>
-<li><p><strong>Linear growth</strong>: ratio increases from 0 to 1.0.</p></li>
-</ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cfg</span><span class="o">.</span><span class="n">curriculum</span><span class="p">[</span><span class="s2">&quot;upper_body_action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">CurriculumTermCfg</span><span class="p">(</span>
-    <span class="n">func</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">upper_body_action_curriculum</span><span class="p">,</span>
-    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;action_name&quot;</span><span class="p">:</span> <span class="s2">&quot;upper_body_pose&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;reward_name&quot;</span><span class="p">:</span> <span class="s2">&quot;track_linear_velocity&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;success_threshold&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
-        <span class="s2">&quot;increment&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="s2">&quot;max_ratio&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="s2">&quot;start_step&quot;</span><span class="p">:</span> <span class="n">step_threshold</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="rewards-terminations-balancing-mixed-objectives">
-<h2>Rewards &amp; terminations: balancing mixed objectives<a class="headerlink" href="#rewards-terminations-balancing-mixed-objectives" title="Link to this heading">¶</a></h2>
-<p>Homie needs to balance “walk” and “squat” objectives while being robust to upper-body disturbances.</p>
-<section id="rewards-decouple-objectives-via-env-groups">
-<h3>1) Rewards: decouple objectives via env groups<a class="headerlink" href="#rewards-decouple-objectives-via-env-groups" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p><strong>Env-group gating</strong>:</p>
-<ul>
-<li><p>many reward terms use <code class="docutils literal notranslate"><span class="pre">env_group=...</span></code> so they only apply to some groups</p></li>
-<li><p>H1 override adds extra standing stabilization (<code class="docutils literal notranslate"><span class="pre">track_*_standing</span></code>) to reduce residual sway in <code class="docutils literal notranslate"><span class="pre">standing</span></code></p></li>
-</ul>
-</li>
-<li><p><strong>Regularizers for robustness</strong>:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">knee_deviation_reward</span></code>: penalize knee lateral deviation during squat, encouraging reasonable squatting posture</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">upright</span></code>: keep the torso upright (critical for resisting upper-body disturbances)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">feet_ground_parallel</span></code> / <code class="docutils literal notranslate"><span class="pre">feet_parallel</span></code>: constrain feet orientation vs ground / between feet (requires per-robot corner site config)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">hip_knee_contact</span></code> / <code class="docutils literal notranslate"><span class="pre">self_collisions</span></code>: penalize “bad contacts” via rewards instead of terminating too early</p></li>
-</ul>
-</li>
-</ul>
-</section>
-<section id="terminations-looser-coupling">
-<h3>2) Terminations: looser coupling<a class="headerlink" href="#terminations-looser-coupling" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p><strong>Relaxed posture limits</strong>: H1 has larger motion ranges and disturbances; <code class="docutils literal notranslate"><span class="pre">fell_over</span></code> thresholds are typically less strict than smaller robots.</p></li>
-<li><p><strong>Self-collision handling</strong>: Homie prefers to keep training signal via reward penalties rather than immediate termination for large-range motion.</p></li>
-</ul>
-</section>
-</section>
-<section id="h1-override-and-h1-constants">
-<h2>H1 override and H1 constants<a class="headerlink" href="#h1-override-and-h1-constants" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/robots/unitree_h1/h1_constants.py</span></code></p>
-<p>Homie uses H1-specific actuator parameters heavily:</p>
-<ul class="simple">
-<li><p><strong>Multiple actuator groups</strong>: H1 is split into <code class="docutils literal notranslate"><span class="pre">HIP_KNEE</span></code>, <code class="docutils literal notranslate"><span class="pre">ANKLE_TORSO</span></code>, and <code class="docutils literal notranslate"><span class="pre">ARM</span></code> groups with different stiffness/damping.</p></li>
-<li><p><strong>Automatic action scale</strong>: per-joint scaling computed from actuator <code class="docutils literal notranslate"><span class="pre">effort_limit</span> <span class="pre">/</span> <span class="pre">stiffness</span></code>.</p></li>
-</ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute action scale automatically</span>
-<span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">H1_ARTICULATION</span><span class="o">.</span><span class="n">actuators</span><span class="p">:</span>
-    <span class="n">names</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">target_names_expr</span>
-    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
-        <span class="n">H1_ACTION_SCALE</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">*</span> <span class="n">a</span><span class="o">.</span><span class="n">effort_limit</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">stiffness</span>
-</pre></div>
-</div>
-</section>
-<section id="with-hands-gripper-variant-policy-free">
-<h2>with_hands: gripper variant (policy-free)<a class="headerlink" href="#with-hands-gripper-variant-policy-free" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/env_cfgs.py</span></code> and <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/robots/unitree_h1/h1_constants.py</span></code></p>
-<p>If you choose <code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>:</p>
-<ul class="simple">
-<li><p>The robot config mounts 2F85 via <code class="docutils literal notranslate"><span class="pre">get_h1_robot_cfg(hands=...)</span></code> (default mount config: <code class="docutils literal notranslate"><span class="pre">_default_hands_cfg</span></code>).</p></li>
-<li><p>The env adds a policy-free <code class="docutils literal notranslate"><span class="pre">gripper</span></code> action (0-dim) and an interval event that resamples gripper targets periodically (similar spirit to the upper-body action).</p></li>
-<li><p>Hand collisions are disabled by default. HOMIE uses the grippers as
-disturbance attachments rather than manipulation contacts, which avoids
-saturating MuJoCo CCD on the locomotion task.</p></li>
-</ul>
-</section>
-<section id="play-time-runner-behavior">
-<h2>Play-time runner behavior<a class="headerlink" href="#play-time-runner-behavior" title="Link to this heading">¶</a></h2>
-<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/rl/runner.py</span></code></p>
-<p>Official <code class="docutils literal notranslate"><span class="pre">mjlab</span></code> play builds a full runner first, but HOMIE adds a custom
-inference-only path. When the play env omits the <code class="docutils literal notranslate"><span class="pre">critic</span></code> observation group,
-<code class="docutils literal notranslate"><span class="pre">HomieHimOnPolicyRunner</span></code> builds an actor-only policy and loads only the actor
-weights that match. This is why HOMIE play can drop the critic group without
-breaking checkpoint loading.</p>
-</section>
-<section id="why-homie-is-a-good-reference">
-<h2>Why Homie is a good reference<a class="headerlink" href="#why-homie-is-a-good-reference" title="Link to this heading">¶</a></h2>
-<p>Homie is a great reference if you want to build tasks with:</p>
-<ol class="arabic simple">
-<li><p><strong>Mixed objectives</strong>: velocity tracking + height control in one setup.</p></li>
-<li><p><strong>Partial actuation</strong>: policy controls only part of the body; the rest follows scripted / random targets.</p></li>
-<li><p><strong>Curriculum beyond domain params</strong>: dynamically changing action behavior (not just friction/mass randomization).</p></li>
-</ol>
+<section id="him-ppo">
+<h2>HIM-PPO<a class="headerlink" href="#him-ppo" title="Link to this heading">¶</a></h2>
+<p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/rl/himppo/</span></code></p>
+<p>Hyperparameters and network sizes (actor/critic hidden dims 512-256-256,
+estimator latent 32, prototype 64, sinkhorn contrastive loss) follow
+OpenHomie. The left/right mirror maps for symmetry augmentation are derived
+from joint names (<code class="docutils literal notranslate"><span class="pre">left_*</span></code>/<code class="docutils literal notranslate"><span class="pre">right_*</span></code> pairing; joints whose names contain
+<code class="docutils literal notranslate"><span class="pre">yaw</span></code>/<code class="docutils literal notranslate"><span class="pre">roll</span></code> flip sign), so G1 and H1 share one implementation.</p>
+<p>Known deviation: the estimator’s next-step critic observation at termination
+steps is the post-reset observation (mjlab computes observations after
+resets), whereas OpenHomie substitutes the pre-reset observation.</p>
 </section>
 </section>
 

@@ -1,237 +1,117 @@
 .. _walkthrough-en-task-homie-h1:
 
-Example 3: Homie — Mixed Motion and Disturbances (Unitree H1)
+Example 3: Homie — Mixed Motion and Disturbances (Unitree G1 / H1)
 ====================================================================
 
-Homie is a more “composite” task that mixes **velocity tracking**, **squatting (height control)**, and **upper-body random disturbances**.
+Homie mixes **velocity tracking**, **squatting (height control)**,
+**standing**, and **upper-body random disturbances**. The implementation
+follows the OpenHomie reference (``HomieRL/legged_gym``): reward set, command
+sampling, and curriculum.
 
-Two task ids are provided:
+Three task ids are provided:
 
-- ``Mjlab-Homie-Unitree-H1``: the default version.
-- ``Mjlab-Homie-Unitree-H1-with_hands``: mounts Robotiq 2F85 grippers (and adds policy-free random gripper motion).
+- ``Mjlab-Homie-Unitree-G1``: the OpenHomie robot (29 dof, 12 lower-body actions).
+- ``Mjlab-Homie-Unitree-H1``: the H1 port (19 dof, 10 lower-body actions).
+- ``Mjlab-Homie-Unitree-H1-with_hands``: H1 with Robotiq 2F85 grippers
+  (policy-free random gripper motion and randomized hand payload).
 
-The core idea is:
-**reduce the policy action space to the lower body, and treat the upper body (and optional grippers) as smooth, time-varying disturbances.**
-This helps the policy keep robust leg locomotion under changing body poses.
+The core idea: **reduce the policy action space to the lower body, and treat
+the upper body (and optional grippers) as smooth, time-varying disturbances.**
 
 Task registration
 -----------------
 
 Path: ``src/mjlab_homierl/__init__.py``
 
-The external package registers both task ids through
-``mjlab.tasks.registry.register_mjlab_task``. The registered play env uses the
-same H1 override, but with ``play=True`` so the task can switch into a lighter
-inference-oriented configuration.
+Three task ids are registered via ``mjlab.tasks.registry.register_mjlab_task``.
+The play env is the same config with ``play=True`` (critic observations,
+rewards, and curriculum stripped; upper-body motion at full range).
 
-Task skeleton: make_homie_env_cfg (base cfg)
---------------------------------------------
+Three-mode command sampling
+---------------------------
 
-Path: ``src/mjlab_homierl/homie_env_cfg.py``
+Path: ``src/mjlab_homierl/mdp/velocity_command.py``
 
-Homie provides two command generators, both supporting env-group gating:
+Commands resample every 4 s. Each environment draws one of three mutually
+exclusive modes (the OpenHomie scheme):
 
-1. **twist** (``UniformVelocityCommand``): target base linear (x/y) and yaw velocities.
-2. **height** (``RelativeHeightCommand``): target pelvis height relative to feet (squat motion).
+- **squat** (p = 1/3): zero twist, random relative-height target;
+- **walk** (p = 1/2): random twist (x ∈ [-0.8, 1.2], y ∈ [-0.5, 0.5],
+  yaw ∈ [-0.8, 0.8]), standing-height target;
+- **stand** (p = 1/6): zero twist, standing-height target.
 
-.. code-block:: python
+The ``twist`` command samples the mode and exposes it via its ``mode``
+attribute; the ``height`` command (``RelativeHeightCommand``, pelvis height
+above the lowest foot site) couples to it. Both commands must share the same
+resampling interval, and ``twist`` must precede ``height`` in the commands
+dict.
 
-   # file: src/mjlab_homierl/homie_env_cfg.py
-   commands = {
-       "twist": UniformVelocityCommandCfg(
-           ...,
-           active_env_group="velocity",
-           rel_standing_envs=1.0 / 6.0,
-           avoid_consecutive_standing=True,
-       ),
-       "height": RelativeHeightCommandCfg(
-           entity_name="robot",
-           active_env_group="squat",
-           # Smooth height-command transitions (avoid step changes at resampling).
-           interp_rate=0.02,
-           foot_site_names=(), # filled by robot override
-           ranges=RelativeHeightCommandCfg.Ranges(height=(0.6, 1.0)),
-       ),
-   }
+Height ranges scale with the robot: G1 stands at 0.78 m and squats down to
+0.28 m; H1 stands at 0.98 m and squats to 0.4 m. A set of "standing only"
+reward terms (hip/ankle deviation, feet_parallel, stand_still, ...) are gated
+on the commanded height being near the standing height.
 
-Env grouping: train three “subtasks” in one vectorized env
---------------------------------------------------------------------
+Reward set
+----------
 
-Path: ``src/mjlab_homierl/mdp/curriculums.py::assign_homie_env_groups``
+Paths: ``src/mjlab_homierl/homie_env_cfg.py`` (weights),
+``src/mjlab_homierl/mdp/rewards.py`` (implementations)
 
-Homie partitions the vectorized env into three env groups (masks), and uses the group names in ``commands`` / ``rewards`` / ``curriculum`` for gating:
+Terms and weights follow OpenHomie's G1 config: split x/y velocity tracking
+(1.5 / 1.0), yaw tracking (2.0, σ²=0.25), height tracking ``exp(-4|err|)``
+(2.0), hip/ankle deviation (-0.2 / -0.5), knee-driven squatting (-0.75), the
+full joint regularization suite (torques, power, velocity, acceleration, soft
+limits), and the feet terms (air time, no-fly, clearance, slip, stumble,
+contact forces, contact momentum, sole parallelism, feet parallel, lateral
+distances).
 
-- ``squat``: ~20% (``set_x < 1/5``), focuses on height commands (squatting).
-- ``standing``: ~13.3% (``1/5 <= set_x <= 1/3``), focuses on “stand still” stability under disturbances.
-- ``velocity``: ~66.7% (``set_x > 1/3``), focuses on velocity tracking (walking/running).
+Intentional deviations from OpenHomie:
 
-Two key takeaways:
+- IsaacGym's torso-contact termination is replaced by contact penalties plus a
+  torso-contact termination on G1, with additional self-collision and
+  hip/knee ground-contact penalties.
+- The fall-over termination threshold matches the original
+  (``asin(0.8) ≈ 53°``).
 
-- **Command gating**:
-
-  - ``twist`` has ``active_env_group="velocity"``: non-velocity envs are forced to ``twist=0`` (standing).
-  - ``height`` has ``active_env_group="squat"``: non-squat envs are set to ``inactive_height`` (filled by robot override), avoiding height commands “confusing” walking envs.
-
-- **Reward gating**: many reward terms specify ``env_group=...`` to only activate on some groups (e.g., standing stabilization terms, squat-only geometric constraints).
-
-H1 override: unitree_h1_homie_env_cfg
+Upper-body disturbance and curriculum
 -------------------------------------
 
-Path: ``src/mjlab_homierl/env_cfgs.py::unitree_h1_homie_env_cfg``
+Paths: ``src/mjlab_homierl/mdp/actions.py``, ``mdp/curriculums.py``
 
-Homie still follows **base cfg + robot-specific override**. The H1 override mainly:
+``UpperBodyPoseAction`` contributes zero policy dimensions. Every 1 s (a
+global interval event), upper-body goal poses are resampled for all
+environments: amplitudes come from a truncated-exponential transform of the
+curriculum ratio (heavily biased toward small motions early on), the direction
+is a fair coin between each joint's lower/upper hard limit (so amplitudes are
+proportional to joint range), and the target is reached by linear
+interpolation over one interval.
 
-- **Switches to plane terrain and disables terrain curriculum** (remove ``terrain_levels``).
-- **Keeps MuJoCo CCD at the flat-task default**: ``cfg.sim.mujoco.ccd_iterations = 50``.
-- **Splits actions**: policy controls legs (hip/knee/ankle); upper-body motion is generated by a policy-free action (next section).
-- **Binds commands to H1 foot geometry**: fill ``foot_site_names`` for the height command, and set squat/standing ranges + ``inactive_height``:
+Curriculum advancement matches OpenHomie: the check runs only when
+``common_step_counter`` is a multiple of the max episode length; if the
+episode-average raw forward-velocity tracking reward is ≥ 0.8, the global
+ratio increases by 0.05.
 
-  - ``height_cmd.ranges.height = (0.4, 0.98)``
-  - ``height_cmd.inactive_height = 0.98`` (keep a stable standing height outside squat envs)
+Domain randomization
+--------------------
 
-- **Adds sensors and contact penalties**: adds ``self_collision`` and ``hip_knee_ground_contact`` sensors, and wires the ``hip_knee_contact`` reward term.
-- **Configures feet “parallel” rewards**: fills H1 foot corner sites (``*_foot_fi/fo/ri/ro``) for ``feet_ground_parallel`` / ``feet_parallel`` and reorders right-foot sites to match left/right local frames.
-- **Adds disturbances/randomization**: step-scheduled external pushes, and a reset-time constant downward hand load (0–5kg equivalent, ``hand_load``).
-- **Optional with_hands version**: when ``hands=True``, mounts 2F85 and adds a
-  policy-free ``gripper`` action with interval resampling (see below).
-- **Play override**: when ``play=True``, the env removes critic observations,
-  rewards, and curriculum, and disables push / hand-load disturbances so viewer
-  playback stays responsive.
+All randomization uses mjlab-native ``dr.*`` events: PD gains ×[0.9, 1.1]
+(per reset), link masses ×[0.8, 1.2], torso payload +[-2, 5] kg, CoM offset,
+encoder bias, foot friction, a global horizontal push every 4 s
+(Δv ≤ 0.5 m/s), and randomized joint poses / root velocities at reset.
+OpenHomie's per-step torque injection has no mjlab equivalent and is
+approximated by PD-gain randomization and encoder bias.
 
-Core feature: UpperBodyPoseAction (policy-free, 0-dim action)
---------------------------------------------------------------------
+HIM-PPO
+-------
 
-Path: ``src/mjlab_homierl/env_cfgs.py``
+Path: ``src/mjlab_homierl/rl/himppo/``
 
-Besides the policy-controlled ``joint_pos`` action, H1 Homie adds ``upper_body_pose`` (policy action dim = 0):
+Hyperparameters and network sizes (actor/critic hidden dims 512-256-256,
+estimator latent 32, prototype 64, sinkhorn contrastive loss) follow
+OpenHomie. The left/right mirror maps for symmetry augmentation are derived
+from joint names (``left_*``/``right_*`` pairing; joints whose names contain
+``yaw``/``roll`` flip sign), so G1 and H1 share one implementation.
 
-- **0 policy dims**: does not increase the neural network output size.
-- **Smooth interpolation**: maintains an internal pose target and moves toward it via ``torch.lerp`` each step.
-- **Periodic resampling**: an ``EventTermCfg`` periodically samples a new goal pose (default: every 2 seconds).
-- **Optional rate limiting**: ``max_speed_rad_s`` clamps per-step target changes to avoid overly abrupt motion.
-
-.. code-block:: python
-
-   # Upper-body action config (policy-free)
-   cfg.actions["upper_body_pose"] = UpperBodyPoseActionCfg(
-       entity_name="robot",
-       joint_names=upper_body_joint_expr,
-       interp_rate=0.05,
-       max_speed_rad_s=1.0,
-       target_range=(-0.6, 0.6),
-       initial_ratio=0.0,  # training starts at 0; play mode uses 1.0
-       use_sampled_ratio=True,
-   )
-
-   # Interval event: resample goals (range is larger but clamped by joint limits + ratio)
-   cfg.events["upper_body_random_targets"] = EventTermCfg(
-       func=_sample_upper_body_targets_with_curriculum,
-       mode="interval",
-       interval_range_s=(2.0, 2.0),
-       params={
-           "action_name": "upper_body_pose",
-           "target_range": (-3.0, 1.0),
-           "start_step": step_threshold,
-       },
-   )
-
-Curriculum: gradually increase disturbance strength
---------------------------------------------------------------------
-
-Path: ``src/mjlab_homierl/mdp/curriculums.py``
-
-To avoid overwhelming early training, Homie uses ``upper_body_action_curriculum``:
-
-- **Performance-coupled**: when the average ``track_linear_velocity`` reward exceeds a threshold (e.g., 0.8), increase disturbance amplitude.
-- **Linear growth**: ratio increases from 0 to 1.0.
-
-.. code-block:: python
-
-   cfg.curriculum["upper_body_action"] = CurriculumTermCfg(
-       func=mdp.upper_body_action_curriculum,
-       params={
-           "action_name": "upper_body_pose",
-           "reward_name": "track_linear_velocity",
-           "success_threshold": 0.8,
-           "increment": 0.05,
-           "max_ratio": 1.0,
-           "start_step": step_threshold,
-       },
-   )
-
-Rewards & terminations: balancing mixed objectives
---------------------------------------------------------------------
-
-Homie needs to balance “walk” and “squat” objectives while being robust to upper-body disturbances.
-
-1) Rewards: decouple objectives via env groups
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-- **Env-group gating**:
-
-  - many reward terms use ``env_group=...`` so they only apply to some groups
-  - H1 override adds extra standing stabilization (``track_*_standing``) to reduce residual sway in ``standing``
-
-- **Regularizers for robustness**:
-
-  - ``knee_deviation_reward``: penalize knee lateral deviation during squat, encouraging reasonable squatting posture
-  - ``upright``: keep the torso upright (critical for resisting upper-body disturbances)
-  - ``feet_ground_parallel`` / ``feet_parallel``: constrain feet orientation vs ground / between feet (requires per-robot corner site config)
-  - ``hip_knee_contact`` / ``self_collisions``: penalize “bad contacts” via rewards instead of terminating too early
-
-2) Terminations: looser coupling
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-- **Relaxed posture limits**: H1 has larger motion ranges and disturbances; ``fell_over`` thresholds are typically less strict than smaller robots.
-- **Self-collision handling**: Homie prefers to keep training signal via reward penalties rather than immediate termination for large-range motion.
-
-H1 override and H1 constants
-----------------------------
-
-Path: ``src/mjlab_homierl/robots/unitree_h1/h1_constants.py``
-
-Homie uses H1-specific actuator parameters heavily:
-
-- **Multiple actuator groups**: H1 is split into ``HIP_KNEE``, ``ANKLE_TORSO``, and ``ARM`` groups with different stiffness/damping.
-- **Automatic action scale**: per-joint scaling computed from actuator ``effort_limit / stiffness``.
-
-.. code-block:: python
-
-   # Compute action scale automatically
-   for a in H1_ARTICULATION.actuators:
-       names = a.target_names_expr
-       for n in names:
-           H1_ACTION_SCALE[n] = 0.25 * a.effort_limit / a.stiffness
-
-with_hands: gripper variant (policy-free)
---------------------------------------------------------------------
-
-Path: ``src/mjlab_homierl/env_cfgs.py`` and ``src/mjlab_homierl/robots/unitree_h1/h1_constants.py``
-
-If you choose ``Mjlab-Homie-Unitree-H1-with_hands``:
-
-- The robot config mounts 2F85 via ``get_h1_robot_cfg(hands=...)`` (default mount config: ``_default_hands_cfg``).
-- The env adds a policy-free ``gripper`` action (0-dim) and an interval event that resamples gripper targets periodically (similar spirit to the upper-body action).
-- Hand collisions are disabled by default. HOMIE uses the grippers as
-  disturbance attachments rather than manipulation contacts, which avoids
-  saturating MuJoCo CCD on the locomotion task.
-
-Play-time runner behavior
--------------------------
-
-Path: ``src/mjlab_homierl/rl/runner.py``
-
-Official ``mjlab`` play builds a full runner first, but HOMIE adds a custom
-inference-only path. When the play env omits the ``critic`` observation group,
-``HomieHimOnPolicyRunner`` builds an actor-only policy and loads only the actor
-weights that match. This is why HOMIE play can drop the critic group without
-breaking checkpoint loading.
-
-Why Homie is a good reference
------------------------------
-
-Homie is a great reference if you want to build tasks with:
-
-1. **Mixed objectives**: velocity tracking + height control in one setup.
-2. **Partial actuation**: policy controls only part of the body; the rest follows scripted / random targets.
-3. **Curriculum beyond domain params**: dynamically changing action behavior (not just friction/mass randomization).
+Known deviation: the estimator's next-step critic observation at termination
+steps is the post-reset observation (mjlab computes observations after
+resets), whereas OpenHomie substitutes the pre-reset observation.
