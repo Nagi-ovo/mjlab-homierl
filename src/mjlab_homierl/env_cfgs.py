@@ -77,7 +77,10 @@ def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
   cfg.curriculum = {}
   cfg.events.pop("push_robot", None)
 
-  # Full upper-body motion range in play.
+  # Upper-body disturbance amplitude during play. The play env has no
+  # curriculum, so this ratio stays fixed: 0.0 holds the default pose
+  # (isolates lower-body gait for inspection); set 1.0 to preview
+  # deployment-like full-range upper-body disturbances.
   upper = cfg.actions["upper_body_pose"]
   assert isinstance(upper, mdp.UpperBodyPoseActionCfg)
   upper.initial_ratio = 0.0
