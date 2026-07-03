@@ -13,7 +13,6 @@ from mjlab.utils.actuator import (
   ElectricActuator,
   reflected_inertia_from_two_stage_planetary,
 )
-from mjlab.utils.os import update_assets
 from mjlab.utils.spec_config import CollisionCfg
 
 ##
@@ -27,12 +26,6 @@ assert H1_XML.exists()
 
 # Default Robotiq 2F85 path.
 DEFAULT_2F85_XML = PACKAGE_DIR.parent / "robotiq_2f85" / "xmls" / "2f85.xml"
-
-
-def get_assets(meshdir: str) -> dict[str, bytes]:
-  assets: dict[str, bytes] = {}
-  update_assets(assets, H1_XML.parent / "assets", meshdir)
-  return assets
 
 
 @dataclass(kw_only=True)
@@ -211,19 +204,14 @@ def _disable_attached_hand_collisions(model: mujoco.MjSpec, side: str) -> None:
 
 
 def get_spec(hands: HandsCfg | None = None) -> mujoco.MjSpec:
+  # Meshes resolve from disk relative to each spec's own file; spec.assets stays
+  # empty (mjlab >= 1.3 removed the get_assets/update_assets round-trip).
   spec = mujoco.MjSpec.from_file(str(H1_XML))
-  assets = get_assets(spec.meshdir)
   if hands is not None:
     for side, hand_cfg in (("left", hands.left), ("right", hands.right)):
       _attach_gripper(spec, side, hand_cfg)
       if hand_cfg.enable and not hand_cfg.enable_collision:
         _disable_attached_hand_collisions(spec, side)
-    if hands.left.enable and hands.left.model is not None:
-      update_assets(assets, hands.left.model.parent / "assets", meshdir="assets")
-    if hands.right.enable and hands.right.model is not None:
-      update_assets(assets, hands.right.model.parent / "assets", meshdir="assets")
-
-  spec.assets = assets
   return spec
 
 
