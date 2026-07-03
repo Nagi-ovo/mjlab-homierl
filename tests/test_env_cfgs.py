@@ -86,3 +86,18 @@ def test_g1_gain_variants() -> None:
 
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(gains="unknown")
+
+
+def test_h1_gain_variants() -> None:
+  from mjlab_homierl.robots.unitree_h1_deploy import H1_DEPLOY_PD_GAINS
+
+  deploy = unitree_h1_homie_env_cfg(gains="deploy")
+  assert deploy.actions["joint_pos"].scale == 0.25
+  stiffness = deploy.rewards["torques"].params["stiffness"]
+  assert stiffness[".*_knee"] == H1_DEPLOY_PD_GAINS[".*_knee"][0] == 200.0
+
+  mjlab_variant = unitree_h1_homie_env_cfg(gains="mjlab")
+  assert isinstance(mjlab_variant.actions["joint_pos"].scale, dict)
+
+  with pytest.raises(ValueError):
+    unitree_h1_homie_env_cfg(gains="unknown")

@@ -23,6 +23,11 @@ from mjlab_homierl.robots.unitree_h1 import (
   HandsCfg,
   h1_constants,
 )
+from mjlab_homierl.robots.unitree_h1_deploy import (
+  H1_DEPLOY_ACTION_SCALE,
+  H1_DEPLOY_PD_GAINS,
+  get_h1_deploy_robot_cfg,
+)
 
 ##
 # Shared helpers.
@@ -363,10 +368,17 @@ H1_HEIGHT_RANGE = (0.4, 0.98)
 H1_STANDING_GATE = H1_STANDING_HEIGHT - 0.005
 H1_CLEARANCE_GATE = H1_STANDING_HEIGHT - 0.03
 
-H1_LOWER_STIFFNESS = {
+# Lower-body stiffness used to normalize the ``torques`` reward; must match
+# the actuator gains of the selected variant.
+H1_MJLAB_LOWER_STIFFNESS = {
   ".*_hip_.*": h1_constants.STIFFNESS_HIP_KNEE,
   ".*_knee": h1_constants.STIFFNESS_HIP_KNEE,
   ".*_ankle": h1_constants.STIFFNESS_ANKLE_TORSO,
+}
+H1_DEPLOY_LOWER_STIFFNESS = {
+  pattern: kp
+  for pattern, (kp, _) in H1_DEPLOY_PD_GAINS.items()
+  if ("hip" in pattern or "knee" in pattern or "ankle" in pattern)
 }
 H1_LOWER_VELOCITY_LIMITS = {
   ".*_hip_.*": h1_constants.ACTUATOR_HIP_KNEE.velocity_limit,
@@ -407,11 +419,30 @@ def unitree_h1_homie_env_cfg(
   play: bool = False,
   curriculum_start_step: int = 0,
   hands: bool = False,
+  gains: str = "deploy",
 ) -> ManagerBasedRlEnvCfg:
-  """Create the Unitree H1 HOMIE task configuration."""
+  """Create the Unitree H1 HOMIE task configuration.
+
+  Args:
+    gains: PD-gain variant.
+      - ``"deploy"`` (default): gains from Unitree's official RL stack
+        (unitree_rl_gym h1_config.py) with the uniform 0.25 action scale.
+        Use this for sim2real.
+      - ``"mjlab"``: mjlab-style first-principles gains (armature x natural
+        frequency). Sim-only / ablation variant.
+  """
+  if gains not in ("deploy", "mjlab"):
+    raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
   cfg = make_homie_env_cfg()
 
-  cfg.scene.entities = {"robot": get_h1_robot_cfg(hands=_default_hands_cfg(hands))}
+  # Standing HOME keyframe as the default pose (OpenHomie squats are commanded
+  # relative to standing; deviation rewards reference the default pose).
+  if gains == "deploy":
+    robot_cfg = get_h1_deploy_robot_cfg(hands=_default_hands_cfg(hands))
+  else:
+    robot_cfg = get_h1_robot_cfg(hands=_default_hands_cfg(hands))
+    robot_cfg.init_state = h1_constants.HOME_KEYFRAME
+  cfg.scene.entities = {"robot": robot_cfg}
   cfg.sim.mujoco.ccd_iterations = 50
 
   cfg.scene.sensors = _make_contact_sensors(
@@ -429,11 +460,14 @@ def unitree_h1_homie_env_cfg(
   joint_pos = cfg.actions["joint_pos"]
   assert isinstance(joint_pos, JointPositionActionCfg)
   joint_pos.actuator_names = H1_LOWER_BODY_JOINTS
-  joint_pos.scale = {
-    k: v
-    for k, v in h1_constants.H1_ACTION_SCALE.items()
-    if ("hip" in k or "knee" in k or "ankle" in k)
-  }
+  if gains == "deploy":
+    joint_pos.scale = H1_DEPLOY_ACTION_SCALE
+  else:
+    joint_pos.scale = {
+      k: v
+      for k, v in h1_constants.H1_ACTION_SCALE.items()
+      if ("hip" in k or "knee" in k or "ankle" in k)
+    }
   upper = cfg.actions["upper_body_pose"]
   assert isinstance(upper, mdp.UpperBodyPoseActionCfg)
   upper.joint_names = H1_UPPER_BODY_JOINTS
@@ -519,7 +553,9 @@ def unitree_h1_homie_env_cfg(
     "joint_tracking_error",
   ):
     cfg.rewards[name].params["asset_cfg"] = lower_cfg
-  cfg.rewards["torques"].params["stiffness"] = H1_LOWER_STIFFNESS
+  cfg.rewards["torques"].params["stiffness"] = (
+    H1_DEPLOY_LOWER_STIFFNESS if gains == "deploy" else H1_MJLAB_LOWER_STIFFNESS
+  )
   cfg.rewards["dof_vel_limits"].params["velocity_limits"] = H1_LOWER_VELOCITY_LIMITS
   cfg.rewards["torque_limits"].params["effort_limits"] = H1_LOWER_EFFORT_LIMITS
 

@@ -82,8 +82,13 @@ through the `mjlab.tasks` entry-point group.
   code can read the gains from the policy file.
 - `Mjlab-Homie-Unitree-G1-mjlab_gains` — ablation variant with mjlab's
   first-principles actuator gains (armature × natural frequency); sim-only.
-- `Mjlab-Homie-Unitree-H1`
-- `Mjlab-Homie-Unitree-H1-with_hands`
+- `Mjlab-Homie-Unitree-H1` — trains with Unitree's official RL-stack PD gains
+  (unitree_rl_gym `h1_config.py`; see `robots/unitree_h1_deploy.py`) and the
+  uniform 0.25 action scale.
+- `Mjlab-Homie-Unitree-H1-mjlab_gains` — H1 ablation variant with
+  first-principles gains; sim-only.
+- `Mjlab-Homie-Unitree-H1-with_hands` — deploy gains, with Robotiq 2F85
+  grippers mounted.
 
 ## Usage
 
