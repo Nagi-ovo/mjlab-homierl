@@ -12,6 +12,11 @@ from mjlab_homierl import mdp
 from mjlab_homierl.homie_env_cfg import make_him_observations, make_homie_env_cfg
 from mjlab_homierl.mdp import RelativeHeightCommandCfg, UniformVelocityCommandCfg
 from mjlab_homierl.robots import get_h1_robot_cfg
+from mjlab_homierl.robots.unitree_g1_deploy import (
+  G1_DEPLOY_ACTION_SCALE,
+  G1_DEPLOY_PD_GAINS,
+  get_g1_deploy_robot_cfg,
+)
 from mjlab_homierl.robots.unitree_h1 import (
   DEFAULT_2F85_XML,
   HandMountCfg,
@@ -70,7 +75,7 @@ def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
   # Full upper-body motion range in play.
   upper = cfg.actions["upper_body_pose"]
   assert isinstance(upper, mdp.UpperBodyPoseActionCfg)
-  upper.initial_ratio = 1.0
+  upper.initial_ratio = 0.0
 
 
 ##
@@ -123,12 +128,19 @@ G1_STANDING_GATE = G1_STANDING_HEIGHT - 0.005
 # Clearance gate keeps OpenHomie's 0.03 margin below standing.
 G1_CLEARANCE_GATE = G1_STANDING_HEIGHT - 0.03
 
-G1_LOWER_STIFFNESS = {
+# Lower-body stiffness used to normalize the ``torques`` reward; must match
+# the actuator gains of the selected variant.
+G1_MJLAB_LOWER_STIFFNESS = {
   ".*_hip_pitch_joint": g1_constants.STIFFNESS_7520_14,
   ".*_hip_yaw_joint": g1_constants.STIFFNESS_7520_14,
   ".*_hip_roll_joint": g1_constants.STIFFNESS_7520_22,
   ".*_knee_joint": g1_constants.STIFFNESS_7520_22,
   ".*_ankle_.*_joint": g1_constants.STIFFNESS_5020 * 2,
+}
+G1_DEPLOY_LOWER_STIFFNESS = {
+  pattern: kp
+  for pattern, (kp, _) in G1_DEPLOY_PD_GAINS.items()
+  if ("hip" in pattern or "knee" in pattern or "ankle" in pattern)
 }
 G1_LOWER_VELOCITY_LIMITS = {
   ".*_hip_pitch_joint": g1_constants.ACTUATOR_7520_14.velocity_limit,
@@ -149,14 +161,30 @@ G1_LOWER_EFFORT_LIMITS = {
 def unitree_g1_homie_env_cfg(
   play: bool = False,
   curriculum_start_step: int = 0,
+  gains: str = "deploy",
 ) -> ManagerBasedRlEnvCfg:
-  """Create the Unitree G1 HOMIE task configuration."""
+  """Create the Unitree G1 HOMIE task configuration.
+
+  Args:
+    gains: PD-gain variant.
+      - ``"deploy"`` (default): deployment-grade gains matching HomieDeploy's
+        real-robot low-level controller, with the uniform 0.25 action scale
+        used by the deployed inference pipeline. Use this for sim2real.
+      - ``"mjlab"``: mjlab asset-zoo first-principles gains (armature x
+        natural-frequency) with per-joint effort/stiffness action scales.
+        Sim-only / ablation variant.
+  """
+  if gains not in ("deploy", "mjlab"):
+    raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
   cfg = make_homie_env_cfg()
 
   # Robot: mjlab asset-zoo G1 with the standing HOME keyframe as the default
   # pose (OpenHomie squats are commanded relative to standing).
-  robot_cfg = g1_constants.get_g1_robot_cfg()
-  robot_cfg.init_state = g1_constants.HOME_KEYFRAME
+  if gains == "deploy":
+    robot_cfg = get_g1_deploy_robot_cfg()
+  else:
+    robot_cfg = g1_constants.get_g1_robot_cfg()
+    robot_cfg.init_state = g1_constants.HOME_KEYFRAME
   cfg.scene.entities = {"robot": robot_cfg}
 
   cfg.sim.nconmax = None
@@ -194,11 +222,14 @@ def unitree_g1_homie_env_cfg(
   joint_pos = cfg.actions["joint_pos"]
   assert isinstance(joint_pos, JointPositionActionCfg)
   joint_pos.actuator_names = G1_LOWER_BODY_JOINTS
-  joint_pos.scale = {
-    k: v
-    for k, v in g1_constants.G1_ACTION_SCALE.items()
-    if ("hip" in k or "knee" in k or "ankle" in k)
-  }
+  if gains == "deploy":
+    joint_pos.scale = G1_DEPLOY_ACTION_SCALE
+  else:
+    joint_pos.scale = {
+      k: v
+      for k, v in g1_constants.G1_ACTION_SCALE.items()
+      if ("hip" in k or "knee" in k or "ankle" in k)
+    }
   upper = cfg.actions["upper_body_pose"]
   assert isinstance(upper, mdp.UpperBodyPoseActionCfg)
   upper.joint_names = G1_UPPER_BODY_JOINTS
@@ -257,7 +288,9 @@ def unitree_g1_homie_env_cfg(
     "joint_tracking_error",
   ):
     cfg.rewards[name].params["asset_cfg"] = lower_cfg
-  cfg.rewards["torques"].params["stiffness"] = G1_LOWER_STIFFNESS
+  cfg.rewards["torques"].params["stiffness"] = (
+    G1_DEPLOY_LOWER_STIFFNESS if gains == "deploy" else G1_MJLAB_LOWER_STIFFNESS
+  )
   cfg.rewards["dof_vel_limits"].params["velocity_limits"] = G1_LOWER_VELOCITY_LIMITS
   cfg.rewards["torque_limits"].params["effort_limits"] = G1_LOWER_EFFORT_LIMITS
 

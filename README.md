@@ -74,7 +74,14 @@ through the `mjlab.tasks` entry-point group.
 
 ## Registered Tasks
 
-- `Mjlab-Homie-Unitree-G1`
+- `Mjlab-Homie-Unitree-G1` — trains with deployment-grade PD gains (the table
+  HomieDeploy's real-robot low-level controller runs; see
+  `robots/unitree_g1_deploy.py`) and the deployed pipeline's uniform 0.25
+  action scale. Use this for sim2real. The effective per-joint
+  stiffness/damping is embedded in the exported ONNX metadata, so deployment
+  code can read the gains from the policy file.
+- `Mjlab-Homie-Unitree-G1-mjlab_gains` — ablation variant with mjlab's
+  first-principles actuator gains (armature × natural frequency); sim-only.
 - `Mjlab-Homie-Unitree-H1`
 - `Mjlab-Homie-Unitree-H1-with_hands`
 

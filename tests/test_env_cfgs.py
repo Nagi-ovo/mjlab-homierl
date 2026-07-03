@@ -69,3 +69,20 @@ def test_homie_play_cfg_strips_training_only_work(make_cfg) -> None:
 def test_g1_terminates_on_torso_contact() -> None:
   cfg = unitree_g1_homie_env_cfg()
   assert "torso_contact" in cfg.terminations
+
+
+def test_g1_gain_variants() -> None:
+  from mjlab_homierl.robots.unitree_g1_deploy import G1_DEPLOY_PD_GAINS
+
+  deploy = unitree_g1_homie_env_cfg(gains="deploy")
+  # Deployment pipeline uses a uniform 0.25 action scale.
+  assert deploy.actions["joint_pos"].scale == 0.25
+  # Torque-reward normalization must match the deploy gain table.
+  stiffness = deploy.rewards["torques"].params["stiffness"]
+  assert stiffness[".*_knee_joint"] == G1_DEPLOY_PD_GAINS[".*_knee_joint"][0] == 300.0
+
+  mjlab_variant = unitree_g1_homie_env_cfg(gains="mjlab")
+  assert isinstance(mjlab_variant.actions["joint_pos"].scale, dict)
+
+  with pytest.raises(ValueError):
+    unitree_g1_homie_env_cfg(gains="unknown")
