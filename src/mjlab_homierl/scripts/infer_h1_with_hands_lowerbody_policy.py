@@ -29,7 +29,9 @@ def _quat_rotate_inverse_wxyz(q_wxyz: np.ndarray, v_xyz: np.ndarray) -> np.ndarr
       dtype=np.float32,
     )
 
-  qv = np.array([0.0, float(v_xyz[0]), float(v_xyz[1]), float(v_xyz[2])], dtype=np.float32)
+  qv = np.array(
+    [0.0, float(v_xyz[0]), float(v_xyz[1]), float(v_xyz[2])], dtype=np.float32
+  )
   return qmul(qmul(q_inv, qv), q_wxyz.astype(np.float32))[1:4]
 
 
@@ -49,7 +51,9 @@ class HomieLowerBodyPolicy:
     ckpt = torch.load(str(checkpoint_path), map_location="cpu")
     sd = ckpt.get("policy_state_dict") or ckpt.get("model_state_dict")
     if sd is None:
-      raise KeyError("Checkpoint must contain `policy_state_dict` or `model_state_dict`.")
+      raise KeyError(
+        "Checkpoint must contain `policy_state_dict` or `model_state_dict`."
+      )
 
     actor_weight_key = next(
       (
@@ -83,7 +87,9 @@ class HomieLowerBodyPolicy:
       torch.nn.Linear(128, self.act_dim),
     )
 
-    actor_sd = {k.removeprefix("actor."): v for k, v in sd.items() if k.startswith("actor.")}
+    actor_sd = {
+      k.removeprefix("actor."): v for k, v in sd.items() if k.startswith("actor.")
+    }
     self.actor.load_state_dict(actor_sd, strict=True)
     self.actor.eval()
 
@@ -138,13 +144,17 @@ def _build_model_with_floor(xml_path: Path) -> mujoco.MjModel:
 
 
 def _get_policy_io(model: mujoco.MjModel) -> PolicyIO:
-  nonfree_jids = [j for j in range(model.njnt) if model.jnt_type[j] != mujoco.mjtJoint.mjJNT_FREE]
+  nonfree_jids = [
+    j for j in range(model.njnt) if model.jnt_type[j] != mujoco.mjtJoint.mjJNT_FREE
+  ]
   nonfree_jids.sort(key=lambda j: int(model.jnt_qposadr[j]))
   joint_names = tuple(
     mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j) for j in nonfree_jids
   )
   if len(joint_names) != 37:
-    raise ValueError(f"Expected 37 non-free joints for H1-with_hands, got {len(joint_names)}")
+    raise ValueError(
+      f"Expected 37 non-free joints for H1-with_hands, got {len(joint_names)}"
+    )
 
   action_joint_names = (
     "left_hip_yaw",
@@ -202,13 +212,23 @@ def _sim_loop(
   if imu_ang_id < 0 or imu_lin_id < 0:
     raise ValueError("Missing IMU sensors (expected 'imu_ang_vel' and 'imu_lin_vel').")
 
-  ang_adr, ang_dim = int(model.sensor_adr[imu_ang_id]), int(model.sensor_dim[imu_ang_id])
-  lin_adr, lin_dim = int(model.sensor_adr[imu_lin_id]), int(model.sensor_dim[imu_lin_id])
+  ang_adr, ang_dim = (
+    int(model.sensor_adr[imu_ang_id]),
+    int(model.sensor_dim[imu_ang_id]),
+  )
+  lin_adr, lin_dim = (
+    int(model.sensor_adr[imu_lin_id]),
+    int(model.sensor_dim[imu_lin_id]),
+  )
   if ang_dim != 3 or lin_dim != 3:
-    raise ValueError(f"Unexpected sensor dims: imu_ang_vel={ang_dim}, imu_lin_vel={lin_dim}")
+    raise ValueError(
+      f"Unexpected sensor dims: imu_ang_vel={ang_dim}, imu_lin_vel={lin_dim}"
+    )
 
   # Joint qpos/qvel addresses (policy uses all non-free joints).
-  nonfree_jids = [j for j in range(model.njnt) if model.jnt_type[j] != mujoco.mjtJoint.mjJNT_FREE]
+  nonfree_jids = [
+    j for j in range(model.njnt) if model.jnt_type[j] != mujoco.mjtJoint.mjJNT_FREE
+  ]
   nonfree_jids.sort(key=lambda j: int(model.jnt_qposadr[j]))
   j_qadr = np.asarray([int(model.jnt_qposadr[j]) for j in nonfree_jids], dtype=np.int32)
   j_vadr = np.asarray([int(model.jnt_dofadr[j]) for j in nonfree_jids], dtype=np.int32)
@@ -229,17 +249,23 @@ def _sim_loop(
     qadr = int(model.jnt_qposadr[jid])
     act_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, jname)
     if act_id < 0:
-      raise ValueError(f"Missing position actuator '{jname}' (expected actuator name == joint name).")
+      raise ValueError(
+        f"Missing position actuator '{jname}' (expected actuator name == joint name)."
+      )
 
     stiffness = float(model.actuator_gainprm[act_id, 0])
     effort = float(abs(model.actuator_forcerange[act_id, 1]))
     if stiffness <= 0.0 or effort <= 0.0:
-      raise ValueError(f"Invalid actuator params for '{jname}': stiffness={stiffness}, effort={effort}")
+      raise ValueError(
+        f"Invalid actuator params for '{jname}': stiffness={stiffness}, effort={effort}"
+      )
 
     act_ids.append(act_id)
     act_qposadr.append(qadr)
     default_action_pos.append(float(data.qpos[qadr]))
-    action_scale.append(0.25 * effort / stiffness)  # matches mjlab_homierl.robots.H1_ACTION_SCALE
+    action_scale.append(
+      0.25 * effort / stiffness
+    )  # matches mjlab_homierl.robots.H1_ACTION_SCALE
 
   act_ids_np = np.asarray(act_ids, dtype=np.int32)
   default_action_pos_np = np.asarray(default_action_pos, dtype=np.float32)
@@ -264,7 +290,9 @@ def _sim_loop(
     base_lin = data.sensordata[lin_adr : lin_adr + lin_dim].copy()
 
     # Projected gravity in pelvis body frame.
-    proj_g = _quat_rotate_inverse_wxyz(data.qpos[3:7], np.array([0.0, 0.0, -1.0], dtype=np.float32))
+    proj_g = _quat_rotate_inverse_wxyz(
+      data.qpos[3:7], np.array([0.0, 0.0, -1.0], dtype=np.float32)
+    )
 
     joint_pos_rel = data.qpos[j_qadr] - default_joint_pos
     joint_vel_rel = data.qvel[j_vadr] - default_joint_vel
@@ -323,10 +351,24 @@ def main() -> None:
     default=Path("src/mjlab_homierl/robots/unitree_h1/xmls/h1-with_hands.xml"),
     help="Path to H1-with_hands MJCF (generated in this repo).",
   )
-  parser.add_argument("--device", type=str, default="cpu", help="Torch device, e.g. cpu/cuda:0.")
-  parser.add_argument("--cmd-vx", type=float, default=0.0, help="Desired forward velocity (body frame), m/s.")
-  parser.add_argument("--cmd-vy", type=float, default=0.0, help="Desired lateral velocity (body frame), m/s.")
-  parser.add_argument("--cmd-wz", type=float, default=0.0, help="Desired yaw rate (body frame), rad/s.")
+  parser.add_argument(
+    "--device", type=str, default="cpu", help="Torch device, e.g. cpu/cuda:0."
+  )
+  parser.add_argument(
+    "--cmd-vx",
+    type=float,
+    default=0.0,
+    help="Desired forward velocity (body frame), m/s.",
+  )
+  parser.add_argument(
+    "--cmd-vy",
+    type=float,
+    default=0.0,
+    help="Desired lateral velocity (body frame), m/s.",
+  )
+  parser.add_argument(
+    "--cmd-wz", type=float, default=0.0, help="Desired yaw rate (body frame), rad/s."
+  )
   parser.add_argument(
     "--cmd-height",
     type=float,
@@ -339,12 +381,24 @@ def main() -> None:
     default=None,
     help="Fixed height for robot root body (z coordinate), meters. Robot will be constrained to this height throughout simulation.",
   )
-  parser.add_argument("--timestep", type=float, default=0.005, help="MuJoCo timestep (s).")
-  parser.add_argument("--decimation", type=int, default=4, help="Physics steps per policy step.")
-  parser.add_argument("--iterations", type=int, default=10, help="MuJoCo solver iterations.")
-  parser.add_argument("--ls-iterations", type=int, default=20, help="MuJoCo solver LS iterations.")
-  parser.add_argument("--no-realtime", action="store_true", help="Run as fast as possible.")
-  parser.add_argument("--steps", type=int, default=2000, help="Number of policy steps to run (headless).")
+  parser.add_argument(
+    "--timestep", type=float, default=0.005, help="MuJoCo timestep (s)."
+  )
+  parser.add_argument(
+    "--decimation", type=int, default=4, help="Physics steps per policy step."
+  )
+  parser.add_argument(
+    "--iterations", type=int, default=10, help="MuJoCo solver iterations."
+  )
+  parser.add_argument(
+    "--ls-iterations", type=int, default=20, help="MuJoCo solver LS iterations."
+  )
+  parser.add_argument(
+    "--no-realtime", action="store_true", help="Run as fast as possible."
+  )
+  parser.add_argument(
+    "--steps", type=int, default=2000, help="Number of policy steps to run (headless)."
+  )
   parser.add_argument(
     "--viewer",
     type=str,

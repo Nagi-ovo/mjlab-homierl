@@ -28,8 +28,8 @@ class HIMActorCritic(nn.Module):
     num_actions: int,
     *,
     layout: HimObsLayout,
-    actor_hidden_dims: tuple[int, ...] = (512, 256, 128),
-    critic_hidden_dims: tuple[int, ...] = (512, 256, 128),
+    actor_hidden_dims: tuple[int, ...] = (512, 256, 256),
+    critic_hidden_dims: tuple[int, ...] = (512, 256, 256),
     activation: str = "elu",
     init_noise_std: float = 1.0,
     dynamic_latent_dim: int = 32,
@@ -52,8 +52,12 @@ class HIMActorCritic(nn.Module):
       int(layout.num_one_step_privileged_obs) if self.has_critic else 0
     )
     self.actor_history_length = int(layout.actor_history_length)
-    self.critic_history_length = int(layout.critic_history_length) if self.has_critic else 0
-    self.actor_proprioceptive_obs_length = self.actor_history_length * self.num_one_step_obs
+    self.critic_history_length = (
+      int(layout.critic_history_length) if self.has_critic else 0
+    )
+    self.actor_proprioceptive_obs_length = (
+      self.actor_history_length * self.num_one_step_obs
+    )
     self.critic_proprioceptive_obs_length = (
       self.critic_history_length * self.num_one_step_critic_obs
     )
@@ -90,7 +94,10 @@ class HIMActorCritic(nn.Module):
       mlp_input_dim_a = self.num_one_step_obs + 3 + self.dynamic_latent_dim
 
     # Policy network.
-    actor_layers: list[nn.Module] = [nn.Linear(mlp_input_dim_a, actor_hidden_dims[0]), act]
+    actor_layers: list[nn.Module] = [
+      nn.Linear(mlp_input_dim_a, actor_hidden_dims[0]),
+      act,
+    ]
     for i, hidden_dim in enumerate(actor_hidden_dims):
       if i == len(actor_hidden_dims) - 1:
         actor_layers.append(nn.Linear(hidden_dim, self.num_actions))
@@ -203,7 +210,11 @@ class HIMActorCritic(nn.Module):
     return self.distribution.log_prob(actions).sum(dim=-1)
 
   def update_estimator(
-    self, obs_history: torch.Tensor, next_critic_obs: torch.Tensor, *, lr: float | None = None
+    self,
+    obs_history: torch.Tensor,
+    next_critic_obs: torch.Tensor,
+    *,
+    lr: float | None = None,
   ) -> tuple[float, float]:
     return self.estimator.update(
       obs_history[:, : self.actor_proprioceptive_obs_length],

@@ -15,7 +15,7 @@
 - `src/mjlab_homierl/homie_env_cfg.py`
   - Base HOMIE environment config factory.
 - `src/mjlab_homierl/env_cfgs.py`
-  - Unitree H1 and H1-with-hands task overrides.
+  - Unitree G1, H1, and H1-with-hands task configs.
   - This is the main place to change play-mode behavior, sensors, rewards, and
     robot/task wiring.
 - `src/mjlab_homierl/rl_cfg.py`
@@ -26,7 +26,7 @@
 - `src/mjlab_homierl/rl/`
   - Custom runner, HIMPPO implementation, ONNX export.
 - `src/mjlab_homierl/robots/`
-  - H1 and Robotiq assets/constants.
+  - H1 and Robotiq assets/constants (G1 comes from mjlab's asset zoo).
 - `src/mjlab_homierl/scripts/`
   - Standalone helpers such as the lower-body inference script.
 - `tests/`
@@ -40,6 +40,7 @@
 - Importing `mjlab_homierl` runs task registration in
   `src/mjlab_homierl/__init__.py`.
 - Registered task IDs:
+  - `Mjlab-Homie-Unitree-G1`
   - `Mjlab-Homie-Unitree-H1`
   - `Mjlab-Homie-Unitree-H1-with_hands`
 
@@ -66,7 +67,7 @@
 - CPU-only fallback:
   - `uv sync --extra cpu`
 - Common commands:
-  - `uv run list_envs`
+  - `uv run list-envs`
   - `uv run train <TaskID> ...`
   - `uv run play <TaskID> --checkpoint-file /path/to/model.pt ...`
   - `uv run pytest tests/test_registration.py tests/test_env_cfgs.py tests/test_rl_cfg.py tests/test_h1_assets.py -q`

@@ -1,4 +1,4 @@
-"""RL configuration for the HOMIE H1 tasks."""
+"""RL configuration for the HOMIE tasks."""
 
 from dataclasses import dataclass, field
 from typing import Any
@@ -8,7 +8,8 @@ from mjlab.rl import RslRlBaseRunnerCfg
 
 @dataclass
 class HomieHimActorCfg:
-  hidden_dims: tuple[int, ...] = (512, 256, 128)
+  # OpenHomie HIMActorCritic hidden dims.
+  hidden_dims: tuple[int, ...] = (512, 256, 256)
   activation: str = "elu"
   distribution_cfg: dict[str, Any] = field(
     default_factory=lambda: {
@@ -24,7 +25,7 @@ class HomieHimActorCfg:
 
 @dataclass
 class HomieHimCriticCfg:
-  hidden_dims: tuple[int, ...] = (512, 256, 128)
+  hidden_dims: tuple[int, ...] = (512, 256, 256)
   activation: str = "elu"
   class_name: str = "mjlab_homierl.rl.himppo.actor_critic.HIMActorCritic"
 
@@ -57,11 +58,21 @@ class HomieHimOnPolicyRunnerCfg(RslRlBaseRunnerCfg):
   algorithm: HomieHimPpoAlgorithmCfg = field(default_factory=HomieHimPpoAlgorithmCfg)
 
 
-def unitree_h1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
-  """Create the HIMPPO runner configuration for the HOMIE tasks."""
+def homie_himppo_runner_cfg(experiment_name: str) -> HomieHimOnPolicyRunnerCfg:
+  """HIM-PPO runner configuration shared by the HOMIE tasks."""
   return HomieHimOnPolicyRunnerCfg(
-    experiment_name="h1_homie_himppo",
-    save_interval=50,
+    experiment_name=experiment_name,
+    save_interval=200,
     num_steps_per_env=50,
     max_iterations=30_000,
+    # Keep W&B metric logging but never upload checkpoints/ONNX artifacts.
+    upload_model=False,
   )
+
+
+def unitree_g1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
+  return homie_himppo_runner_cfg("g1_homie_himppo")
+
+
+def unitree_h1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
+  return homie_himppo_runner_cfg("h1_homie_himppo")

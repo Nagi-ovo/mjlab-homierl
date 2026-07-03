@@ -3,7 +3,6 @@ import os
 
 import torch
 import torch.nn.functional as F
-
 from mjlab.envs import ManagerBasedRlEnv
 from mjlab.rl.exporter_utils import (
   attach_metadata_to_onnx,
@@ -28,17 +27,17 @@ class _HimOnnxPolicyExporter(torch.nn.Module):
     # NOTE: Do not deepcopy the full actor_critic module.
     # HIMPPO policies cache non-leaf tensors (e.g., action distribution mean/std)
     # which PyTorch does not allow to be deep-copied in newer versions.
-    self.actor = copy.deepcopy(getattr(actor_critic, "actor"))
-    self.estimator = copy.deepcopy(getattr(actor_critic, "estimator").encoder)
-    self.num_actor_obs = int(getattr(actor_critic, "num_actor_obs"))
-    self.num_one_step_obs = int(getattr(actor_critic, "num_one_step_obs"))
+    self.actor = copy.deepcopy(actor_critic.actor)
+    self.estimator = copy.deepcopy(actor_critic.estimator.encoder)
+    self.num_actor_obs = int(actor_critic.num_actor_obs)
+    self.num_one_step_obs = int(actor_critic.num_one_step_obs)
     self.actor_proprioceptive_obs_length = int(
-      getattr(actor_critic, "actor_proprioceptive_obs_length")
+      actor_critic.actor_proprioceptive_obs_length
     )
     self.num_height_points = int(getattr(actor_critic, "num_height_points", 0))
     self.actor_use_height = bool(getattr(actor_critic, "actor_use_height", False))
     if self.actor_use_height:
-      self.terrain_encoder = copy.deepcopy(getattr(actor_critic, "terrain_encoder"))
+      self.terrain_encoder = copy.deepcopy(actor_critic.terrain_encoder)
     else:
       self.terrain_encoder = None
 
@@ -63,7 +62,9 @@ class _HimOnnxPolicyExporter(torch.nn.Module):
       assert self.terrain_encoder is not None
       terrain_in = obs[:, -(self.num_height_points + self.num_one_step_obs) :]
       terrain_latent = self.terrain_encoder(terrain_in)
-      last_step = obs[:, -(self.num_height_points + self.num_one_step_obs) : -self.num_height_points]
+      last_step = obs[
+        :, -(self.num_height_points + self.num_one_step_obs) : -self.num_height_points
+      ]
       actor_in = torch.cat((last_step, vel, z, terrain_latent), dim=-1)
     else:
       last_step = obs[:, -self.num_one_step_obs :]
@@ -101,7 +102,8 @@ def export_homie_policy_as_onnx(
     os.makedirs(path, exist_ok=True)
 
   if not (
-    hasattr(actor_critic, "act_inference_actor_obs") and hasattr(actor_critic, "estimator")
+    hasattr(actor_critic, "act_inference_actor_obs")
+    and hasattr(actor_critic, "estimator")
   ):
     raise TypeError("HOMIE ONNX export expects a HIMActorCritic-compatible policy.")
 

@@ -2,26 +2,43 @@
 
 [Screencast from 2026-03-25 19-53-04.webm](https://github.com/user-attachments/assets/a401ea12-95c9-4aec-a6dd-0c6c99aa47aa)
 
-`mjlab-homierl` is an external `mjlab` task package for reproducing the lower-body
-locomotion part of HOMIE on Unitree H1. It follows the standard `anymal_c_velocity`
-style layout: the repository only contains custom tasks, assets, and the HIMPPO
-training stack, while the core simulator/runtime comes from upstream `mjlab`.
+`mjlab-homierl` is an external `mjlab` task package reproducing the lower-body
+locomotion RL portion of
+[HOMIE: Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit](https://arxiv.org/abs/2502.13013)
+on Unitree G1 (the robot used by the original OpenHomie release) and Unitree H1.
+It follows the standard `anymal_c_velocity` style layout: the repository only
+contains custom tasks, assets, and the HIM-PPO training stack, while the core
+simulator/runtime comes from upstream `mjlab`.
 
-This repository targets the lower-body locomotion RL portion of
-[HOMIE: Humanoid Loco-Manipulation with Isomorphic Exoskeleton Cockpit](https://arxiv.org/abs/2502.13013).
+Reward terms, weights, command sampling (1/3 squat, 1/2 walk, 1/6 stand every
+4 s), the upper-body disturbance curriculum, and the HIM-PPO hyperparameters
+follow the OpenHomie reference implementation (`HomieRL/legged_gym`).
+Intentional deviations from OpenHomie are:
+
+- Contact-based termination is replaced by contact penalties plus a
+  torso-contact termination (G1), matching MuJoCo Warp's contact model.
+- Domain randomization uses mjlab-native `dr.*` events (PD gains, link mass,
+  payload, CoM offset, encoder bias, foot friction). OpenHomie's per-step
+  torque injection has no mjlab equivalent and is approximated by PD-gain
+  randomization and encoder bias.
+- Per-joint action scales are derived from actuator effort/stiffness
+  (`0.25 * effort / stiffness`), the mjlab convention, instead of a uniform
+  0.25.
+- The HIM estimator's next-step critic observation at termination steps is the
+  post-reset observation (mjlab computes observations after resets).
 
 ## Structure
 
 ```text
 src/mjlab_homierl/
   __init__.py              # entry-point task registration
-  homie_env_cfg.py         # base HOMIE task config
-  env_cfgs.py              # H1 / H1-with-hands overrides
-  rl_cfg.py                # HIMPPO runner config
-  mdp/                     # HOMIE-specific commands, rewards, observations
-  rl/                      # custom HIMPPO algorithm, runner, ONNX export
+  homie_env_cfg.py         # base HOMIE task config (OpenHomie rewards/commands)
+  env_cfgs.py              # G1 / H1 / H1-with-hands configs
+  rl_cfg.py                # HIM-PPO runner config
+  mdp/                     # HOMIE commands, rewards, observations, actions
+  rl/                      # HIM-PPO algorithm, runner, ONNX export
   robots/
-    unitree_h1/            # H1 XML + constants
+    unitree_h1/            # H1 XML + constants (G1 comes from mjlab's asset zoo)
     robotiq_2f85/          # gripper XML assets
 ```
 
@@ -52,11 +69,12 @@ For local docs builds:
 uv sync --extra docs
 ```
 
-This package depends on upstream `mjlab>=1.2.0,<1.3.0` and registers tasks through
-the `mjlab.tasks` entry-point group.
+This package depends on upstream `mjlab>=1.5.0,<1.6.0` and registers tasks
+through the `mjlab.tasks` entry-point group.
 
 ## Registered Tasks
 
+- `Mjlab-Homie-Unitree-G1`
 - `Mjlab-Homie-Unitree-H1`
 - `Mjlab-Homie-Unitree-H1-with_hands`
 
@@ -69,44 +87,33 @@ training and go straight to playback.
 List available environments:
 
 ```bash
-uv run list_envs
+uv run list-envs
 ```
 
 Train:
 
 ```bash
+uv run train Mjlab-Homie-Unitree-G1 --env.scene.num-envs 4096
 uv run train Mjlab-Homie-Unitree-H1 --env.scene.num-envs 4096
-uv run train Mjlab-Homie-Unitree-H1-with_hands --env.scene.num-envs 4096
 ```
 
-Multi-GPU training is also supported by the upstream CLI:
+The runner config sets `upload_model=False`: metrics are logged to W&B (when
+the `wandb` logger is selected) but checkpoints and ONNX exports stay local.
+Use `--agent.logger tensorboard` to skip W&B entirely.
 
-```bash
-uv run train Mjlab-Homie-Unitree-H1 \
-  --gpu-ids 0 1 \
-  --env.scene.num-envs 4096
-
-uv run train Mjlab-Homie-Unitree-H1-with_hands \
-  --gpu-ids 0 1 \
-  --env.scene.num-envs 4096
-```
+Note: the HIM-PPO algorithm is single-GPU; the upstream `--gpu-ids` multi-GPU
+path is not supported.
 
 Play:
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1 --checkpoint-file /path/to/model.pt --viewer viser
-uv run play Mjlab-Homie-Unitree-H1-with_hands --checkpoint-file /path/to/model.pt --viewer viser
+uv run play Mjlab-Homie-Unitree-G1 --checkpoint-file /path/to/model.pt --viewer viser
 ```
 
 More explicit playback examples:
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1 \
-  --checkpoint-file /path/to/model.pt \
-  --num-envs 30 \
-  --viewer viser
-
-uv run play Mjlab-Homie-Unitree-H1-with_hands \
+uv run play Mjlab-Homie-Unitree-G1 \
   --checkpoint-file /path/to/model.pt \
   --num-envs 30 \
   --viewer viser \
@@ -116,14 +123,16 @@ uv run play Mjlab-Homie-Unitree-H1-with_hands \
 Sanity-check the MDP before training:
 
 ```bash
-uv run play Mjlab-Homie-Unitree-H1 --agent zero
-uv run play Mjlab-Homie-Unitree-H1 --agent random
+uv run play Mjlab-Homie-Unitree-G1 --agent zero
+uv run play Mjlab-Homie-Unitree-G1 --agent random
 ```
 
 ## Notes
 
 - The repository no longer vendors the `mjlab` framework itself.
-- HIMPPO remains package-local under `mjlab_homierl.rl.himppo`.
+- HIM-PPO remains package-local under `mjlab_homierl.rl.himppo`. Left/right
+  mirror maps for its symmetry augmentation are derived from joint names, so
+  any humanoid with `left_*`/`right_*` joint naming works.
 - `Mjlab-Homie-Unitree-H1-with_hands` mounts the 2F85 grippers with hand
   collisions disabled by default. For HOMIE this keeps the hands as inertial /
   disturbance attachments instead of contact-rich manipulation tools.

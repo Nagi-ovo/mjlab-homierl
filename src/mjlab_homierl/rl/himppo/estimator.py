@@ -85,7 +85,10 @@ class HIMEstimator(nn.Module):
     return vel.detach(), z.detach()
 
   def update(
-    self, obs_history: torch.Tensor, next_critic_obs: torch.Tensor, lr: float | None = None
+    self,
+    obs_history: torch.Tensor,
+    next_critic_obs: torch.Tensor,
+    lr: float | None = None,
   ) -> tuple[float, float]:
     if lr is not None:
       self.learning_rate = float(lr)

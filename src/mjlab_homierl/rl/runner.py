@@ -4,9 +4,9 @@ from typing import Any
 
 import torch
 import wandb
-
 from mjlab.rl import RslRlVecEnvWrapper
 from mjlab.rl.runner import MjlabOnPolicyRunner
+
 from mjlab_homierl.rl.exporter import (
   attach_onnx_metadata,
   export_homie_policy_as_onnx,
@@ -65,7 +65,9 @@ class HomieHimOnPolicyRunner(MjlabOnPolicyRunner):
         f"Got actor_terms={actor_terms}."
       )
 
-    actor_term_cfg = env_unwrapped.observation_manager.get_term_cfg(actor_group, actor_terms[0])
+    actor_term_cfg = env_unwrapped.observation_manager.get_term_cfg(
+      actor_group, actor_terms[0]
+    )
     actor_history_length = max(1, int(actor_term_cfg.history_length))
     actor_obs_dim = int(obs[actor_group].shape[-1])
     if actor_obs_dim % actor_history_length != 0:
@@ -76,7 +78,7 @@ class HomieHimOnPolicyRunner(MjlabOnPolicyRunner):
     actor_cfg = dict(train_cfg["actor"])
     critic_cfg = dict(train_cfg.get("critic", {}))
     actor_cfg.pop("class_name", None)
-    actor_hidden_dims = tuple(actor_cfg.pop("hidden_dims", (512, 256, 128)))
+    actor_hidden_dims = tuple(actor_cfg.pop("hidden_dims", (512, 256, 256)))
     activation = actor_cfg.pop("activation", critic_cfg.pop("activation", "elu"))
     distribution_cfg = actor_cfg.pop("distribution_cfg", None) or {}
     init_noise_std = float(distribution_cfg.get("init_std", 1.0))
@@ -143,17 +145,27 @@ class HomieHimOnPolicyRunner(MjlabOnPolicyRunner):
     map_location: str | None = None,
   ) -> dict:
     if not self._inference_only:
-      return super().load(path, load_cfg=load_cfg, strict=strict, map_location=map_location)
+      return super().load(
+        path, load_cfg=load_cfg, strict=strict, map_location=map_location
+      )
 
     loaded_dict = torch.load(path, map_location=map_location, weights_only=False)
-    policy_state_dict = loaded_dict.get("policy_state_dict") or loaded_dict.get("model_state_dict")
+    policy_state_dict = loaded_dict.get("policy_state_dict") or loaded_dict.get(
+      "model_state_dict"
+    )
     if policy_state_dict is None:
-      raise KeyError("Checkpoint must contain `policy_state_dict` or `model_state_dict`.")
+      raise KeyError(
+        "Checkpoint must contain `policy_state_dict` or `model_state_dict`."
+      )
 
     policy = self.alg.get_policy()
     model_keys = set(policy.state_dict().keys())
-    filtered_state_dict = {k: v for k, v in policy_state_dict.items() if k in model_keys}
-    missing_keys, unexpected_keys = policy.load_state_dict(filtered_state_dict, strict=False)
+    filtered_state_dict = {
+      k: v for k, v in policy_state_dict.items() if k in model_keys
+    }
+    missing_keys, unexpected_keys = policy.load_state_dict(
+      filtered_state_dict, strict=False
+    )
     if strict:
       missing_keys = [k for k in missing_keys if not k.startswith("critic.")]
       unexpected_keys = [k for k in unexpected_keys if not k.startswith("critic.")]

@@ -39,11 +39,16 @@ class HIMRolloutStorage:
     privileged_obs_shape: tuple[int, ...] | None,
     actions_shape: tuple[int, ...],
     device: torch.device,
+    transitions_per_step: int = 2,
   ) -> None:
     self.device = device
 
-    # Double capacity since we store (original, mirrored) transitions each step.
-    self.num_transitions_per_env = int(num_transitions_per_env) * 2
+    # With symmetry augmentation (transitions_per_step=2), each env step stores
+    # the original and the mirrored transition.
+    self.transitions_per_step = int(transitions_per_step)
+    self.num_transitions_per_env = (
+      int(num_transitions_per_env) * self.transitions_per_step
+    )
     self.num_envs = int(num_envs)
 
     self.observations = torch.zeros(
@@ -121,7 +126,9 @@ class HIMRolloutStorage:
       self.privileged_observations[self.step].copy_(transition.critic_observations)
     if self.next_privileged_observations is not None:
       assert transition.next_critic_observations is not None
-      self.next_privileged_observations[self.step].copy_(transition.next_critic_observations)
+      self.next_privileged_observations[self.step].copy_(
+        transition.next_critic_observations
+      )
 
     self.actions[self.step].copy_(transition.actions)
     self.rewards[self.step].copy_(transition.rewards.view(-1, 1))
@@ -135,11 +142,13 @@ class HIMRolloutStorage:
   def clear(self) -> None:
     self.step = 0
 
-  def compute_returns(self, last_values: torch.Tensor, gamma: float, lam: float) -> None:
-    num_steps = self.num_transitions_per_env // 2
+  def compute_returns(
+    self, last_values: torch.Tensor, gamma: float, lam: float
+  ) -> None:
+    num_steps = self.num_transitions_per_env // self.transitions_per_step
 
     def _resize(x: torch.Tensor) -> torch.Tensor:
-      return x.view(num_steps, 2, -1, 1)
+      return x.view(num_steps, self.transitions_per_step, -1, 1)
 
     advantage = 0.0
     for step in reversed(range(num_steps)):
@@ -170,6 +179,7 @@ class HIMRolloutStorage:
 
     observations = self.observations.flatten(0, 1)
     if self.privileged_observations is not None:
+      assert self.next_privileged_observations is not None
       critic_observations = self.privileged_observations.flatten(0, 1)
       next_critic_observations = self.next_privileged_observations.flatten(0, 1)
     else:
@@ -202,4 +212,3 @@ class HIMRolloutStorage:
           old_mu[batch_idx],
           old_sigma[batch_idx],
         )
-

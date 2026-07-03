@@ -6,7 +6,6 @@ from typing import Sequence
 
 import mujoco
 import numpy as np
-
 from mjlab.actuator import BuiltinPositionActuatorCfg
 from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 from mjlab.utils.actuator import (
@@ -445,7 +444,6 @@ for a in H1_ARTICULATION.actuators:
 
 if __name__ == "__main__":
   import mujoco.viewer as viewer
-
   from mjlab.entity.entity import Entity
 
   robot = Entity(get_h1_robot_cfg())
