@@ -14,6 +14,10 @@ from mjlab_homierl import mdp
 from mjlab_homierl.homie_env_cfg import make_him_observations, make_homie_env_cfg
 from mjlab_homierl.mdp import RelativeHeightCommandCfg, UniformVelocityCommandCfg
 from mjlab_homierl.robots import get_h1_robot_cfg
+from mjlab_homierl.robots.unitree_dex3 import (
+  DEX3_MOUNT_BODY_PATTERN,
+  attach_dex3_hands,
+)
 from mjlab_homierl.robots.unitree_g1_deploy import (
   G1_DEPLOY_ACTION_SCALE,
   G1_DEPLOY_PD_GAINS,
@@ -173,6 +177,7 @@ def unitree_g1_homie_env_cfg(
   play: bool = False,
   curriculum_start_step: int = 0,
   gains: str = "deploy",
+  dex3: bool = False,
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
 
@@ -184,6 +189,10 @@ def unitree_g1_homie_env_cfg(
       - ``"mjlab"``: mjlab asset-zoo first-principles gains (armature x
         natural-frequency) with per-joint effort/stiffness action scales.
         Sim-only / ablation variant.
+    dex3: Mount Unitree Dex3 hands (~0.53 kg each) as inertial attachments and
+      randomize an additional held-object payload. The observation/action
+      interface is unchanged, so checkpoints remain compatible with the base
+      task (BiGym's G1 is G1-Dex3).
   """
   if gains not in ("deploy", "mjlab"):
     raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
@@ -196,6 +205,18 @@ def unitree_g1_homie_env_cfg(
   else:
     robot_cfg = g1_constants.get_g1_robot_cfg()
     robot_cfg.init_state = g1_constants.HOME_KEYFRAME
+  if dex3:
+    robot_cfg.spec_fn = lambda: attach_dex3_hands(g1_constants.get_spec())
+    # Held-object payload on top of the hand mass itself.
+    cfg.events["hand_payload"] = EventTermCfg(
+      mode="startup",
+      func=mdp.dr.body_mass,
+      params={
+        "asset_cfg": SceneEntityCfg("robot", body_names=(DEX3_MOUNT_BODY_PATTERN,)),
+        "operation": "add",
+        "ranges": (0.0, 1.0),
+      },
+    )
   cfg.scene.entities = {"robot": robot_cfg}
 
   cfg.sim.nconmax = None

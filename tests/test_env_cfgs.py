@@ -88,6 +88,20 @@ def test_g1_gain_variants() -> None:
     unitree_g1_homie_env_cfg(gains="unknown")
 
 
+def test_g1_dex3_variant() -> None:
+  cfg = unitree_g1_homie_env_cfg(dex3=True)
+  assert "hand_payload" in cfg.events
+  # Interface must stay identical to the base task (checkpoint-compatible).
+  base = unitree_g1_homie_env_cfg()
+  assert (
+    cfg.actions["joint_pos"].actuator_names == base.actions["joint_pos"].actuator_names
+  )
+  spec = cfg.scene.entities["robot"].spec_fn()
+  dex3_bodies = [b.name for b in spec.bodies if "dex3" in b.name]
+  assert "left_dex3/left_dex3_mount" in dex3_bodies
+  assert "right_dex3/right_dex3_mount" in dex3_bodies
+
+
 def test_h1_gain_variants() -> None:
   from mjlab_homierl.robots.unitree_h1_deploy import H1_DEPLOY_PD_GAINS
 
