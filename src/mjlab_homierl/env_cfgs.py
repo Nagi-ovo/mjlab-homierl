@@ -1,5 +1,7 @@
 """Robot-specific HOMIE environment configurations (Unitree G1 and H1)."""
 
+import os
+
 from mjlab.asset_zoo.robots.unitree_g1 import g1_constants
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
@@ -78,12 +80,13 @@ def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
   cfg.events.pop("push_robot", None)
 
   # Upper-body disturbance amplitude during play. The play env has no
-  # curriculum, so this ratio stays fixed: 0.0 holds the default pose
-  # (isolates lower-body gait for inspection); set 1.0 to preview
-  # deployment-like full-range upper-body disturbances.
+  # curriculum, so this ratio stays fixed. Default 0.0 holds the default pose
+  # (isolates lower-body gait for inspection); the upstream play CLI exposes
+  # no env overrides, so the value can be set via an environment variable:
+  #   HOMIE_PLAY_UPPER_RATIO=1.0 uv run play ...   # deployment-like disturbance
   upper = cfg.actions["upper_body_pose"]
   assert isinstance(upper, mdp.UpperBodyPoseActionCfg)
-  upper.initial_ratio = 0.0
+  upper.initial_ratio = float(os.environ.get("HOMIE_PLAY_UPPER_RATIO", "0.0"))
 
 
 ##

@@ -139,6 +139,13 @@ uv run play Mjlab-Homie-Unitree-G1 --agent zero
 uv run play Mjlab-Homie-Unitree-G1 --agent random
 ```
 
+Play holds the upper body at its default pose by default (isolating the
+lower-body gait). To preview deployment-like upper-body disturbances instead:
+
+```bash
+HOMIE_PLAY_UPPER_RATIO=1.0 uv run play Mjlab-Homie-Unitree-G1 --checkpoint-file ...
+```
+
 ## Notes
 
 - The repository no longer vendors the `mjlab` framework itself.
