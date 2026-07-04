@@ -28,12 +28,20 @@ register_mjlab_task(
   runner_cls=HomieHimOnPolicyRunner,
 )
 
-# G1 with Dex3 hands mounted (inertial attachments; same obs/action interface,
-# so base-task checkpoints load into this variant and vice versa).
+# G1 with real hand models mounted (inertial attachments; same obs/action
+# interface, so base-task checkpoints load into these variants and vice versa).
 register_mjlab_task(
   task_id="Mjlab-Homie-Unitree-G1-with_dex3",
-  env_cfg=unitree_g1_homie_env_cfg(dex3=True),
-  play_env_cfg=unitree_g1_homie_env_cfg(play=True, dex3=True),
+  env_cfg=unitree_g1_homie_env_cfg(hands="dex3"),
+  play_env_cfg=unitree_g1_homie_env_cfg(play=True, hands="dex3"),
+  rl_cfg=unitree_g1_homie_himppo_runner_cfg(),
+  runner_cls=HomieHimOnPolicyRunner,
+)
+
+register_mjlab_task(
+  task_id="Mjlab-Homie-Unitree-G1-with_inspire",
+  env_cfg=unitree_g1_homie_env_cfg(hands="inspire"),
+  play_env_cfg=unitree_g1_homie_env_cfg(play=True, hands="inspire"),
   rl_cfg=unitree_g1_homie_himppo_runner_cfg(),
   runner_cls=HomieHimOnPolicyRunner,
 )

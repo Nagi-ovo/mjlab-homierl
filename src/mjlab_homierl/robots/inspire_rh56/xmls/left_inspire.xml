@@ -1,0 +1,36 @@
+<mujoco model="left_inspire">
+  <compiler meshdir="assets" autolimits="true" />
+  <asset>
+    <mesh name="L_hand_base_link" file="L_hand_base_link.STL" />
+    <mesh name="Link11_L" file="Link11_L.STL" />
+    <mesh name="Link12_L" file="Link12_L.STL" />
+    <mesh name="Link13_L" file="Link13_L.STL" />
+    <mesh name="Link14_L" file="Link14_L.STL" />
+    <mesh name="Link15_L" file="Link15_L.STL" />
+    <mesh name="Link16_L" file="Link16_L.STL" />
+    <mesh name="Link17_L" file="Link17_L.STL" />
+    <mesh name="Link18_L" file="Link18_L.STL" />
+    <mesh name="Link19_L" file="Link19_L.STL" />
+    <mesh name="Link20_L" file="Link20_L.STL" />
+    <mesh name="Link21_L" file="Link21_L.STL" />
+    <mesh name="Link22_L" file="Link22_L.STL" />
+  </asset>
+  <worldbody>
+    <body name="left_inspire_mount" pos="0.0415 0 0" quat="0.70710678 0 0 0.70710678">
+      <inertial pos="0.034526603 -0.053000852 -0.0060137622" quat="0.048058173 0.67976838 0.28419527 0.67441709" mass="0.54" diaginertia="0.0028877959 0.0027385867 0.00057580039" />
+      <geom type="mesh" mesh="L_hand_base_link" pos="0.00027391201 -0.064067308 -0.0012362196" quat="0.70033502 0.71323732 0.027308399 -0.0088111728" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link11_L" pos="-0.017040527 -0.062039538 0.024982094" quat="-0.027664766 -0.1879331 -0.14297533 0.97132583" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link12_L" pos="-0.022854159 -0.073786605 0.054852649" quat="-0.027686212 -0.080300248 -0.32187822 0.94296328" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link13_L" pos="-0.027697411 -0.092912447 0.08322939" quat="-0.03207626 -0.078278546 -0.37781278 0.92200927" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link14_L" pos="-0.031179089 -0.1091427 0.10357463" quat="-0.031572489 -0.078483089 -0.37187908 0.92441849" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link15_L" pos="0.0013473718 -0.14826238 0.02667391" quat="0.51277203 0.48689305 -0.49546714 0.50449214" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link16_L" pos="0.00015019188 -0.18663551 0.028013896" quat="0.53428574 0.46318328 -0.5177952 0.48154764" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link17_L" pos="0.0013473718 -0.14863 0.0069498588" quat="0.50419638 0.4957681 -0.50419638 0.4957681" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link18_L" pos="-0.0001778615 -0.18853501 0.0069504312" quat="0.52859336 0.4696691 -0.52859336 0.4696691" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link19_L" pos="0.0013473718 -0.14811018 -0.012882553" quat="0.49104588 0.50879657 -0.51700133 0.48239986" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link20_L" pos="0.00015025911 -0.18645393 -0.014892093" quat="0.51357387 0.4860472 -0.53830784 0.45850264" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link21_L" pos="0.0013473718 -0.14654965 -0.032660488" quat="0.47755883 0.52147633 -0.52945195 0.46870101" contype="0" conaffinity="0" group="2" />
+      <geom type="mesh" mesh="Link22_L" pos="0.00053864078 -0.18143632 -0.036326995" quat="0.49845766 0.5015376 -0.54815212 0.44668698" contype="0" conaffinity="0" group="2" />
+    </body>
+  </worldbody>
+</mujoco>

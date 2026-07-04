@@ -96,8 +96,9 @@ def test_g1_has_no_self_collision_penalty() -> None:
   assert "self_collisions" in unitree_h1_homie_env_cfg().rewards
 
 
-def test_g1_dex3_variant() -> None:
-  cfg = unitree_g1_homie_env_cfg(dex3=True)
+@pytest.mark.parametrize("hands", ["dex3", "inspire"])
+def test_g1_hand_variants(hands) -> None:
+  cfg = unitree_g1_homie_env_cfg(hands=hands)
   assert "hand_payload" in cfg.events
   # Interface must stay identical to the base task (checkpoint-compatible).
   base = unitree_g1_homie_env_cfg()
@@ -105,9 +106,12 @@ def test_g1_dex3_variant() -> None:
     cfg.actions["joint_pos"].actuator_names == base.actions["joint_pos"].actuator_names
   )
   spec = cfg.scene.entities["robot"].spec_fn()
-  dex3_bodies = [b.name for b in spec.bodies if "dex3" in b.name]
-  assert "left_dex3/left_dex3_mount" in dex3_bodies
-  assert "right_dex3/right_dex3_mount" in dex3_bodies
+  hand_bodies = [b.name for b in spec.bodies if hands in b.name]
+  assert f"left_{hands}/left_{hands}_mount" in hand_bodies
+  assert f"right_{hands}/right_{hands}_mount" in hand_bodies
+
+  with pytest.raises(ValueError):
+    unitree_g1_homie_env_cfg(hands="unknown")
 
 
 def test_h1_gain_variants() -> None:

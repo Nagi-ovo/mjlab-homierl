@@ -14,6 +14,10 @@ from mjlab_homierl import mdp
 from mjlab_homierl.homie_env_cfg import make_him_observations, make_homie_env_cfg
 from mjlab_homierl.mdp import RelativeHeightCommandCfg, UniformVelocityCommandCfg
 from mjlab_homierl.robots import get_h1_robot_cfg
+from mjlab_homierl.robots.inspire_rh56 import (
+  INSPIRE_MOUNT_BODY_PATTERN,
+  attach_inspire_hands,
+)
 from mjlab_homierl.robots.unitree_dex3 import (
   DEX3_MOUNT_BODY_PATTERN,
   attach_dex3_hands,
@@ -177,7 +181,7 @@ def unitree_g1_homie_env_cfg(
   play: bool = False,
   curriculum_start_step: int = 0,
   gains: str = "deploy",
-  dex3: bool = False,
+  hands: str | None = None,
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
 
@@ -189,10 +193,11 @@ def unitree_g1_homie_env_cfg(
       - ``"mjlab"``: mjlab asset-zoo first-principles gains (armature x
         natural-frequency) with per-joint effort/stiffness action scales.
         Sim-only / ablation variant.
-    dex3: Mount Unitree Dex3 hands (~0.53 kg each) as inertial attachments and
-      randomize an additional held-object payload. The observation/action
-      interface is unchanged, so checkpoints remain compatible with the base
-      task (BiGym's G1 is G1-Dex3).
+    hands: Mount real hand models as inertial attachments and randomize an
+      additional held-object payload. The observation/action interface is
+      unchanged, so checkpoints remain compatible with the base task.
+      - ``"dex3"``: Unitree Dex3 (~0.53 kg each; BiGym's G1 is G1-Dex3).
+      - ``"inspire"``: Inspire RH56 (RH56DFX spec weight, 0.54 kg each).
   """
   if gains not in ("deploy", "mjlab"):
     raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
@@ -205,14 +210,23 @@ def unitree_g1_homie_env_cfg(
   else:
     robot_cfg = g1_constants.get_g1_robot_cfg()
     robot_cfg.init_state = g1_constants.HOME_KEYFRAME
-  if dex3:
-    robot_cfg.spec_fn = lambda: attach_dex3_hands(g1_constants.get_spec())
+  if hands is not None:
+    try:
+      attach_fn, mount_pattern = {
+        "dex3": (attach_dex3_hands, DEX3_MOUNT_BODY_PATTERN),
+        "inspire": (attach_inspire_hands, INSPIRE_MOUNT_BODY_PATTERN),
+      }[hands]
+    except KeyError:
+      raise ValueError(
+        f"Unknown hands variant '{hands}'. Use 'dex3' or 'inspire'."
+      ) from None
+    robot_cfg.spec_fn = lambda: attach_fn(g1_constants.get_spec())
     # Held-object payload on top of the hand mass itself.
     cfg.events["hand_payload"] = EventTermCfg(
       mode="startup",
       func=mdp.dr.body_mass,
       params={
-        "asset_cfg": SceneEntityCfg("robot", body_names=(DEX3_MOUNT_BODY_PATTERN,)),
+        "asset_cfg": SceneEntityCfg("robot", body_names=(mount_pattern,)),
         "operation": "add",
         "ranges": (0.0, 1.0),
       },
