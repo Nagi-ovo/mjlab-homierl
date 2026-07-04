@@ -1,4 +1,6 @@
 import copy
+import importlib.metadata
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -139,6 +141,14 @@ def homie_extra_metadata(env: ManagerBasedRlEnv) -> dict:
   """
   metadata: dict = {"train_repo_commit": _train_repo_commit()}
 
+  # Physics-stack provenance: the benchmark runtime must match these versions
+  # or settle behavior and gait drift relative to training.
+  for pkg in ("mjlab", "mujoco", "mujoco-warp"):
+    try:
+      metadata[f"version_{pkg.replace('-', '_')}"] = importlib.metadata.version(pkg)
+    except importlib.metadata.PackageNotFoundError:
+      pass
+
   # Init keyframe: joint pose (base metadata `default_joint_pos`) and base
   # height must travel as a pair.
   robot_cfg = env.cfg.scene.entities["robot"]
@@ -154,6 +164,26 @@ def homie_extra_metadata(env: ManagerBasedRlEnv) -> dict:
   except KeyError:
     pass
 
+  # Twist command semantics: body(base)-frame velocities and training ranges.
+  # Commands outside these ranges are out-of-distribution for the policy.
+  try:
+    twist_ranges = env.command_manager.get_term("twist").cfg.ranges
+    metadata["command_frame"] = "base"
+    metadata["twist_command_ranges"] = json.dumps(
+      {
+        "lin_vel_x": list(twist_ranges.lin_vel_x),
+        "lin_vel_y": list(twist_ranges.lin_vel_y),
+        "ang_vel_z": list(twist_ranges.ang_vel_z),
+      }
+    )
+  except KeyError:
+    pass
+
+  # The joints the policy's action vector maps to, in output order (the base
+  # `joint_names` field lists the full robot; actions cover a subset).
+  action_term = env.action_manager.get_term("joint_pos")
+  metadata["action_joint_names"] = ",".join(action_term._target_names)
+
   # Observation scaling and layout of the flattened actor history.
   obs_term_cfg = env.observation_manager.get_term_cfg("actor", "him_obs")
   obs_scales = obs_term_cfg.params.get("obs_scales")
@@ -164,6 +194,22 @@ def homie_extra_metadata(env: ManagerBasedRlEnv) -> dict:
   metadata["obs_history_length"] = history_length
   actor_dim = env.observation_manager.group_obs_dim["actor"][0]
   metadata["num_one_step_obs"] = int(actor_dim) // history_length
+
+  # Field order of one step of the actor observation (see
+  # mdp.observations.him_actor_one_step_obs). joint_pos/joint_vel follow the
+  # full `joint_names` order; commands are (vx, vy, wz, height).
+  robot = env.scene["robot"]
+  num_joints = len(robot.joint_names)
+  metadata["one_step_obs_layout"] = json.dumps(
+    {
+      "command": 4,
+      "base_ang_vel": 3,
+      "projected_gravity": 3,
+      "joint_pos_rel": num_joints,
+      "joint_vel": num_joints,
+      "last_action": int(action_term.action_dim),
+    }
+  )
 
   return metadata
 
