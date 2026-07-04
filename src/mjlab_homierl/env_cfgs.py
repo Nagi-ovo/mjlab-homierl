@@ -350,6 +350,16 @@ def unitree_g1_homie_env_cfg(
     preserve_order=True,
   )
 
+  # OpenHomie G1 trains with self-collision disabled (IsaacGym
+  # ``self_collision = 1``) and has no self-collision penalty in its reward
+  # scales; leg separation is shaped by the lateral-distance terms instead.
+  # On the G1 the hanging wrists rest against the hip links (wrist kp 5-10
+  # cannot hold them clear), so a self-collision penalty fires on ~25-30% of
+  # steps at the default pose and intensifies as the thighs rise -- an
+  # anti-squat gradient that walled the 2026-07-03 run at ~0.67 m. Physical
+  # self-contacts remain simulated; only the penalty is dropped.
+  del cfg.rewards["self_collisions"]
+
   cfg.viewer.body_name = "torso_link"
 
   if play:

@@ -88,6 +88,14 @@ def test_g1_gain_variants() -> None:
     unitree_g1_homie_env_cfg(gains="unknown")
 
 
+def test_g1_has_no_self_collision_penalty() -> None:
+  # OpenHomie G1 trains with self-collision disabled (IsaacGym
+  # self_collision=1) and no such penalty in its reward scales; the term
+  # walled squatting via permanent wrist-hip contacts (see env cfg comment).
+  assert "self_collisions" not in unitree_g1_homie_env_cfg().rewards
+  assert "self_collisions" in unitree_h1_homie_env_cfg().rewards
+
+
 def test_g1_dex3_variant() -> None:
   cfg = unitree_g1_homie_env_cfg(dex3=True)
   assert "hand_payload" in cfg.events
