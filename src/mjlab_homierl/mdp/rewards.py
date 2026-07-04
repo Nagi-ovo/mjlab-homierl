@@ -435,7 +435,9 @@ def no_fly(
   sensor: ContactSensor = env.scene[sensor_name]
   assert sensor.data.force is not None
 
-  contacts = sensor.data.force[:, :, 2] > float(force_threshold)
+  # The net-force z sign depends on the contact normal orientation (foot-ground
+  # contacts report negative z here); contact presence is a magnitude test.
+  contacts = torch.abs(sensor.data.force[:, :, 2]) > float(force_threshold)
   reward = (torch.sum(contacts.float(), dim=1) == 1.0).float()
 
   if command_name is not None:
@@ -528,8 +530,10 @@ def contact_momentum(
 
   foot_vel_z = asset.data.site_lin_vel_w[:, asset_cfg.site_ids, 2]
   down_vel = torch.clamp(foot_vel_z, max=0.0)
+  # Normal-force magnitude: the net-force z sign depends on the contact
+  # normal orientation (foot-ground contacts report negative z here).
   excess_force = torch.clamp(
-    sensor.data.force[:, :, 2] - float(force_threshold), min=0.0
+    torch.abs(sensor.data.force[:, :, 2]) - float(force_threshold), min=0.0
   )
   return torch.sum(down_vel * excess_force, dim=1)
 
