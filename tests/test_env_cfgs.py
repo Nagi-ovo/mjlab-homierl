@@ -96,6 +96,25 @@ def test_g1_has_no_self_collision_penalty() -> None:
   assert "self_collisions" in unitree_h1_homie_env_cfg().rewards
 
 
+@pytest.mark.parametrize(
+  "make_cfg", [unitree_g1_homie_env_cfg, unitree_h1_homie_env_cfg]
+)
+def test_homie_dr_follows_openhomie_ranges(make_cfg) -> None:
+  from mjlab_homierl import mdp
+
+  cfg = make_cfg()
+  assert cfg.events["payload_mass"].params["ranges"] == (-5.0, 10.0)
+  assert cfg.events["foot_friction"].params["ranges"] == (0.1, 3.0)
+  assert cfg.events["encoder_bias"].params["bias_range"] == (-0.05, 0.05)
+  # Actuation latency: training randomizes 0..decimation-1 substeps; play
+  # runs the plant without it.
+  joint_pos = cfg.actions["joint_pos"]
+  assert isinstance(joint_pos, mdp.DelayedJointPositionActionCfg)
+  assert joint_pos.max_delay_substeps is None
+  play = make_cfg(play=True)
+  assert play.actions["joint_pos"].max_delay_substeps == 0
+
+
 def test_g1_base_task_randomizes_wrist_payload() -> None:
   # Hand-agnostic training: the bare-wrist payload envelope covers Dex3
   # (0.53 kg), Inspire RH56DFX (0.54 kg), and a held object.

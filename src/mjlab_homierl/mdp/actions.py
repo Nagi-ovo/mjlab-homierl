@@ -7,10 +7,86 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Sequence
 
 import torch
+from mjlab.envs.mdp.actions import JointPositionAction, JointPositionActionCfg
 from mjlab.managers.action_manager import ActionTerm, ActionTermCfg
 
 if TYPE_CHECKING:
   from mjlab.envs import ManagerBasedRlEnv
+
+
+@dataclass(kw_only=True)
+class DelayedJointPositionActionCfg(JointPositionActionCfg):
+  """Joint position action with randomized actuation latency.
+
+  OpenHomie DR (``domain_rand.delay``): each policy step, every env draws a
+  delay of 0..max physics substeps; the previous position target is held for
+  that many substeps before the new one takes effect. This models the real
+  robot's control-loop/communication latency (one policy step spans
+  ``decimation`` physics substeps, 5 ms each on the HOMIE tasks).
+  """
+
+  max_delay_substeps: int | None = None
+  """Maximum delay in physics substeps. ``None`` uses ``decimation - 1``
+  (OpenHomie's choice); ``0`` disables the delay entirely (play/eval)."""
+
+  def build(self, env: "ManagerBasedRlEnv") -> "DelayedJointPositionAction":
+    return DelayedJointPositionAction(self, env)
+
+
+class DelayedJointPositionAction(JointPositionAction):
+  """Applies the previous target for the first ``delay`` substeps of a step."""
+
+  cfg: "DelayedJointPositionActionCfg"
+
+  def __init__(self, cfg: "DelayedJointPositionActionCfg", env: ManagerBasedRlEnv):
+    super().__init__(cfg=cfg, env=env)
+    self._max_delay = (
+      env.cfg.decimation - 1
+      if cfg.max_delay_substeps is None
+      else int(cfg.max_delay_substeps)
+    )
+    if not 0 <= self._max_delay < env.cfg.decimation:
+      raise ValueError(
+        f"max_delay_substeps must be in [0, {env.cfg.decimation - 1}], got"
+        f" {self._max_delay}."
+      )
+    # Holding the default pose is the correct "previous target" after a reset.
+    self._default_target = self._entity.data.default_joint_pos[
+      :, self._target_ids
+    ].clone()
+    self._prev_target = self._default_target.clone()
+    self._delay = torch.zeros(self.num_envs, 1, device=self.device)
+    self._substep = 0
+
+  def process_actions(self, actions: torch.Tensor) -> None:
+    self._prev_target = self._processed_actions.clone()
+    super().process_actions(actions)
+    if self._max_delay > 0:
+      self._delay = torch.randint(
+        0, self._max_delay + 1, (self.num_envs, 1), device=self.device
+      ).float()
+    self._substep = 0
+
+  def apply_actions(self) -> None:
+    if self._max_delay == 0:
+      super().apply_actions()
+      return
+    use_new = (self._substep >= self._delay).float()
+    target = self._prev_target + (self._processed_actions - self._prev_target) * use_new
+    encoder_bias = self._entity.data.encoder_bias[:, self._target_ids]
+    self._entity.set_joint_position_target(
+      target - encoder_bias, joint_ids=self._target_ids
+    )
+    self._substep += 1
+
+  def reset(self, env_ids: torch.Tensor | slice | None = None) -> None:
+    super().reset(env_ids)
+    if env_ids is None:
+      env_ids = slice(None)
+    self._prev_target[env_ids] = self._default_target[env_ids]
+    # Freshly reset envs also have stale processed actions; align them so the
+    # first delayed substeps hold the default pose rather than a dead target.
+    self._processed_actions[env_ids] = self._default_target[env_ids]
 
 
 class UpperBodyPoseAction(ActionTerm):

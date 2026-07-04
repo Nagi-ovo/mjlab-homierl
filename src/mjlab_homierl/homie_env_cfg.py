@@ -13,7 +13,6 @@ import math
 
 import torch
 from mjlab.envs import ManagerBasedRlEnvCfg
-from mjlab.envs.mdp.actions import JointPositionActionCfg
 from mjlab.managers.action_manager import ActionTermCfg
 from mjlab.managers.command_manager import CommandTermCfg
 from mjlab.managers.curriculum_manager import CurriculumTermCfg
@@ -114,7 +113,9 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
   ##
 
   actions: dict[str, ActionTermCfg] = {
-    "joint_pos": JointPositionActionCfg(
+    # Randomized actuation latency (OpenHomie domain_rand.delay): 0..3 physics
+    # substeps per policy step. Disabled in play (see _apply_play_overrides).
+    "joint_pos": mdp.DelayedJointPositionActionCfg(
       entity_name="robot",
       actuator_names=(),  # Set per-robot (lower body only).
       scale=0.25,  # Set per-robot.
@@ -209,7 +210,9 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
       params={
         "asset_cfg": SceneEntityCfg("robot", geom_names=()),  # Set per-robot.
         "operation": "abs",
-        "ranges": (0.3, 1.2),
+        # OpenHomie friction_range. Effective because mjlab feet geoms carry
+        # priority=1, overriding the terrain's friction in contact mixing.
+        "ranges": (0.1, 3.0),
         "shared_random": True,
       },
     ),
@@ -218,7 +221,10 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.dr.encoder_bias,
       params={
         "asset_cfg": SceneEntityCfg("robot"),
-        "bias_range": (-0.015, 0.015),
+        # Approximates OpenHomie's joint_injection + actuation_offset (each
+        # +-0.05 rad): mjlab's encoder bias shifts observations and position
+        # targets coherently, modeling a joint zero-calibration error.
+        "bias_range": (-0.05, 0.05),
       },
     ),
     "base_com": EventTermCfg(
@@ -227,7 +233,8 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
       params={
         "asset_cfg": SceneEntityCfg("robot", body_names=()),  # Set per-robot.
         "operation": "add",
-        "ranges": {0: (-0.025, 0.025), 1: (-0.025, 0.025), 2: (-0.03, 0.03)},
+        # OpenHomie body_displacement: torso CoM shifted by up to +-0.1 m.
+        "ranges": {0: (-0.1, 0.1), 1: (-0.1, 0.1), 2: (-0.1, 0.1)},
       },
     ),
     "link_mass": EventTermCfg(
@@ -245,7 +252,8 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
       params={
         "asset_cfg": SceneEntityCfg("robot", body_names=()),  # Set per-robot (torso).
         "operation": "add",
-        "ranges": (-2.0, 5.0),
+        # OpenHomie payload_mass_range.
+        "ranges": (-5.0, 10.0),
       },
     ),
     "pd_gains": EventTermCfg(

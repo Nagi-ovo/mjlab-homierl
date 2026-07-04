@@ -87,6 +87,12 @@ def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
   cfg.curriculum = {}
   cfg.events.pop("push_robot", None)
 
+  # Actuation-latency DR is a training-time robustness measure; play/eval
+  # (including the BiGym plugin runtime) runs the plant without it.
+  joint_pos = cfg.actions["joint_pos"]
+  assert isinstance(joint_pos, mdp.DelayedJointPositionActionCfg)
+  joint_pos.max_delay_substeps = 0
+
   # Upper-body disturbance amplitude during play. The play env has no
   # curriculum, so this ratio stays fixed. Default 0.0 holds the default pose
   # (isolates lower-body gait for inspection); the upstream play CLI exposes
