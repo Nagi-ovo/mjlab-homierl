@@ -96,10 +96,22 @@ def test_g1_has_no_self_collision_penalty() -> None:
   assert "self_collisions" in unitree_h1_homie_env_cfg().rewards
 
 
+def test_g1_base_task_randomizes_wrist_payload() -> None:
+  # Hand-agnostic training: the bare-wrist payload envelope covers Dex3
+  # (0.53 kg), Inspire RH56DFX (0.54 kg), and a held object.
+  cfg = unitree_g1_homie_env_cfg()
+  params = cfg.events["hand_payload"].params
+  assert params["ranges"] == (0.0, 1.5)
+  assert params["asset_cfg"].body_names == (r".*_wrist_yaw_link",)
+
+
 @pytest.mark.parametrize("hands", ["dex3", "inspire"])
 def test_g1_hand_variants(hands) -> None:
   cfg = unitree_g1_homie_env_cfg(hands=hands)
+  # The mounted hand replaces the bare-wrist payload DR (real hand mass +
+  # held-object remainder on the mount body).
   assert "hand_payload" in cfg.events
+  assert cfg.events["hand_payload"].params["ranges"] == (0.0, 1.0)
   # Interface must stay identical to the base task (checkpoint-compatible).
   base = unitree_g1_homie_env_cfg()
   assert (

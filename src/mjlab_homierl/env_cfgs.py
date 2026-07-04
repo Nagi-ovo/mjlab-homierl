@@ -210,6 +210,22 @@ def unitree_g1_homie_env_cfg(
   else:
     robot_cfg = g1_constants.get_g1_robot_cfg()
     robot_cfg.init_state = g1_constants.HOME_KEYFRAME
+
+  # Wrist payload DR, sampled independently per hand: makes the lower-body
+  # policy hand-agnostic. OpenHomie's reference config randomizes a hand
+  # payload of [-0.1, 0.3] kg on its bare-wrist G1; the wider (0, 1.5) kg
+  # envelope also covers mounted hands (Dex3 0.53 kg, Inspire RH56DFX
+  # 0.54 kg) plus a held object, so one policy serves every hand option.
+  cfg.events["hand_payload"] = EventTermCfg(
+    mode="startup",
+    func=mdp.dr.body_mass,
+    params={
+      "asset_cfg": SceneEntityCfg("robot", body_names=(r".*_wrist_yaw_link",)),
+      "operation": "add",
+      "ranges": (0.0, 1.5),
+    },
+  )
+
   if hands is not None:
     try:
       attach_fn, mount_pattern = {
@@ -221,7 +237,8 @@ def unitree_g1_homie_env_cfg(
         f"Unknown hands variant '{hands}'. Use 'dex3' or 'inspire'."
       ) from None
     robot_cfg.spec_fn = lambda: attach_fn(g1_constants.get_spec())
-    # Held-object payload on top of the hand mass itself.
+    # Replaces the bare-wrist payload DR: the mounted hand supplies its real
+    # mass, and the randomized remainder models a held object.
     cfg.events["hand_payload"] = EventTermCfg(
       mode="startup",
       func=mdp.dr.body_mass,
