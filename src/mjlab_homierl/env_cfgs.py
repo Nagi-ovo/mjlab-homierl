@@ -513,6 +513,21 @@ def unitree_h1_homie_env_cfg(
   cfg.scene.entities = {"robot": robot_cfg}
   cfg.sim.mujoco.ccd_iterations = 50
 
+  # Wrist payload DR, sampled independently per arm: makes the lower-body
+  # policy hand-agnostic (H1's factory hand option is the Inspire RH56 series,
+  # ~0.54 kg; a Robotiq 2F85 is ~0.9 kg). The bare H1 arm ends at the elbow
+  # (forearm) link, so the payload is added there. The with-hands variant
+  # below replaces this with a held-object payload on the mounted gripper.
+  cfg.events["hand_payload"] = EventTermCfg(
+    mode="startup",
+    func=mdp.dr.body_mass,
+    params={
+      "asset_cfg": SceneEntityCfg("robot", body_names=(r".*_elbow_link",)),
+      "operation": "add",
+      "ranges": (0.0, 2.0),
+    },
+  )
+
   cfg.scene.sensors = _make_contact_sensors(
     feet_link_pattern=r"^(left_ankle_link|right_ankle_link)$",
     hip_knee_pattern=r"^(left|right)_(hip_(yaw|roll|pitch)|knee)_link$",

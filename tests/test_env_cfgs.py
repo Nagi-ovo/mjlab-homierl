@@ -105,6 +105,21 @@ def test_g1_base_task_randomizes_wrist_payload() -> None:
   assert params["asset_cfg"].body_names == (r".*_wrist_yaw_link",)
 
 
+def test_h1_base_task_randomizes_wrist_payload() -> None:
+  # Bare H1 arms end at the elbow (forearm) link; the envelope covers an
+  # Inspire hand or 2F85 gripper plus a held object.
+  cfg = unitree_h1_homie_env_cfg()
+  params = cfg.events["hand_payload"].params
+  assert params["ranges"] == (0.0, 2.0)
+  assert params["asset_cfg"].body_names == (r".*_elbow_link",)
+  # The mounted-gripper variant replaces it with a payload on the wrist links.
+  hands_cfg = unitree_h1_homie_env_cfg(hands=True)
+  assert hands_cfg.events["hand_payload"].params["asset_cfg"].body_names == (
+    "left_wrist_link",
+    "right_wrist_link",
+  )
+
+
 @pytest.mark.parametrize("hands", ["dex3", "inspire"])
 def test_g1_hand_variants(hands) -> None:
   cfg = unitree_g1_homie_env_cfg(hands=hands)
