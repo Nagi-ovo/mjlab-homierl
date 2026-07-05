@@ -88,6 +88,29 @@ def test_g1_gain_variants() -> None:
     unitree_g1_homie_env_cfg(gains="unknown")
 
 
+def test_g1_waist_variants() -> None:
+  # Default = OpenHomie 27-dof parity: waist_roll/pitch held at the default
+  # pose, only waist_yaw in the disturbance set.
+  locked = unitree_g1_homie_env_cfg()
+  locked_joints = locked.actions["upper_body_pose"].joint_names
+  assert "waist_yaw_joint" in locked_joints
+  assert "waist_roll_joint" not in locked_joints
+  assert "waist_pitch_joint" not in locked_joints
+  assert len(locked_joints) == 15
+
+  free = unitree_g1_homie_env_cfg(waist="free")
+  free_joints = free.actions["upper_body_pose"].joint_names
+  assert len(free_joints) == 17
+  # Interface unchanged: same policy joints either way (checkpoint-compatible).
+  assert (
+    locked.actions["joint_pos"].actuator_names
+    == free.actions["joint_pos"].actuator_names
+  )
+
+  with pytest.raises(ValueError):
+    unitree_g1_homie_env_cfg(waist="unknown")
+
+
 def test_g1_has_no_self_collision_penalty() -> None:
   # OpenHomie G1 trains with self-collision disabled (IsaacGym
   # self_collision=1) and no such penalty in its reward scales; the term

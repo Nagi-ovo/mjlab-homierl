@@ -191,10 +191,21 @@ def unitree_g1_homie_env_cfg(
   curriculum_start_step: int = 0,
   gains: str = "deploy",
   hands: str | None = None,
+  waist: str = "locked",
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
 
   Args:
+    waist: Waist-joint treatment in the upper-body disturbance.
+      - ``"locked"`` (default): waist_roll/waist_pitch are held at the default
+        pose (PD, never disturbed) and only waist_yaw joins the random
+        disturbance set. This matches OpenHomie's G1, whose URDF welds
+        waist_roll/pitch (27-dof: 12 legs + waist_yaw + 14 arms), and BiGym's
+        locked-waist HOMIE track. The joints stay in the model and in the
+        observation, so checkpoints remain compatible with ``"free"``.
+      - ``"free"``: all three waist joints join the disturbance set — a
+        strict superset of the original training distribution (the torso can
+        be randomly pitched/rolled).
     gains: PD-gain variant.
       - ``"deploy"`` (default): deployment-grade gains matching HomieDeploy's
         real-robot low-level controller, with the uniform 0.25 action scale
@@ -304,7 +315,18 @@ def unitree_g1_homie_env_cfg(
     }
   upper = cfg.actions["upper_body_pose"]
   assert isinstance(upper, mdp.UpperBodyPoseActionCfg)
-  upper.joint_names = G1_UPPER_BODY_JOINTS
+  if waist == "locked":
+    # OpenHomie 27-dof parity: waist_roll/pitch never move (URDF-welded in
+    # the original); they hold the default pose via their PD actuators.
+    upper.joint_names = tuple(
+      j
+      for j in G1_UPPER_BODY_JOINTS
+      if j not in ("waist_roll_joint", "waist_pitch_joint")
+    )
+  elif waist == "free":
+    upper.joint_names = G1_UPPER_BODY_JOINTS
+  else:
+    raise ValueError(f"Unknown waist variant '{waist}'. Use 'locked' or 'free'.")
   cfg.events["upper_body_goals"].params["start_step"] = step_threshold
   cfg.curriculum["upper_body_action"].params["start_step"] = step_threshold
 

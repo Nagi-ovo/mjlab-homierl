@@ -19,6 +19,17 @@ register_mjlab_task(
   runner_cls=HomieHimOnPolicyRunner,
 )
 
+# Superset variant: waist_roll/pitch join the random upper-body disturbance
+# (the default task locks them at the default pose, matching OpenHomie's
+# 27-dof G1). Interface-identical; checkpoints load both ways.
+register_mjlab_task(
+  task_id="Mjlab-Homie-Unitree-G1-free_waist",
+  env_cfg=unitree_g1_homie_env_cfg(waist="free"),
+  play_env_cfg=unitree_g1_homie_env_cfg(play=True, waist="free"),
+  rl_cfg=unitree_g1_homie_himppo_runner_cfg(),
+  runner_cls=HomieHimOnPolicyRunner,
+)
+
 # Ablation variant with mjlab's first-principles actuator gains (sim-only).
 register_mjlab_task(
   task_id="Mjlab-Homie-Unitree-G1-mjlab_gains",
