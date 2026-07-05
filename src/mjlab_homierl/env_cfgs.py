@@ -192,6 +192,7 @@ def unitree_g1_homie_env_cfg(
   gains: str = "deploy",
   hands: str | None = None,
   waist: str = "locked",
+  turn_prob: float = 0.0,
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
 
@@ -218,6 +219,11 @@ def unitree_g1_homie_env_cfg(
       unchanged, so checkpoints remain compatible with the base task.
       - ``"dex3"``: Unitree Dex3 (~0.53 kg each; BiGym's G1 is G1-Dex3).
       - ``"inspire"``: Inspire RH56 (RH56DFX spec weight, 0.54 kg each).
+    turn_prob: Fraction of walk-mode command resamples converted to in-place
+      turns (vx = vy = 0, |wz| >= 0.3). OpenHomie's joint vx/vy/wz sampling
+      gives pure rotation measure zero, so its policies gate stepping on |vx|
+      and stand through yaw-only commands; this option densifies that corner.
+      0.0 (default) = exact OpenHomie parity.
   """
   if gains not in ("deploy", "mjlab"):
     raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
@@ -334,6 +340,7 @@ def unitree_g1_homie_env_cfg(
   twist = cfg.commands["twist"]
   assert isinstance(twist, UniformVelocityCommandCfg)
   twist.viz.z_offset = 1.15
+  twist.turn_prob = turn_prob
   height = cfg.commands["height"]
   assert isinstance(height, RelativeHeightCommandCfg)
   height.foot_site_names = ("left_foot", "right_foot")

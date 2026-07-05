@@ -19,6 +19,19 @@ register_mjlab_task(
   runner_cls=HomieHimOnPolicyRunner,
 )
 
+# Opt-in extension: 1/3 of walk-mode resamples become in-place-turn commands
+# (vx=vy=0, |wz|>=0.3; ~1/6 of all envs). The faithful OpenHomie sampler never
+# produces pure rotation, so base-task policies stand through yaw-only
+# commands; train (or resume) on this variant if step-turning in place is a
+# deployment requirement. Interface-identical; checkpoints load both ways.
+register_mjlab_task(
+  task_id="Mjlab-Homie-Unitree-G1-turn_mode",
+  env_cfg=unitree_g1_homie_env_cfg(turn_prob=1.0 / 3.0),
+  play_env_cfg=unitree_g1_homie_env_cfg(play=True, turn_prob=1.0 / 3.0),
+  rl_cfg=unitree_g1_homie_himppo_runner_cfg(),
+  runner_cls=HomieHimOnPolicyRunner,
+)
+
 # Superset variant: waist_roll/pitch join the random upper-body disturbance
 # (the default task locks them at the default pose, matching OpenHomie's
 # 27-dof G1). Interface-identical; checkpoints load both ways.

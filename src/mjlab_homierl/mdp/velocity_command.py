@@ -7,6 +7,13 @@ exclusive modes (OpenHomie scheme):
 - walk   (p = 1/2): random twist, standing height target
 - stand  (p = 1/6): zero twist, standing height target
 
+Optionally, ``turn_prob`` converts that fraction of walk-mode resamples into
+pure in-place-turn commands (vx = vy = 0, |wz| >= ``turn_min_ang_vel``). This
+is an extension over OpenHomie: its sampler draws vx/vy/wz jointly, so
+"rotate without translating" has measure zero and trained policies gate their
+gait on |vx| alone, standing through pure-yaw commands. Default 0.0 = exact
+OpenHomie parity.
+
 The twist command samples the mode and exposes it via :attr:`mode`; the height
 command couples to it. Both commands must share the same resampling interval,
 and the twist command must precede the height command in the commands dict.
@@ -82,6 +89,21 @@ class UniformVelocityCommand(CommandTerm):
       self.vel_command_b[walk_ids, 0] = r.uniform_(*self.cfg.ranges.lin_vel_x)
       self.vel_command_b[walk_ids, 1] = r.uniform_(*self.cfg.ranges.lin_vel_y)
       self.vel_command_b[walk_ids, 2] = r.uniform_(*self.cfg.ranges.ang_vel_z)
+      if self.cfg.turn_prob > 0.0:
+        is_turn = (
+          torch.rand(len(walk_ids), device=self.device) < self.cfg.turn_prob
+        )
+        turn_ids = walk_ids[is_turn]
+        if turn_ids.numel() > 0:
+          self.vel_command_b[turn_ids, :2] = 0.0
+          wz = self.vel_command_b[turn_ids, 2]
+          min_mag = float(self.cfg.turn_min_ang_vel)
+          # Clamp away from zero so every turn-mode env actually rotates.
+          self.vel_command_b[turn_ids, 2] = torch.where(
+            wz.abs() < min_mag,
+            min_mag * torch.where(wz < 0.0, -1.0, 1.0),
+            wz,
+          )
 
   def _update_command(self) -> None:
     pass
@@ -135,6 +157,18 @@ class UniformVelocityCommandCfg(CommandTermCfg):
     ang_vel_z: tuple[float, float]
 
   ranges: Ranges
+
+  turn_prob: float = 0.0
+  """Fraction of walk-mode resamples converted to in-place turns (vx = vy = 0).
+
+  0.0 (default) reproduces OpenHomie's sampler exactly. The turn envs keep
+  walk-mode semantics everywhere else (standing height target, twist-gated
+  reward terms see a nonzero command norm).
+  """
+
+  turn_min_ang_vel: float = 0.3
+  """Minimum |wz| for turn-mode commands; smaller draws are pushed to this
+  magnitude (sign preserved) so the mode never degenerates into standing."""
 
   @dataclass
   class VizCfg:
