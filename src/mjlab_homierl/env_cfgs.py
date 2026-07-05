@@ -86,6 +86,9 @@ def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
   cfg.rewards = {}
   cfg.curriculum = {}
   cfg.events.pop("push_robot", None)
+  # The terminal-critic-obs recorder serves the HIM estimator during training;
+  # it requires the critic group, which play strips.
+  cfg.recorders.pop("terminal_critic_obs", None)
 
   # Actuation-latency DR is a training-time robustness measure; play/eval
   # (including the BiGym plugin runtime) runs the plant without it.

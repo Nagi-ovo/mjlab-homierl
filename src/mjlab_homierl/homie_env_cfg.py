@@ -18,6 +18,7 @@ from mjlab.managers.command_manager import CommandTermCfg
 from mjlab.managers.curriculum_manager import CurriculumTermCfg
 from mjlab.managers.event_manager import EventTermCfg
 from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
+from mjlab.managers.recorder_manager import RecorderTermCfg
 from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
@@ -566,6 +567,11 @@ def make_homie_env_cfg() -> ManagerBasedRlEnvCfg:
     rewards=rewards,
     terminations=terminations,
     curriculum=curriculum,
+    # OpenHomie feeds the estimator the PRE-reset critic observation on done
+    # transitions (him_on_policy_runner.py:144); this recorder captures it.
+    recorders={
+      "terminal_critic_obs": RecorderTermCfg(func=mdp.TerminalCriticObsRecorder),
+    },
     viewer=ViewerConfig(
       origin_type=ViewerConfig.OriginType.ASSET_BODY,
       entity_name="robot",

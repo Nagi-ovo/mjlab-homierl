@@ -264,6 +264,16 @@ class HIMPPO:
 
     critic_obs_next = self.policy.get_critic_obs(obs).to(self.device)
 
+    # OpenHomie substitutes the PRE-reset (terminal) critic observation for
+    # terminated envs (him_on_policy_runner.py:144) so the estimator's targets
+    # on done transitions come from the terminal state, not the post-reset
+    # one. The TerminalCriticObsRecorder captures it into extras.
+    terminal = extras.pop("terminal_critic_obs", None) if extras else None
+    if terminal is not None:
+      terminal_ids, terminal_obs = terminal
+      critic_obs_next = critic_obs_next.clone()
+      critic_obs_next[terminal_ids.to(self.device)] = terminal_obs.to(self.device)
+
     step_rewards = rewards.to(self.device).detach().clone()
     self.transition.next_critic_observations = critic_obs_next.detach()
     self.transition.rewards = step_rewards
