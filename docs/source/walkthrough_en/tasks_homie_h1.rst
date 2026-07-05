@@ -8,12 +8,35 @@ Homie mixes **velocity tracking**, **squatting (height control)**,
 follows the OpenHomie reference (``HomieRL/legged_gym``): reward set, command
 sampling, and curriculum.
 
-Three task ids are provided:
+Main task ids:
 
-- ``Mjlab-Homie-Unitree-G1``: the OpenHomie robot (29 dof, 12 lower-body actions).
+- ``Mjlab-Homie-Unitree-G1``: the OpenHomie robot (29 dof, 12 lower-body
+  actions). The waist defaults to ``locked``: waist_roll/pitch are PD-held at
+  the default pose and excluded from the upper-body disturbance, matching
+  OpenHomie's 27-dof URDF (which welds those two joints) and real-robot
+  deployment.
 - ``Mjlab-Homie-Unitree-H1``: the H1 port (19 dof, 10 lower-body actions).
 - ``Mjlab-Homie-Unitree-H1-with_hands``: H1 with Robotiq 2F85 grippers
   (policy-free random gripper motion and randomized hand payload).
+
+G1 variants (identical observation/action interface; checkpoints load
+interchangeably):
+
+- ``Mjlab-Homie-Unitree-G1-free_waist``: all three waist joints join the
+  upper-body disturbance (a strict superset of the original distribution).
+- ``Mjlab-Homie-Unitree-G1-turn_mode``: opt-in extension — 1/3 of walk-mode
+  command resamples become in-place turns (``vx = vy = 0``, ``|wz| >= 0.3``,
+  ~1/6 of all envs). The faithful sampler draws vx/vy/wz jointly, so pure
+  rotation has measure zero and base-task policies stand through yaw-only
+  commands; train (or resume) on this variant if step-turning in place is a
+  deployment requirement.
+- ``Mjlab-Homie-Unitree-G1-with_dex3`` / ``-with_inspire``: Unitree Dex3 /
+  Inspire RH56 hand models mounted as inertial attachments with a randomized
+  held-object payload. The base task's wrist-payload randomization covers
+  these hand masses, so one checkpoint serves bare wrists and both hand
+  models; these variants are primarily for play/eval with real hand geometry.
+- ``Mjlab-Homie-Unitree-G1-mjlab_gains``: ablation with mjlab's
+  first-principles actuator gains; sim-only.
 
 The core idea: **reduce the policy action space to the lower body, and treat
 the upper body (and optional grippers) as smooth, time-varying disturbances.**
@@ -23,7 +46,7 @@ Task registration
 
 Path: ``src/mjlab_homierl/__init__.py``
 
-Three task ids are registered via ``mjlab.tasks.registry.register_mjlab_task``.
+The task ids above are registered via ``mjlab.tasks.registry.register_mjlab_task``.
 The play env is the same config with ``play=True`` (critic observations,
 rewards, and curriculum stripped; upper-body motion at full range).
 

@@ -79,7 +79,30 @@ through the `mjlab.tasks` entry-point group.
   `robots/unitree_g1_deploy.py`) and the deployed pipeline's uniform 0.25
   action scale. Use this for sim2real. The effective per-joint
   stiffness/damping is embedded in the exported ONNX metadata, so deployment
-  code can read the gains from the policy file.
+  code can read the gains from the policy file. Waist defaults to `locked`:
+  waist_roll/pitch are PD-held at the default pose and excluded from the
+  upper-body disturbance, matching OpenHomie's 27-dof G1 (its URDF welds those
+  two joints) and real-robot deployment, which software-holds them.
+
+All G1 variants below share the base task's observation/action interface, so
+checkpoints load interchangeably across them (and into the base task):
+
+- `Mjlab-Homie-Unitree-G1-free_waist` — all three waist joints join the random
+  upper-body disturbance; a strict superset of the original training
+  distribution (the torso can be randomly pitched/rolled).
+- `Mjlab-Homie-Unitree-G1-turn_mode` — opt-in extension: 1/3 of walk-mode
+  command resamples become in-place turns (`vx = vy = 0`, `|wz| >= 0.3`;
+  about 1/6 of all envs). The faithful OpenHomie sampler draws vx/vy/wz
+  jointly, so pure rotation has measure zero and base-task policies stand
+  through yaw-only commands; train (or resume) on this variant if step-turning
+  in place is a deployment requirement.
+- `Mjlab-Homie-Unitree-G1-with_dex3` — Unitree Dex3 hands mounted as inertial
+  attachments (~0.53 kg each) plus a randomized held-object payload.
+- `Mjlab-Homie-Unitree-G1-with_inspire` — Inspire RH56 hands (RH56DFX spec
+  mass, 0.54 kg each), same treatment. The base task randomizes a wrist
+  payload covering these hand masses, so one checkpoint serves bare wrists
+  and both hand models; these variants are primarily for play/eval with the
+  real hand geometry.
 - `Mjlab-Homie-Unitree-G1-mjlab_gains` — ablation variant with mjlab's
   first-principles actuator gains (armature × natural frequency); sim-only.
 - `Mjlab-Homie-Unitree-H1` — trains with Unitree's official RL-stack PD gains

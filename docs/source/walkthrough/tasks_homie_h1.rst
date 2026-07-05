@@ -7,12 +7,29 @@ Homie 是一个综合性任务，结合了 **速度追踪 (Velocity)**、**蹲�
 **站立 (Stand)** 以及 **上身随机干扰**。实现对齐 OpenHomie 参考实现
 （``HomieRL/legged_gym``）的奖励集、命令采样与课程机制。
 
-目前提供三个 task id：
+主要 task id：
 
-- ``Mjlab-Homie-Unitree-G1``：标准版本（OpenHomie 原版机器人，29 dof，12 个下肢动作）。
+- ``Mjlab-Homie-Unitree-G1``：标准版本（OpenHomie 原版机器人，29 dof，12 个下肢
+  动作）。默认锁腰（waist_roll/pitch 由 PD 保持默认位姿、不参与上身扰动，对齐
+  OpenHomie 焊死这两个关节的 27-dof URDF 与实机部署行为）。
 - ``Mjlab-Homie-Unitree-H1``：H1 移植（19 dof，10 个下肢动作）。
 - ``Mjlab-Homie-Unitree-H1-with_hands``：H1 额外挂载 Robotiq 2F85 夹爪
   （包含 policy-free 的夹爪随机动作与手部负载随机化）。
+
+G1 变体（观测/动作接口与标准版完全一致，checkpoint 可互相加载）：
+
+- ``Mjlab-Homie-Unitree-G1-free_waist``：三个腰关节全部参与上身扰动
+  （原版训练分布的严格超集）。
+- ``Mjlab-Homie-Unitree-G1-turn_mode``：可选扩展，walk 模式 1/3 的命令重采样
+  转为原地转（vx = vy = 0、|wz| ≥ 0.3，约占全部环境的 1/6）。忠实版采样器对
+  vx/vy/wz 联合采样，纯旋转命令测度为零，因此基线策略遇到纯 yaw 命令会站立
+  不动；需要原地碎步转向时用此变体训练或续训。
+- ``Mjlab-Homie-Unitree-G1-with_dex3`` / ``-with_inspire``：挂载 Unitree Dex3 /
+  Inspire RH56 手模型（惯性附件 + 持物负载随机化）。基线任务的腕端负载随机化
+  已覆盖这些手的质量，同一 checkpoint 裸腕/双手型通用；这两个变体主要用于
+  带真实手几何的 play/评估。
+- ``Mjlab-Homie-Unitree-G1-mjlab_gains``：mjlab 第一性原理增益的消融版本
+  （仅仿真）。
 
 核心设计思想：**缩小策略的动作空间，将其集中在下肢控制上，而将上身（以及可选
 的夹爪）作为"随时间变化的平滑扰动"。**
@@ -22,7 +39,7 @@ Homie 是一个综合性任务，结合了 **速度追踪 (Velocity)**、**蹲�
 
 路径：``src/mjlab_homierl/__init__.py``
 
-通过 ``mjlab.tasks.registry.register_mjlab_task`` 注册三个 task id。
+通过 ``mjlab.tasks.registry.register_mjlab_task`` 注册上述 task id。
 play env 是同一配置在 ``play=True`` 下的轻量化版本（剥离 critic 观测、
 奖励与课程，上身扰动幅度直接拉满）。
 
