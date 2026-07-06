@@ -186,6 +186,33 @@ lower-body gait). To preview deployment-like upper-body disturbances instead:
 HOMIE_PLAY_UPPER_RATIO=1.0 uv run play Mjlab-Homie-Unitree-G1 --checkpoint-file ...
 ```
 
+## Real-robot deployment (G1)
+
+`src/mjlab_homierl/scripts/deploy_g1_homie.py` runs an exported policy ONNX on
+the real robot over DDS, reading every convention (joint order, PD gains,
+obs layout, command ranges, optional torso-pitch channel) from the ONNX
+metadata. The real path needs only `numpy + onnxruntime + unitree_sdk2py` —
+no mjlab/torch on the robot-side machine. One-time environment setup (builds
+cyclonedds 0.10.2 and works around three upstream packaging defects — see the
+script header):
+
+```bash
+bash scripts/setup_deploy_env.sh
+```
+
+Then (robot in debug/low-level mode, harnessed):
+
+```bash
+.venv-deploy/bin/python src/mjlab_homierl/scripts/deploy_g1_homie.py \
+  --onnx <run_dir>/<run>.onnx --net <iface>
+```
+
+START moves to the default pose, A starts the policy, sticks drive vx/vy/wz,
+dpad up/down slews the height command, X/B slews torso pitch (HOMIE+ models),
+SELECT exits to damping. `--sim` (in the training venv:
+`uv run --extra deploy ... --sim`) validates the deploy-side observation
+builder bit-for-bit against the mjlab plant before any hardware session.
+
 ## Notes
 
 - The repository no longer vendors the `mjlab` framework itself.

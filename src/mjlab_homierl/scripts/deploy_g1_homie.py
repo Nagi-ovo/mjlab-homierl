@@ -83,14 +83,12 @@ class HomieOnnxPolicy:
   """ONNX session + the metadata-driven observation builder."""
 
   def __init__(self, onnx_path: str):
-    import onnx
     import onnxruntime as ort
 
-    model = onnx.load(onnx_path, load_external_data=False)
-    self.meta = {p.key: p.value for p in model.metadata_props}
     self.session = ort.InferenceSession(
       onnx_path, providers=["CPUExecutionProvider"]
     )
+    self.meta = dict(self.session.get_modelmeta().custom_metadata_map)
     self.input_name = self.session.get_inputs()[0].name
 
     m = self.meta
@@ -227,14 +225,30 @@ def run_real(policy: HomieOnnxPolicy, net_iface: str, control_dt: float) -> None
   from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_ as LowStateHG
   from unitree_sdk2py.utils.crc import CRC
 
-  # Reuse unitree_rl_gym helpers if importable; else minimal local versions.
-  from mjlab_homierl.scripts._deploy_common import (
-    KeyMap,
-    RemoteController,
-    create_damping_cmd,
-    create_zero_cmd,
-    init_cmd_hg,
-  )
+  # Import the remote/cmd helpers without touching the mjlab_homierl package
+  # (a robot-side machine only needs numpy + onnxruntime + unitree_sdk2py).
+  try:
+    from mjlab_homierl.scripts._deploy_common import (
+      KeyMap,
+      RemoteController,
+      create_damping_cmd,
+      create_zero_cmd,
+      init_cmd_hg,
+    )
+  except ImportError:
+    import importlib.util
+    import pathlib
+
+    spec = importlib.util.spec_from_file_location(
+      "_deploy_common", pathlib.Path(__file__).resolve().parent / "_deploy_common.py"
+    )
+    common = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(common)
+    KeyMap = common.KeyMap
+    RemoteController = common.RemoteController
+    create_damping_cmd = common.create_damping_cmd
+    create_zero_cmd = common.create_zero_cmd
+    init_cmd_hg = common.init_cmd_hg
 
   motor_of = {n: i for i, n in enumerate(G1_MOTOR_ORDER)}
   jm = [motor_of[n] for n in policy.joint_names]  # metadata order -> motor idx

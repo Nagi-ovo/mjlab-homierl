@@ -23,3 +23,5 @@ benchmark_results/
 bigym/
 legged_gym/
 rsl_rl/
+.venv-*/
+.local/
