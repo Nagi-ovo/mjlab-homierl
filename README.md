@@ -105,6 +105,23 @@ checkpoints load interchangeably across them (and into the base task):
   real hand geometry.
 - `Mjlab-Homie-Unitree-G1-mjlab_gains` — ablation variant with mjlab's
   first-principles actuator gains (armature × natural frequency); sim-only.
+
+HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
+
+- `Mjlab-Homie-Unitree-G1-plus` — adds a commanded torso pitch: a 5th command
+  dim carries a `waist_pitch` joint-angle target (rad, + = lean forward,
+  sampled in walk/squat modes up to 0.45 rad). The joint is command-driven
+  (policy-free, slew-limited at 1 rad/s); the policy keeps the 12-dim leg
+  interface and learns to balance the lean — the missing DoF for
+  pick-from-floor work. One-step observation grows 80 → 81 (actor input 486),
+  so this is a separate training lineage with its own experiment dir
+  (`g1_homie_plus_himppo`). Commanding pitch = 0 reproduces plain HOMIE
+  behavior (~68% of training env-time is at zero pitch). The exported ONNX
+  metadata declares the 5-dim command (`one_step_obs_layout`,
+  `pitch_command_joint`, `pitch_command_ranges`) so downstream plugins
+  bootstrap without hardcoding. Play works the same as the base task:
+  `uv run play Mjlab-Homie-Unitree-G1-plus --checkpoint-file ... --viewer viser`.
+
 - `Mjlab-Homie-Unitree-H1` — trains with Unitree's official RL-stack PD gains
   (unitree_rl_gym `h1_config.py`; see `robots/unitree_h1_deploy.py`) and the
   uniform 0.25 action scale.

@@ -31,6 +31,17 @@ G1 变体（观测/动作接口与标准版完全一致，checkpoint 可互相�
 - ``Mjlab-Homie-Unitree-G1-mjlab_gains``：mjlab 第一性原理增益的消融版本
   （仅仿真）。
 
+HOMIE+（接口分叉，checkpoint 与上述任务**不**互通）：
+
+- ``Mjlab-Homie-Unitree-G1-plus``：增加躯干俯仰命令——第 5 个命令维度携带
+  ``waist_pitch`` 关节角目标（rad，正=前倾，walk/squat 模式下采样至 0.45）。
+  该关节由命令直驱（policy-free、1 rad/s 限速），策略保持 12 维下肢接口并
+  学会在前倾时保持平衡（弯腰捡物所缺的自由度）。单步观测 80 → 81
+  （actor 输入 486），独立训练谱系（experiment dir ``g1_homie_plus_himppo``）。
+  pitch 命令恒 0 即为普通 HOMIE 行为（训练分布 ~68% 的环境时间 pitch=0）。
+  ONNX metadata 声明 5 维命令契约（``pitch_command_joint`` /
+  ``pitch_command_ranges``），下游插件零硬编码自举。
+
 核心设计思想：**缩小策略的动作空间，将其集中在下肢控制上，而将上身（以及可选
 的夹爪）作为"随时间变化的平滑扰动"。**
 

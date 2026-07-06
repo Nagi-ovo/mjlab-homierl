@@ -38,6 +38,20 @@ interchangeably):
 - ``Mjlab-Homie-Unitree-G1-mjlab_gains``: ablation with mjlab's
   first-principles actuator gains; sim-only.
 
+HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
+
+- ``Mjlab-Homie-Unitree-G1-plus``: adds a commanded torso pitch — a 5th
+  command dim carries a ``waist_pitch`` joint-angle target (rad, + = lean
+  forward, sampled in walk/squat modes up to 0.45). The joint is
+  command-driven (policy-free, slew-limited at 1 rad/s); the policy keeps the
+  12-dim leg interface and learns to balance the lean. One-step observation
+  grows 80 → 81 (actor input 486); separate training lineage (experiment dir
+  ``g1_homie_plus_himppo``). Commanding pitch = 0 reproduces plain HOMIE
+  behavior (~68% of training env-time is at zero pitch). The exported ONNX
+  metadata declares the 5-dim command contract (``pitch_command_joint``,
+  ``pitch_command_ranges``) so downstream plugins bootstrap without
+  hardcoding.
+
 The core idea: **reduce the policy action space to the lower body, and treat
 the upper body (and optional grippers) as smooth, time-varying disturbances.**
 
