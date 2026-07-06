@@ -6,6 +6,7 @@ from mjlab.asset_zoo.robots.unitree_g1 import g1_constants
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
 from mjlab.managers.event_manager import EventTermCfg
+from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
@@ -193,6 +194,7 @@ def unitree_g1_homie_env_cfg(
   hands: str | None = None,
   waist: str = "locked",
   turn_prob: float = 0.0,
+  torso_pitch: bool = False,
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
 
@@ -224,6 +226,12 @@ def unitree_g1_homie_env_cfg(
       gives pure rotation measure zero, so its policies gate stepping on |vx|
       and stand through yaw-only commands; this option densifies that corner.
       0.0 (default) = exact OpenHomie parity.
+    torso_pitch: HOMIE+ — add a commanded waist_pitch joint-angle target
+      (5th command dim; one-step obs 80 -> 81). waist_pitch is direct-driven
+      by the command (policy-free, rate-limited), a pitch-tracking reward is
+      added, and the hip-deviation gate is lifted while leaning. Requires
+      ``waist='locked'``. Checkpoints are NOT compatible with the base task
+      (interface fork, homie_plus_plan.md §2.6).
   """
   if gains not in ("deploy", "mjlab"):
     raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
@@ -303,7 +311,9 @@ def unitree_g1_homie_env_cfg(
 
   # Observations.
   cfg.observations = make_him_observations(
-    joint_names=G1_ALL_JOINTS, num_actions=len(G1_LOWER_BODY_JOINTS)
+    joint_names=G1_ALL_JOINTS,
+    num_actions=len(G1_LOWER_BODY_JOINTS),
+    pitch_command=torso_pitch,
   )
 
   # Actions.
@@ -428,6 +438,29 @@ def unitree_g1_homie_env_cfg(
   # anti-squat gradient that walled the 2026-07-03 run at ~0.67 m. Physical
   # self-contacts remain simulated; only the penalty is dropped.
   del cfg.rewards["self_collisions"]
+
+  # HOMIE+: commanded torso pitch (homie_plus_plan.md §2).
+  if torso_pitch:
+    if waist != "locked":
+      raise ValueError("torso_pitch=True requires waist='locked'.")
+    # Command must come after "twist" (mode coupling) — dict order gives that.
+    cfg.commands["torso_pitch"] = mdp.TorsoPitchCommandCfg(
+      entity_name="robot",
+      resampling_time_range=(4.0, 4.0),
+      debug_vis=False,
+    )
+    cfg.actions["torso_pitch"] = mdp.TorsoPitchActionCfg(entity_name="robot")
+    # Note: the plan's §2.4-1 orientation rework is unnecessary — the
+    # orientation penalty acts on the PELVIS (root) projected gravity, and the
+    # lean happens at the waist joint above it, so a commanded lean does not
+    # fight the penalty. Pelvis uprightness remains desirable in HOMIE+.
+    cfg.rewards["track_torso_pitch"] = RewardTermCfg(
+      func=mdp.track_torso_pitch,
+      weight=1.0,
+      params={"command_name": "torso_pitch", "scale": 8.0},
+    )
+    # Leaning requires hip deviation to shift the CoM; lift the gate then.
+    cfg.rewards["deviation_hip_joint"].params["pitch_command_name"] = "torso_pitch"
 
   cfg.viewer.body_name = "torso_link"
 

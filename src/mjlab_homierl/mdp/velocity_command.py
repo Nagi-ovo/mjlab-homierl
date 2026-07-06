@@ -314,3 +314,97 @@ class RelativeHeightCommandCfg(CommandTermCfg):
 
   def build(self, env: ManagerBasedRlEnv) -> RelativeHeightCommand:
     return RelativeHeightCommand(self, env)
+
+
+class TorsoPitchCommand(CommandTerm):
+  """HOMIE+ torso-pitch command: a waist_pitch joint-angle target (rad, +fwd).
+
+  Couples to the mode sampled by :class:`UniformVelocityCommand`:
+
+  - walk  envs: 0 with p = ``walk_zero_prob``, else U(``walk_range``) — covers
+    "look down / reach while walking";
+  - squat envs: 0 with p = ``squat_zero_prob``, else U(``squat_range``) —
+    squat + lean is the pick-from-floor work case;
+  - stand envs: always 0.
+
+  The command is a joint-space target so upstream IK/teleop can drive it
+  directly, with no attitude-estimation loop (homie_plus_plan.md §2.1).
+  """
+
+  cfg: "TorsoPitchCommandCfg"
+
+  def __init__(self, cfg: "TorsoPitchCommandCfg", env: ManagerBasedRlEnv):
+    super().__init__(cfg, env)
+    self.robot: Entity = env.scene[cfg.entity_name]
+
+    joint_ids, _ = self.robot.find_joints((cfg.joint_name,), preserve_order=True)
+    if len(joint_ids) != 1:
+      raise ValueError(
+        f"TorsoPitchCommand: joint '{cfg.joint_name}' not found or ambiguous."
+      )
+    self._joint_id = int(joint_ids[0])
+
+    self.pitch_command = torch.zeros(self.num_envs, 1, device=self.device)
+    self.metrics["error_pitch"] = torch.zeros(self.num_envs, device=self.device)
+
+  @property
+  def command(self) -> torch.Tensor:
+    return self.pitch_command
+
+  @property
+  def joint_id(self) -> int:
+    return self._joint_id
+
+  def _twist_mode(self) -> torch.Tensor:
+    term = self._env.command_manager.get_term(self.cfg.twist_command_name)
+    if not isinstance(term, UniformVelocityCommand):
+      raise TypeError(
+        f"Command '{self.cfg.twist_command_name}' must be UniformVelocityCommand."
+      )
+    return term.mode
+
+  def _update_metrics(self) -> None:
+    max_command_step = self.cfg.resampling_time_range[1] / self._env.step_dt
+    actual = self.robot.data.joint_pos[:, self._joint_id]
+    error = torch.abs(self.pitch_command[:, 0] - actual)
+    self.metrics["error_pitch"] += error / max_command_step
+
+  def _resample_command(self, env_ids: torch.Tensor) -> None:
+    mode = self._twist_mode()[env_ids]
+    self.pitch_command[env_ids, 0] = 0.0
+    for mode_id, zero_prob, rng in (
+      (MODE_WALK, self.cfg.walk_zero_prob, self.cfg.walk_range),
+      (MODE_SQUAT, self.cfg.squat_zero_prob, self.cfg.squat_range),
+    ):
+      ids = env_ids[mode == mode_id]
+      if ids.numel() == 0:
+        continue
+      active = torch.rand(len(ids), device=self.device) >= zero_prob
+      act_ids = ids[active]
+      if act_ids.numel() > 0:
+        r = torch.empty(len(act_ids), device=self.device)
+        self.pitch_command[act_ids, 0] = r.uniform_(*rng)
+
+  def _update_command(self) -> None:
+    pass
+
+  def _debug_vis_impl(self, visualizer: "DebugVisualizer") -> None:
+    pass
+
+
+@dataclass(kw_only=True)
+class TorsoPitchCommandCfg(CommandTermCfg):
+  """Configuration for the HOMIE+ torso-pitch command term."""
+
+  entity_name: str
+  joint_name: str = "waist_pitch_joint"
+  twist_command_name: str = "twist"
+  """Coupled mode source; must precede this term in the commands dict."""
+
+  walk_zero_prob: float = 0.7
+  walk_range: tuple[float, float] = (-0.15, 0.25)
+  squat_zero_prob: float = 0.5
+  squat_range: tuple[float, float] = (-0.2, 0.45)
+
+  def build(self, env: ManagerBasedRlEnv) -> TorsoPitchCommand:
+    return TorsoPitchCommand(self, env)

@@ -233,6 +233,72 @@ def sample_upper_body_goals(
   term.sample_new_goals()
 
 
+class TorsoPitchAction(ActionTerm):
+  """Command-driven waist_pitch position target (HOMIE+; zero policy dims).
+
+  Reads the :class:`TorsoPitchCommand` each step and slews the joint position
+  target toward ``default + pitch_cmd`` at ``max_speed`` rad/s. The policy
+  never controls this joint; its job is to keep balance while the waist is
+  commanded forward (homie_plus_plan.md §2.2).
+  """
+
+  cfg: "TorsoPitchActionCfg"
+
+  def __init__(self, cfg: "TorsoPitchActionCfg", env: ManagerBasedRlEnv):
+    super().__init__(cfg=cfg, env=env)
+    joint_ids, _ = self._entity.find_joints((cfg.joint_name,), preserve_order=True)
+    if len(joint_ids) != 1:
+      raise ValueError(
+        f"TorsoPitchAction: joint '{cfg.joint_name}' not found or ambiguous."
+      )
+    self._joint_ids = torch.tensor(joint_ids, device=self.device, dtype=torch.long)
+    self._raw_actions = torch.zeros(self.num_envs, 0, device=self.device)
+    self._default = self._entity.data.default_joint_pos[:, self._joint_ids].clone()
+    self._current = self._default.clone()
+    self._max_step = float(cfg.max_speed) * env.step_dt
+
+  @property
+  def action_dim(self) -> int:
+    return 0
+
+  @property
+  def raw_action(self) -> torch.Tensor:
+    return self._raw_actions
+
+  def process_actions(self, actions: torch.Tensor) -> None:
+    if actions.numel() != 0:
+      raise ValueError(
+        f"TorsoPitchAction expects zero-dim actions, got shape {actions.shape}."
+      )
+    cmd = self._env.command_manager.get_command(self.cfg.command_name)
+    assert cmd is not None
+    goal = self._default + cmd[:, 0:1]
+    self._current = self._current + torch.clamp(
+      goal - self._current, min=-self._max_step, max=self._max_step
+    )
+
+  def apply_actions(self) -> None:
+    self._entity.set_joint_position_target(self._current, joint_ids=self._joint_ids)
+
+  def reset(self, env_ids: torch.Tensor | slice | None = None) -> None:
+    if env_ids is None:
+      env_ids = slice(None)
+    self._current[env_ids] = self._default[env_ids]
+
+
+@dataclass(kw_only=True)
+class TorsoPitchActionCfg(ActionTermCfg):
+  """Configuration for :class:`TorsoPitchAction`."""
+
+  joint_name: str = "waist_pitch_joint"
+  command_name: str = "torso_pitch"
+  max_speed: float = 1.0
+  """Slew-rate limit on the position target, rad/s."""
+
+  def build(self, env: ManagerBasedRlEnv) -> TorsoPitchAction:
+    return TorsoPitchAction(self, env)
+
+
 class GripperActuatorAction(ActionTerm):
   """Drive XML-defined gripper actuators with internal random targets."""
 

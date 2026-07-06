@@ -74,5 +74,11 @@ def unitree_g1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
   return homie_himppo_runner_cfg("g1_homie_himppo")
 
 
+def unitree_g1_homie_plus_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
+  # Separate experiment dir: HOMIE+ checkpoints (5-dim command, obs 486) are
+  # interface-incompatible with the base task's.
+  return homie_himppo_runner_cfg("g1_homie_plus_himppo")
+
+
 def unitree_h1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
   return homie_himppo_runner_cfg("h1_homie_himppo")

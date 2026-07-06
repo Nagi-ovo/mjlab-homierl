@@ -37,28 +37,36 @@ NOISE_SCALES = {"dof_pos": 0.02, "dof_vel": 2.0, "ang_vel": 0.5, "gravity": 0.05
 
 
 def make_him_observations(
-  joint_names: tuple[str, ...], num_actions: int
+  joint_names: tuple[str, ...],
+  num_actions: int,
+  pitch_command: bool = False,
 ) -> dict[str, ObservationGroupCfg]:
   """Build HIM actor/critic observation groups for a robot's joint layout.
 
   Actor: 6-step history of the one-step observation, with additive uniform
-  noise. Critic: single noiseless step plus base linear velocity.
+  noise. Critic: single noiseless step plus base linear velocity. With
+  ``pitch_command`` (HOMIE+), the command segment is 5-dim instead of 4.
   """
   joint_asset_cfg = SceneEntityCfg(
     "robot", joint_names=joint_names, preserve_order=True
   )
 
   num_dofs = len(joint_names)
-  one_step_dim = 10 + 2 * num_dofs + num_actions
+  num_commands = 5 if pitch_command else 4
+  one_step_dim = num_commands + 6 + 2 * num_dofs + num_actions
+  cmd_end = num_commands
   noise_vec = torch.zeros(one_step_dim, dtype=torch.float32)
-  noise_vec[0:4] = 0.0  # Commands.
-  noise_vec[4:7] = NOISE_SCALES["ang_vel"] * OBS_SCALES["ang_vel"]
-  noise_vec[7:10] = NOISE_SCALES["gravity"]
-  noise_vec[10 : 10 + num_dofs] = NOISE_SCALES["dof_pos"] * OBS_SCALES["dof_pos"]
-  noise_vec[10 + num_dofs : 10 + 2 * num_dofs] = (
+  noise_vec[0:cmd_end] = 0.0  # Commands.
+  noise_vec[cmd_end : cmd_end + 3] = NOISE_SCALES["ang_vel"] * OBS_SCALES["ang_vel"]
+  noise_vec[cmd_end + 3 : cmd_end + 6] = NOISE_SCALES["gravity"]
+  dof_start = cmd_end + 6
+  noise_vec[dof_start : dof_start + num_dofs] = (
+    NOISE_SCALES["dof_pos"] * OBS_SCALES["dof_pos"]
+  )
+  noise_vec[dof_start + num_dofs : dof_start + 2 * num_dofs] = (
     NOISE_SCALES["dof_vel"] * OBS_SCALES["dof_vel"]
   )
-  noise_vec[10 + 2 * num_dofs :] = 0.0  # Previous actions.
+  noise_vec[dof_start + 2 * num_dofs :] = 0.0  # Previous actions.
 
   common_params = {
     "command_name": "twist",
@@ -66,6 +74,8 @@ def make_him_observations(
     "joint_asset_cfg": joint_asset_cfg,
     "obs_scales": OBS_SCALES,
   }
+  if pitch_command:
+    common_params["pitch_command_name"] = "torso_pitch"
 
   return {
     "actor": ObservationGroupCfg(

@@ -72,17 +72,20 @@ def _build_mirror_maps(
 ) -> _MirrorMaps:
   """Mirror maps for the HIM one-step observation layout.
 
-  Layout: [commands(4), ang_vel(3), gravity(3), dof_pos(N), dof_vel(N),
-  actions(A)] with an optional base_lin_vel(3) tail on the critic.
+  Layout: [commands(C), ang_vel(3), gravity(3), dof_pos(N), dof_vel(N),
+  actions(A)] with an optional base_lin_vel(3) tail on the critic. C is 4
+  (vx, vy, wz, height) for HOMIE or 5 (+ torso_pitch, mirror-symmetric) for
+  HOMIE+, inferred from the observation dim.
   """
   num_dofs = len(obs_joint_names)
   num_actions = len(action_joint_names)
-  expected = 10 + 2 * num_dofs + num_actions
-  if num_one_step_obs != expected:
+  num_commands = num_one_step_obs - 6 - 2 * num_dofs - num_actions
+  if num_commands not in (4, 5):
     raise ValueError(
       f"One-step obs dim {num_one_step_obs} does not match layout "
-      f"10 + 2*{num_dofs} + {num_actions} = {expected}."
+      f"C + 6 + 2*{num_dofs} + {num_actions} with C in (4, 5); got C={num_commands}."
     )
+  expected = num_commands + 6 + 2 * num_dofs + num_actions
   if num_one_step_critic_obs not in (expected, expected + 3):
     raise ValueError(
       f"One-step critic obs dim {num_one_step_critic_obs} must be {expected} "
@@ -96,23 +99,24 @@ def _build_mirror_maps(
     src = torch.arange(one_step_dim, device=device, dtype=torch.long)
     sign = torch.ones(one_step_dim, device=device, dtype=torch.float32)
 
-    # Commands: [x, y, yaw, height] -> y and yaw flip.
+    # Commands: [x, y, yaw, height(, pitch)] -> y and yaw flip; height and
+    # torso pitch are mirror-symmetric.
     sign[1] = -1.0
     sign[2] = -1.0
     # Angular velocity: roll and yaw rates flip.
-    sign[4] = -1.0
-    sign[6] = -1.0
+    sign[num_commands + 0] = -1.0
+    sign[num_commands + 2] = -1.0
     # Projected gravity: y flips.
-    sign[8] = -1.0
+    sign[num_commands + 4] = -1.0
 
-    dof_pos_start = 10
-    dof_vel_start = 10 + num_dofs
+    dof_pos_start = num_commands + 6
+    dof_vel_start = dof_pos_start + num_dofs
     src[dof_pos_start : dof_pos_start + num_dofs] = dof_pos_start + dof_map
     sign[dof_pos_start : dof_pos_start + num_dofs] = dof_sign
     src[dof_vel_start : dof_vel_start + num_dofs] = dof_vel_start + dof_map
     sign[dof_vel_start : dof_vel_start + num_dofs] = dof_sign
 
-    act_start = 10 + 2 * num_dofs
+    act_start = dof_vel_start + num_dofs
     src[act_start : act_start + num_actions] = act_start + act_map
     sign[act_start : act_start + num_actions] = act_sign
 

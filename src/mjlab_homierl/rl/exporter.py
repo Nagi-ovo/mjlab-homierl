@@ -179,6 +179,21 @@ def homie_extra_metadata(env: ManagerBasedRlEnv) -> dict:
   except KeyError:
     pass
 
+  # HOMIE+ torso-pitch command semantics (waist_pitch joint-angle target).
+  num_commands = 4
+  try:
+    pitch_cfg = env.command_manager.get_term("torso_pitch").cfg
+    num_commands = 5
+    metadata["pitch_command_joint"] = pitch_cfg.joint_name
+    metadata["pitch_command_ranges"] = json.dumps(
+      {
+        "walk": list(pitch_cfg.walk_range),
+        "squat": list(pitch_cfg.squat_range),
+      }
+    )
+  except KeyError:
+    pass
+
   # The joints the policy's action vector maps to, in output order (the base
   # `joint_names` field lists the full robot; actions cover a subset).
   action_term = env.action_manager.get_term("joint_pos")
@@ -197,12 +212,13 @@ def homie_extra_metadata(env: ManagerBasedRlEnv) -> dict:
 
   # Field order of one step of the actor observation (see
   # mdp.observations.him_actor_one_step_obs). joint_pos/joint_vel follow the
-  # full `joint_names` order; commands are (vx, vy, wz, height).
+  # full `joint_names` order; commands are (vx, vy, wz, height) or, with a
+  # torso_pitch command term (HOMIE+), (vx, vy, wz, height, pitch).
   robot = env.scene["robot"]
   num_joints = len(robot.joint_names)
   metadata["one_step_obs_layout"] = json.dumps(
     {
-      "command": 4,
+      "command": num_commands,
       "base_ang_vel": 3,
       "projected_gravity": 3,
       "joint_pos_rel": num_joints,

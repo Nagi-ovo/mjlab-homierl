@@ -7,6 +7,7 @@ from mjlab_homierl.env_cfgs import (
 from mjlab_homierl.rl import HomieHimOnPolicyRunner
 from mjlab_homierl.rl_cfg import (
   unitree_g1_homie_himppo_runner_cfg,
+  unitree_g1_homie_plus_himppo_runner_cfg,
   unitree_h1_homie_himppo_runner_cfg,
 )
 
@@ -16,6 +17,18 @@ register_mjlab_task(
   env_cfg=unitree_g1_homie_env_cfg(),
   play_env_cfg=unitree_g1_homie_env_cfg(play=True),
   rl_cfg=unitree_g1_homie_himppo_runner_cfg(),
+  runner_cls=HomieHimOnPolicyRunner,
+)
+
+# HOMIE+ (homie_plus_plan.md): commanded torso pitch. 5-dim command, one-step
+# obs 81 (actor 486) -- an interface fork; checkpoints do NOT interchange with
+# the base task. waist_pitch is command-driven (policy-free), waist_roll stays
+# locked, waist_yaw stays in the disturbance set.
+register_mjlab_task(
+  task_id="Mjlab-Homie-Unitree-G1-plus",
+  env_cfg=unitree_g1_homie_env_cfg(torso_pitch=True),
+  play_env_cfg=unitree_g1_homie_env_cfg(play=True, torso_pitch=True),
+  rl_cfg=unitree_g1_homie_plus_himppo_runner_cfg(),
   runner_cls=HomieHimOnPolicyRunner,
 )
 

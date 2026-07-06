@@ -175,10 +175,15 @@ def joint_deviation_gated(
   asset_cfg: SceneEntityCfg,
   height_command_name: str,
   min_height: float,
+  pitch_command_name: str | None = None,
+  pitch_epsilon: float = 0.05,
 ) -> torch.Tensor:
   """Squared deviation from the default pose, active only near standing height.
 
   Used for OpenHomie's ``deviation_hip_joint`` / ``deviation_ankle_joint``.
+  With ``pitch_command_name`` set (HOMIE+), the gate additionally requires the
+  commanded torso pitch to be near zero — leaning demands hip deviation to
+  shift the CoM, which must not be penalized.
   """
   asset: Entity = env.scene[asset_cfg.name]
   joint_ids = asset_cfg.joint_ids
@@ -188,7 +193,27 @@ def joint_deviation_gated(
     ),
     dim=1,
   )
-  return error * _height_gate(env, height_command_name, min_height)
+  gate = _height_gate(env, height_command_name, min_height)
+  if pitch_command_name is not None:
+    pitch_cmd = env.command_manager.get_command(pitch_command_name)
+    assert pitch_cmd is not None
+    gate = gate * (pitch_cmd[:, 0].abs() < float(pitch_epsilon)).float()
+  return error * gate
+
+
+def track_torso_pitch(
+  env: ManagerBasedRlEnv,
+  command_name: str,
+  scale: float,
+  asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
+) -> torch.Tensor:
+  """HOMIE+: exponential tracking of the commanded waist_pitch joint angle."""
+  asset: Entity = env.scene[asset_cfg.name]
+  cmd_term = env.command_manager.get_term(command_name)
+  joint_id = cmd_term.joint_id  # TorsoPitchCommand
+  cmd = cmd_term.command
+  error = torch.abs(asset.data.joint_pos[:, joint_id] - cmd[:, 0])
+  return torch.exp(-error * float(scale))
 
 
 def knee_deviation(

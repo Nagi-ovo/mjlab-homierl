@@ -111,6 +111,40 @@ def test_g1_waist_variants() -> None:
     unitree_g1_homie_env_cfg(waist="unknown")
 
 
+def test_g1_homie_plus_torso_pitch() -> None:
+  from mjlab_homierl import mdp
+
+  cfg = unitree_g1_homie_env_cfg(torso_pitch=True)
+
+  # 5th command dim: torso_pitch term, coupled to the twist mode.
+  assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)
+  assert cfg.commands["torso_pitch"].resampling_time_range == (4.0, 4.0)
+  # Command-driven waist_pitch, zero policy dims; policy interface unchanged.
+  assert isinstance(cfg.actions["torso_pitch"], mdp.TorsoPitchActionCfg)
+  assert len(cfg.actions["joint_pos"].actuator_names) == 12
+  # waist_pitch must not also be in the random disturbance set.
+  assert "waist_pitch_joint" not in cfg.actions["upper_body_pose"].joint_names
+  # Rewards: pitch tracking added, hip-deviation gate lifted while leaning.
+  assert "track_torso_pitch" in cfg.rewards
+  assert (
+    cfg.rewards["deviation_hip_joint"].params["pitch_command_name"] == "torso_pitch"
+  )
+  # Observation command segment is 5-dim (one-step 81 = 5 + 6 + 2*29 + 12).
+  actor_term = cfg.observations["actor"].terms["him_obs"]
+  assert actor_term.params["pitch_command_name"] == "torso_pitch"
+  assert len(actor_term.noise.n_max) == 81
+
+  # Base task is untouched (4-dim command, no pitch machinery).
+  base = unitree_g1_homie_env_cfg()
+  assert "torso_pitch" not in base.commands
+  assert "torso_pitch" not in base.actions
+  assert "track_torso_pitch" not in base.rewards
+  assert len(base.observations["actor"].terms["him_obs"].noise.n_max) == 80
+
+  with pytest.raises(ValueError):
+    unitree_g1_homie_env_cfg(torso_pitch=True, waist="free")
+
+
 def test_g1_has_no_self_collision_penalty() -> None:
   # OpenHomie G1 trains with self-collision disabled (IsaacGym
   # self_collision=1) and no such penalty in its reward scales; the term
