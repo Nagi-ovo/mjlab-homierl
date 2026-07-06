@@ -160,7 +160,13 @@ def test_homie_dr_follows_openhomie_ranges(make_cfg) -> None:
   from mjlab_homierl import mdp
 
   cfg = make_cfg()
-  assert cfg.events["payload_mass"].params["ranges"] == (-5.0, 10.0)
+  if make_cfg is unitree_g1_homie_env_cfg:
+    # Deliberate deviation: OpenHomie's (-5, +10) is a field outlier (peers
+    # use (-1, +3)) and our model under-weighs the battery by ~2 kg; see the
+    # env cfg comment.
+    assert cfg.events["payload_mass"].params["ranges"] == (-1.0, 5.0)
+  else:
+    assert cfg.events["payload_mass"].params["ranges"] == (-5.0, 10.0)
   assert cfg.events["foot_friction"].params["ranges"] == (0.1, 3.0)
   assert cfg.events["encoder_bias"].params["bias_range"] == (-0.05, 0.05)
   # Actuation latency: training randomizes 0..decimation-1 substeps; play

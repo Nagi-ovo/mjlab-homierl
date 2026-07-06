@@ -364,6 +364,15 @@ def unitree_g1_homie_env_cfg(
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = foot_geoms
   cfg.events["base_com"].params["asset_cfg"].body_names = ("torso_link",)
   cfg.events["payload_mass"].params["asset_cfg"].body_names = ("torso_link",)
+  # Deliberate deviation from OpenHomie's (-5, +10): a 2026-07-06 survey found
+  # that range to be an outlier (Unitree official & Holosoma G1 both use
+  # (-1, +3); HumanPlus (-1, +1)). Our model also sums to 33.3 kg vs ~35 kg
+  # spec-with-battery, so the real powered robot runs ~+1.5-2 kg above the
+  # model as its NORMAL state. (-1, +5) = the official range re-centered on
+  # reality plus backpack margin; hand-held loads are covered separately by
+  # the wrist hand_payload DR, and link_mass scale 0.8-1.2 already supplies
+  # +-20% whole-body mass uncertainty.
+  cfg.events["payload_mass"].params["ranges"] = (-1.0, 5.0)
 
   # Rewards: wire robot-specific parameters.
   site_names = ("left_foot", "right_foot")
