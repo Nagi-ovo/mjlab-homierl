@@ -20,10 +20,6 @@ G1 变体（观测/动作接口与标准版完全一致，checkpoint 可互相�
 
 - ``Mjlab-Homie-Unitree-G1-free_waist``：三个腰关节全部参与上身扰动
   （原版训练分布的严格超集）。
-- ``Mjlab-Homie-Unitree-G1-turn_mode``：可选扩展，walk 模式 1/3 的命令重采样
-  转为原地转（vx = vy = 0、|wz| ≥ 0.3，约占全部环境的 1/6）。忠实版采样器对
-  vx/vy/wz 联合采样，纯旋转命令测度为零，因此基线策略遇到纯 yaw 命令会站立
-  不动；需要原地碎步转向时用此变体训练或续训。
 - ``Mjlab-Homie-Unitree-G1-with_dex3`` / ``-with_inspire``：挂载 Unitree Dex3 /
   Inspire RH56 手模型（惯性附件 + 持物负载随机化）。基线任务的腕端负载随机化
   已覆盖这些手的质量，同一 checkpoint 裸腕/双手型通用；这两个变体主要用于
@@ -33,14 +29,17 @@ G1 变体（观测/动作接口与标准版完全一致，checkpoint 可互相�
 
 HOMIE+（接口分叉，checkpoint 与上述任务**不**互通）：
 
-- ``Mjlab-Homie-Unitree-G1-plus``：增加躯干俯仰命令——第 5 个命令维度携带
-  ``waist_pitch`` 关节角目标（rad，正=前倾，walk/squat 模式下采样至 0.45）。
-  该关节由命令直驱（policy-free、1 rad/s 限速），策略保持 12 维下肢接口并
-  学会在前倾时保持平衡（弯腰捡物所缺的自由度）。单步观测 80 → 81
-  （actor 输入 486），独立训练谱系（experiment dir ``g1_homie_plus_himppo``）。
-  pitch 命令恒 0 即为普通 HOMIE 行为（训练分布 ~68% 的环境时间 pitch=0）。
-  ONNX metadata 声明 5 维命令契约（``pitch_command_joint`` /
-  ``pitch_command_ranges``），下游插件零硬编码自举。
+- ``Mjlab-Homie-Unitree-G1-plus``：部署分支，在忠实配方之上叠加三个由实机
+  发现驱动的扩展：(1) **躯干俯仰命令**——第 5 个命令维度携带 ``waist_pitch``
+  关节角目标（rad，正=前倾，walk/squat 模式采样至 0.45），关节由命令直驱
+  （policy-free、1 rad/s 限速），策略保持 12 维下肢接口并学会前倾配平（弯腰
+  捡物所缺的自由度）；单步观测 80 → 81（actor 486），独立训练谱系
+  （``g1_homie_plus_himppo``），checkpoint 与基线不互通，pitch=0 即普通
+  HOMIE 行为。(2) **原地运动采样**——walk 模式 1/3 的重采样置 vx=0、保留
+  vy/wz（支配轴钳制 ≥0.3）；忠实采样器下纯横移/纯转向测度为零，实测策略
+  遇此类命令 100% 双支撑站立。(3) **脚部接触柔性 DR**——每 env 随机化脚部
+  geom_solref（近刚性到软泡沫，参照 arXiv:2504.13619），修复 EVA 拼接垫上
+  的站立微晃。ONNX metadata 声明 5 维命令契约，下游插件零硬编码自举。
 
 核心设计思想：**缩小策略的动作空间，将其集中在下肢控制上，而将上身（以及可选
 的夹爪）作为"随时间变化的平滑扰动"。**

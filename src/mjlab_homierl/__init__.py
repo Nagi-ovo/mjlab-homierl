@@ -20,28 +20,23 @@ register_mjlab_task(
   runner_cls=HomieHimOnPolicyRunner,
 )
 
-# HOMIE+ (homie_plus_plan.md): commanded torso pitch. 5-dim command, one-step
-# obs 81 (actor 486) -- an interface fork; checkpoints do NOT interchange with
-# the base task. waist_pitch is command-driven (policy-free), waist_roll stays
-# locked, waist_yaw stays in the disturbance set.
+# HOMIE+ (homie_plus_plan.md): the deployment fork. Commanded torso pitch
+# (5-dim command, one-step obs 81, actor 486 -- checkpoints do NOT interchange
+# with the base task; waist_pitch command-driven, waist_roll locked, waist_yaw
+# disturbed), plus two deployment-motivated extensions over OpenHomie parity:
+# in-place locomotion sampling (1/3 of walk resamples: vx=0, vy/wz kept with
+# the dominant axis clamped >= 0.3 -- fixes the dead pure-strafe / pure-turn
+# corners found on hardware) and per-env foot contact-compliance DR
+# (arXiv:2504.13619; fixes standing sway on foam mats).
 register_mjlab_task(
   task_id="Mjlab-Homie-Unitree-G1-plus",
-  env_cfg=unitree_g1_homie_env_cfg(torso_pitch=True),
-  play_env_cfg=unitree_g1_homie_env_cfg(play=True, torso_pitch=True),
+  env_cfg=unitree_g1_homie_env_cfg(
+    torso_pitch=True, inplace_prob=1.0 / 3.0, floor="compliant"
+  ),
+  play_env_cfg=unitree_g1_homie_env_cfg(
+    play=True, torso_pitch=True, inplace_prob=1.0 / 3.0, floor="compliant"
+  ),
   rl_cfg=unitree_g1_homie_plus_himppo_runner_cfg(),
-  runner_cls=HomieHimOnPolicyRunner,
-)
-
-# Opt-in extension: 1/3 of walk-mode resamples become in-place-turn commands
-# (vx=vy=0, |wz|>=0.3; ~1/6 of all envs). The faithful OpenHomie sampler never
-# produces pure rotation, so base-task policies stand through yaw-only
-# commands; train (or resume) on this variant if step-turning in place is a
-# deployment requirement. Interface-identical; checkpoints load both ways.
-register_mjlab_task(
-  task_id="Mjlab-Homie-Unitree-G1-turn_mode",
-  env_cfg=unitree_g1_homie_env_cfg(turn_prob=1.0 / 3.0),
-  play_env_cfg=unitree_g1_homie_env_cfg(play=True, turn_prob=1.0 / 3.0),
-  rl_cfg=unitree_g1_homie_himppo_runner_cfg(),
   runner_cls=HomieHimOnPolicyRunner,
 )
 

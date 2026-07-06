@@ -24,12 +24,6 @@ interchangeably):
 
 - ``Mjlab-Homie-Unitree-G1-free_waist``: all three waist joints join the
   upper-body disturbance (a strict superset of the original distribution).
-- ``Mjlab-Homie-Unitree-G1-turn_mode``: opt-in extension — 1/3 of walk-mode
-  command resamples become in-place turns (``vx = vy = 0``, ``|wz| >= 0.3``,
-  ~1/6 of all envs). The faithful sampler draws vx/vy/wz jointly, so pure
-  rotation has measure zero and base-task policies stand through yaw-only
-  commands; train (or resume) on this variant if step-turning in place is a
-  deployment requirement.
 - ``Mjlab-Homie-Unitree-G1-with_dex3`` / ``-with_inspire``: Unitree Dex3 /
   Inspire RH56 hand models mounted as inertial attachments with a randomized
   held-object payload. The base task's wrist-payload randomization covers
@@ -40,16 +34,18 @@ interchangeably):
 
 HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
 
-- ``Mjlab-Homie-Unitree-G1-plus``: adds a commanded torso pitch — a 5th
-  command dim carries a ``waist_pitch`` joint-angle target (rad, + = lean
-  forward, sampled in walk/squat modes up to 0.45). The joint is
-  command-driven (policy-free, slew-limited at 1 rad/s); the policy keeps the
-  12-dim leg interface and learns to balance the lean. One-step observation
-  grows 80 → 81 (actor input 486); separate training lineage (experiment dir
-  ``g1_homie_plus_himppo``). Commanding pitch = 0 reproduces plain HOMIE
-  behavior (~68% of training env-time is at zero pitch). The exported ONNX
-  metadata declares the 5-dim command contract (``pitch_command_joint``,
-  ``pitch_command_ranges``) so downstream plugins bootstrap without
+- ``Mjlab-Homie-Unitree-G1-plus``: the deployment fork — three deliberate,
+  hardware-motivated extensions over parity: (1) commanded torso pitch (5th
+  command dim, ``waist_pitch`` joint-angle target up to 0.45 rad, command
+  driven / policy-free, slew-limited 1 rad/s; one-step obs 80 → 81, actor
+  486, separate lineage ``g1_homie_plus_himppo``, pitch = 0 reproduces plain
+  HOMIE); (2) in-place locomotion sampling (1/3 of walk resamples: vx = 0,
+  sampled vy/wz kept with the dominant axis clamped ≥ 0.3 — the faithful
+  sampler leaves pure strafe/turn at measure zero and probed policies stand
+  through such commands); (3) per-env foot contact-compliance DR
+  (``geom_solref`` near-rigid to soft foam, after arXiv:2504.13619 — fixes
+  standing sway on EVA gym mats). The exported ONNX metadata declares the
+  5-dim command contract so downstream plugins bootstrap without
   hardcoding.
 
 The core idea: **reduce the policy action space to the lower body, and treat
@@ -132,7 +128,8 @@ Domain randomization
 --------------------
 
 All randomization uses mjlab-native ``dr.*`` events: PD gains ×[0.9, 1.1]
-(per reset), link masses ×[0.8, 1.2], torso payload +[-2, 5] kg, CoM offset,
+(per reset), link masses ×[0.8, 1.2], torso payload +[-1, +5] kg (see the env cfg
+comment for the survey behind this deviation), CoM offset,
 encoder bias, foot friction, a global horizontal push every 4 s
 (Δv ≤ 0.5 m/s), and randomized joint poses / root velocities at reset.
 OpenHomie's per-step torque injection has no mjlab equivalent and is
@@ -149,6 +146,5 @@ OpenHomie. The left/right mirror maps for symmetry augmentation are derived
 from joint names (``left_*``/``right_*`` pairing; joints whose names contain
 ``yaw``/``roll`` flip sign), so G1 and H1 share one implementation.
 
-Known deviation: the estimator's next-step critic observation at termination
-steps is the post-reset observation (mjlab computes observations after
-resets), whereas OpenHomie substitutes the pre-reset observation.
+Termination steps feed the estimator the pre-reset critic observation via a
+recorder term, matching OpenHomie's runner behavior.

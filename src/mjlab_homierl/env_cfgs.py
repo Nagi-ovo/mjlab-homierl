@@ -193,8 +193,9 @@ def unitree_g1_homie_env_cfg(
   gains: str = "deploy",
   hands: str | None = None,
   waist: str = "locked",
-  turn_prob: float = 0.0,
+  inplace_prob: float = 0.0,
   torso_pitch: bool = False,
+  floor: str = "rigid",
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
 
@@ -221,11 +222,17 @@ def unitree_g1_homie_env_cfg(
       unchanged, so checkpoints remain compatible with the base task.
       - ``"dex3"``: Unitree Dex3 (~0.53 kg each; BiGym's G1 is G1-Dex3).
       - ``"inspire"``: Inspire RH56 (RH56DFX spec weight, 0.54 kg each).
-    turn_prob: Fraction of walk-mode command resamples converted to in-place
-      turns (vx = vy = 0, |wz| >= 0.3). OpenHomie's joint vx/vy/wz sampling
-      gives pure rotation measure zero, so its policies gate stepping on |vx|
-      and stand through yaw-only commands; this option densifies that corner.
-      0.0 (default) = exact OpenHomie parity.
+    inplace_prob: Fraction of walk-mode command resamples converted to
+      in-place locomotion (vx = 0, sampled vy/wz kept, dominant axis clamped
+      to >= 0.3). OpenHomie's joint vx/vy/wz sampling gives pure strafe and
+      pure rotation measure zero, so its policies gate stepping on |vx| and
+      stand through such commands (probes: vy_act = 0 and wz_act = 0 at 100%
+      double support). 0.0 (default) = exact OpenHomie parity.
+    floor: ``"rigid"`` (default, parity) or ``"compliant"`` — adds per-env
+      foot contact-compliance DR (geom_solref on the foot spheres, negative
+      stiffness/damping form) spanning near-rigid to soft gym-mat foam, per
+      arXiv:2504.13619. Motivated by observed standing sway on the lab's EVA
+      puzzle mats.
     torso_pitch: HOMIE+ — add a commanded waist_pitch joint-angle target
       (5th command dim; one-step obs 80 -> 81). waist_pitch is direct-driven
       by the command (policy-free, rate-limited), a pitch-tracking reward is
@@ -350,7 +357,7 @@ def unitree_g1_homie_env_cfg(
   twist = cfg.commands["twist"]
   assert isinstance(twist, UniformVelocityCommandCfg)
   twist.viz.z_offset = 1.15
-  twist.turn_prob = turn_prob
+  twist.inplace_prob = inplace_prob
   height = cfg.commands["height"]
   assert isinstance(height, RelativeHeightCommandCfg)
   height.foot_site_names = ("left_foot", "right_foot")
@@ -364,6 +371,20 @@ def unitree_g1_homie_env_cfg(
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = foot_geoms
   cfg.events["base_com"].params["asset_cfg"].body_names = ("torso_link",)
   cfg.events["payload_mass"].params["asset_cfg"].body_names = ("torso_link",)
+  if floor == "compliant":
+    cfg.events["foot_compliance"] = EventTermCfg(
+      mode="startup",
+      func=mdp.foot_compliance,
+      params={
+        "asset_cfg": SceneEntityCfg("robot", geom_names=foot_geoms),
+        # -stiffness [N/m], -damping [N*s/m]: near-rigid to soft foam mats.
+        "ranges": {0: (-100000.0, -8000.0), 1: (-1000.0, -100.0)},
+        # One floor softness per env, shared by all foot spheres.
+        "shared_random": True,
+      },
+    )
+  elif floor != "rigid":
+    raise ValueError(f"Unknown floor variant '{floor}'. Use 'rigid' or 'compliant'.")
   # Deliberate deviation from OpenHomie's (-5, +10): a 2026-07-06 survey found
   # that range to be an outlier (Unitree official & Holosoma G1 both use
   # (-1, +3); HumanPlus (-1, +1)). Our model also sums to 33.3 kg vs ~35 kg

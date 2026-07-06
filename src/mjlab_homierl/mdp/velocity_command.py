@@ -7,12 +7,13 @@ exclusive modes (OpenHomie scheme):
 - walk   (p = 1/2): random twist, standing height target
 - stand  (p = 1/6): zero twist, standing height target
 
-Optionally, ``turn_prob`` converts that fraction of walk-mode resamples into
-pure in-place-turn commands (vx = vy = 0, |wz| >= ``turn_min_ang_vel``). This
-is an extension over OpenHomie: its sampler draws vx/vy/wz jointly, so
-"rotate without translating" has measure zero and trained policies gate their
-gait on |vx| alone, standing through pure-yaw commands. Default 0.0 = exact
-OpenHomie parity.
+Optionally, ``inplace_prob`` converts that fraction of walk-mode resamples
+into in-place locomotion commands: vx = 0 with the sampled (vy, wz) kept and
+the dominant of the two clamped away from zero. This is an extension over
+OpenHomie: its sampler draws vx/vy/wz jointly, so "strafe or rotate without
+advancing" has measure zero and trained policies gate their gait on |vx|
+alone — probes showed pure-turn AND pure-strafe commands leave the robot
+standing at 100% double support. Default 0.0 = exact OpenHomie parity.
 
 The twist command samples the mode and exposes it via :attr:`mode`; the height
 command couples to it. Both commands must share the same resampling interval,
@@ -89,21 +90,28 @@ class UniformVelocityCommand(CommandTerm):
       self.vel_command_b[walk_ids, 0] = r.uniform_(*self.cfg.ranges.lin_vel_x)
       self.vel_command_b[walk_ids, 1] = r.uniform_(*self.cfg.ranges.lin_vel_y)
       self.vel_command_b[walk_ids, 2] = r.uniform_(*self.cfg.ranges.ang_vel_z)
-      if self.cfg.turn_prob > 0.0:
-        is_turn = (
-          torch.rand(len(walk_ids), device=self.device) < self.cfg.turn_prob
+      if self.cfg.inplace_prob > 0.0:
+        is_ip = (
+          torch.rand(len(walk_ids), device=self.device) < self.cfg.inplace_prob
         )
-        turn_ids = walk_ids[is_turn]
-        if turn_ids.numel() > 0:
-          self.vel_command_b[turn_ids, :2] = 0.0
-          wz = self.vel_command_b[turn_ids, 2]
-          min_mag = float(self.cfg.turn_min_ang_vel)
-          # Clamp away from zero so every turn-mode env actually rotates.
-          self.vel_command_b[turn_ids, 2] = torch.where(
-            wz.abs() < min_mag,
-            min_mag * torch.where(wz < 0.0, -1.0, 1.0),
-            wz,
+        ip_ids = walk_ids[is_ip]
+        if ip_ids.numel() > 0:
+          self.vel_command_b[ip_ids, 0] = 0.0
+          vy = self.vel_command_b[ip_ids, 1]
+          wz = self.vel_command_b[ip_ids, 2]
+          # Clamp the dominant axis away from zero so every in-place env
+          # actually strafes and/or turns; the other axis keeps its sampled
+          # value, so pure-strafe, pure-turn, and combos all occur.
+          min_mag = float(self.cfg.inplace_min_cmd)
+          vy_c = torch.where(
+            vy.abs() < min_mag, min_mag * torch.where(vy < 0.0, -1.0, 1.0), vy
           )
+          wz_c = torch.where(
+            wz.abs() < min_mag, min_mag * torch.where(wz < 0.0, -1.0, 1.0), wz
+          )
+          wz_dominant = wz.abs() >= vy.abs()
+          self.vel_command_b[ip_ids, 1] = torch.where(wz_dominant, vy, vy_c)
+          self.vel_command_b[ip_ids, 2] = torch.where(wz_dominant, wz_c, wz)
 
   def _update_command(self) -> None:
     pass
@@ -158,17 +166,19 @@ class UniformVelocityCommandCfg(CommandTermCfg):
 
   ranges: Ranges
 
-  turn_prob: float = 0.0
-  """Fraction of walk-mode resamples converted to in-place turns (vx = vy = 0).
+  inplace_prob: float = 0.0
+  """Fraction of walk-mode resamples converted to in-place locomotion
+  (vx = 0, sampled vy/wz kept, dominant axis clamped to ``inplace_min_cmd``).
 
-  0.0 (default) reproduces OpenHomie's sampler exactly. The turn envs keep
+  0.0 (default) reproduces OpenHomie's sampler exactly. In-place envs keep
   walk-mode semantics everywhere else (standing height target, twist-gated
   reward terms see a nonzero command norm).
   """
 
-  turn_min_ang_vel: float = 0.3
-  """Minimum |wz| for turn-mode commands; smaller draws are pushed to this
-  magnitude (sign preserved) so the mode never degenerates into standing."""
+  inplace_min_cmd: float = 0.3
+  """Minimum magnitude for the dominant in-place axis (vy or wz); smaller
+  draws are pushed to this value (sign preserved) so the mode never
+  degenerates into standing."""
 
   @dataclass
   class VizCfg:

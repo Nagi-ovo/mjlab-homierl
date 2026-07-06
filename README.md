@@ -90,12 +90,6 @@ checkpoints load interchangeably across them (and into the base task):
 - `Mjlab-Homie-Unitree-G1-free_waist` — all three waist joints join the random
   upper-body disturbance; a strict superset of the original training
   distribution (the torso can be randomly pitched/rolled).
-- `Mjlab-Homie-Unitree-G1-turn_mode` — opt-in extension: 1/3 of walk-mode
-  command resamples become in-place turns (`vx = vy = 0`, `|wz| >= 0.3`;
-  about 1/6 of all envs). The faithful OpenHomie sampler draws vx/vy/wz
-  jointly, so pure rotation has measure zero and base-task policies stand
-  through yaw-only commands; train (or resume) on this variant if step-turning
-  in place is a deployment requirement.
 - `Mjlab-Homie-Unitree-G1-with_dex3` — Unitree Dex3 hands mounted as inertial
   attachments (~0.53 kg each) plus a randomized held-object payload.
 - `Mjlab-Homie-Unitree-G1-with_inspire` — Inspire RH56 hands (RH56DFX spec
@@ -108,18 +102,28 @@ checkpoints load interchangeably across them (and into the base task):
 
 HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
 
-- `Mjlab-Homie-Unitree-G1-plus` — adds a commanded torso pitch: a 5th command
-  dim carries a `waist_pitch` joint-angle target (rad, + = lean forward,
-  sampled in walk/squat modes up to 0.45 rad). The joint is command-driven
-  (policy-free, slew-limited at 1 rad/s); the policy keeps the 12-dim leg
-  interface and learns to balance the lean — the missing DoF for
-  pick-from-floor work. One-step observation grows 80 → 81 (actor input 486),
-  so this is a separate training lineage with its own experiment dir
-  (`g1_homie_plus_himppo`). Commanding pitch = 0 reproduces plain HOMIE
-  behavior (~68% of training env-time is at zero pitch). The exported ONNX
-  metadata declares the 5-dim command (`one_step_obs_layout`,
-  `pitch_command_joint`, `pitch_command_ranges`) so downstream plugins
-  bootstrap without hardcoding. Play works the same as the base task:
+- `Mjlab-Homie-Unitree-G1-plus` — the deployment fork; three deliberate
+  extensions over OpenHomie parity, each motivated by hardware findings:
+  1. **Commanded torso pitch**: a 5th command dim carries a `waist_pitch`
+     joint-angle target (rad, + = lean forward, sampled in walk/squat modes
+     up to 0.45 rad). The joint is command-driven (policy-free, slew-limited
+     at 1 rad/s); the policy keeps the 12-dim leg interface and learns to
+     balance the lean — the missing DoF for pick-from-floor work. One-step
+     observation grows 80 → 81 (actor input 486): separate training lineage
+     (`g1_homie_plus_himppo`), checkpoints do not interchange with the base
+     task. Commanding pitch = 0 reproduces plain HOMIE behavior.
+  2. **In-place locomotion sampling**: 1/3 of walk-mode resamples set
+     `vx = 0` and keep the sampled `vy`/`wz` (dominant axis clamped ≥ 0.3).
+     The faithful sampler leaves pure strafe and pure rotation at measure
+     zero — probed policies stand at 100% double support through such
+     commands.
+  3. **Foot contact-compliance DR**: per-env `geom_solref` on the foot
+     spheres, near-rigid to soft foam (after arXiv:2504.13619) — fixes the
+     standing sway observed on EVA gym mats.
+  The exported ONNX metadata declares the 5-dim command
+  (`one_step_obs_layout`, `pitch_command_joint`, `pitch_command_ranges`) so
+  downstream plugins bootstrap without hardcoding. Play works the same as the
+  base task:
   `uv run play Mjlab-Homie-Unitree-G1-plus --checkpoint-file ... --viewer viser`.
 
 - `Mjlab-Homie-Unitree-H1` — trains with Unitree's official RL-stack PD gains

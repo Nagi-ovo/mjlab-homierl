@@ -111,10 +111,19 @@ def test_g1_waist_variants() -> None:
     unitree_g1_homie_env_cfg(waist="unknown")
 
 
-def test_g1_homie_plus_torso_pitch() -> None:
+def test_g1_homie_plus_deployment_extensions() -> None:
   from mjlab_homierl import mdp
 
-  cfg = unitree_g1_homie_env_cfg(torso_pitch=True)
+  cfg = unitree_g1_homie_env_cfg(
+    torso_pitch=True, inplace_prob=1.0 / 3.0, floor="compliant"
+  )
+
+  # In-place locomotion sampling (pure strafe/turn corners).
+  assert cfg.commands["twist"].inplace_prob == 1.0 / 3.0
+  # Foot contact-compliance DR (soft floors).
+  assert cfg.events["foot_compliance"].params["ranges"][0] == (-100000.0, -8000.0)
+  with pytest.raises(ValueError):
+    unitree_g1_homie_env_cfg(floor="unknown")
 
   # 5th command dim: torso_pitch term, coupled to the twist mode.
   assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)
@@ -134,12 +143,14 @@ def test_g1_homie_plus_torso_pitch() -> None:
   assert actor_term.params["pitch_command_name"] == "torso_pitch"
   assert len(actor_term.noise.n_max) == 81
 
-  # Base task is untouched (4-dim command, no pitch machinery).
+  # Base task is untouched (4-dim command, parity sampler, rigid floor).
   base = unitree_g1_homie_env_cfg()
   assert "torso_pitch" not in base.commands
   assert "torso_pitch" not in base.actions
   assert "track_torso_pitch" not in base.rewards
   assert len(base.observations["actor"].terms["him_obs"].noise.n_max) == 80
+  assert base.commands["twist"].inplace_prob == 0.0
+  assert "foot_compliance" not in base.events
 
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(torso_pitch=True, waist="free")
