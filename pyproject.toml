@@ -49,6 +49,9 @@ dev = [
 cu128 = ["torch>=2.7.0"]
 cpu = ["torch>=2.7.0"]
 docs = ["sphinx>=8,<10"]
+deploy = [
+    "onnxruntime>=1.24.3",
+]
 
 [tool.uv]
 conflicts = [
