@@ -62,7 +62,9 @@ rt = _load_runtime()
 ##
 
 
-def run_real(policy, net_iface: str, control_dt: float) -> None:
+def run_real(
+  policy, net_iface: str, control_dt: float, speed_scale: float = 0.5
+) -> None:
   from unitree_sdk2py.core.channel import (
     ChannelFactoryInitialize,
     ChannelPublisher,
@@ -167,7 +169,7 @@ def run_real(policy, net_iface: str, control_dt: float) -> None:
     time.sleep(control_dt)
 
   policy.reset()
-  cmd_state = rt.CommandState(policy)
+  cmd_state = rt.CommandState(policy, speed_scale=speed_scale)
   height_step = 0.05 * control_dt / 0.5  # full step in 0.5 s of holding
   print("Policy running.")
   try:
@@ -303,6 +305,14 @@ def main() -> None:
   parser.add_argument("--sim", action="store_true", help="Local MuJoCo check.")
   parser.add_argument("--task", default="Mjlab-Homie-Unitree-G1")
   parser.add_argument("--control-dt", type=float, default=0.02)
+  parser.add_argument(
+    "--speed-scale",
+    type=float,
+    default=0.5,
+    help="Fraction of the training twist range at full stick deflection "
+    "(default 0.5: fwd 0.6 m/s, back 0.4, yaw 0.4). Raise toward 1.0 once "
+    "comfortable.",
+  )
   args = parser.parse_args()
 
   policy = rt.HomieOnnxPolicy(args.onnx)
@@ -316,7 +326,7 @@ def main() -> None:
     raise SystemExit(run_sim(policy, args.task))
   if not args.net:
     raise SystemExit("Provide --net <iface> for real deployment or --sim.")
-  run_real(policy, args.net, args.control_dt)
+  run_real(policy, args.net, args.control_dt, speed_scale=args.speed_scale)
 
 
 if __name__ == "__main__":

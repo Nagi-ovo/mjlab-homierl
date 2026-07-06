@@ -183,18 +183,35 @@ class HomieOnnxPolicy:
 
 class CommandState:
   """Joystick-driven (vx, vy, wz, height[, pitch]) command with slewed
-  height/pitch channels, scaled to the policy's training ranges."""
+  height/pitch channels, scaled to the policy's training ranges.
 
-  def __init__(self, policy: HomieOnnxPolicy):
+  ``speed_scale`` caps full stick deflection at that fraction of the training
+  twist range (1.0 = full range; teleop wants ~0.4-0.6). ``deadzone`` zeroes
+  small stick values so drift does not creep the robot.
+  """
+
+  def __init__(
+    self,
+    policy: HomieOnnxPolicy,
+    speed_scale: float = 1.0,
+    deadzone: float = 0.05,
+  ):
     self.p = policy
+    self.speed_scale = float(speed_scale)
+    self.deadzone = float(deadzone)
     self.height = policy.standing_height
     self.pitch = 0.0
 
+  def _stick(self, v: float) -> float:
+    return 0.0 if abs(v) < self.deadzone else float(v)
+
   def vector(self, lx, ly, rx, height_step=0.0, pitch_step=0.0) -> np.ndarray:
     p = self.p
-    vx = ly * (p.vx_range[1] if ly >= 0 else -p.vx_range[0])
-    vy = -lx * p.vy_range[1]
-    wz = -rx * p.wz_range[1]
+    lx, ly, rx = self._stick(lx), self._stick(ly), self._stick(rx)
+    s = self.speed_scale
+    vx = s * ly * (p.vx_range[1] if ly >= 0 else -p.vx_range[0])
+    vy = s * -lx * p.vy_range[1]
+    wz = s * -rx * p.wz_range[1]
     self.height = float(
       np.clip(self.height + height_step, p.height_range[0], p.height_range[1])
     )
