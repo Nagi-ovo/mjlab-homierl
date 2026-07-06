@@ -377,8 +377,12 @@ def unitree_g1_homie_env_cfg(
       func=mdp.foot_compliance,
       params={
         "asset_cfg": SceneEntityCfg("robot", geom_names=foot_geoms),
-        # -stiffness [N/m], -damping [N*s/m]: near-rigid to soft foam mats.
-        "ranges": {0: (-100000.0, -8000.0), 1: (-1000.0, -100.0)},
+        # Positive solref form (timeconst [s], dampratio): 0.02 = MuJoCo's
+        # rigid default, 0.1 = soft foam feel. Numerically safe by
+        # construction (timeconst >= 4x the 5 ms physics step); the negative
+        # stiffness/damping form NaN'd training when it sampled the
+        # high-stiffness/low-damping corner.
+        "ranges": {0: (0.02, 0.1), 1: (0.7, 1.5)},
         # One floor softness per env, shared by all foot spheres.
         "shared_random": True,
       },

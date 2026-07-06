@@ -7,10 +7,13 @@ mattresses/foam/grass), the compliance is randomized on the FOOT geoms: the
 feet already carry contact ``priority=1`` over the terrain, so their solref
 governs the foot-ground contact — no terrain changes needed.
 
-``geom_solref`` uses MuJoCo's negative direct form: axis 0 = -stiffness
-[N/m], axis 1 = -damping [N*s/m]. mjlab's DR engine expands the field
-per-world (verified shape (num_envs, ngeom, 2)), so each environment trains
-on its own floor softness.
+``geom_solref`` uses MuJoCo's positive form: axis 0 = time constant [s]
+(0.02 = rigid default, larger = softer), axis 1 = damping ratio. The positive
+form is numerically safe across the whole sampled box; the negative
+stiffness/damping form produced NaNs when independent axis draws landed on
+high-stiffness/low-damping (a ~224 rad/s underdamped contact at a 5 ms
+step). mjlab's DR engine expands the field per-world (verified shape
+(num_envs, ngeom, 2)), so each environment trains on its own floor softness.
 """
 
 from __future__ import annotations
@@ -40,11 +43,11 @@ def foot_compliance(
   distribution: str = "uniform",
   shared_random: bool = False,
 ) -> None:
-  """Randomize foot geom solref (negative stiffness/damping form).
+  """Randomize foot geom solref (positive timeconst/dampratio form).
 
-  Pass ``ranges`` as ``{0: (-K_max, -K_min), 1: (-D_max, -D_min)}``; e.g.
-  ``{0: (-1e5, -8e3), 1: (-1000, -100)}`` spans near-rigid (~2 mm sink under
-  a 35 kg robot) down to soft gym-mat foam (~2 cm sink).
+  Pass ``ranges`` as ``{0: (T_min, T_max), 1: (zeta_min, zeta_max)}``; e.g.
+  ``{0: (0.02, 0.1), 1: (0.7, 1.5)}`` spans MuJoCo's rigid default to a soft
+  gym-mat foam feel. Keep T_min >= 2x the physics step.
   """
   _randomize_model_field(
     env,

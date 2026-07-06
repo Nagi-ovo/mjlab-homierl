@@ -121,7 +121,7 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   # In-place locomotion sampling (pure strafe/turn corners).
   assert cfg.commands["twist"].inplace_prob == 1.0 / 3.0
   # Foot contact-compliance DR (soft floors).
-  assert cfg.events["foot_compliance"].params["ranges"][0] == (-100000.0, -8000.0)
+  assert cfg.events["foot_compliance"].params["ranges"][0] == (0.02, 0.1)
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(floor="unknown")
 
