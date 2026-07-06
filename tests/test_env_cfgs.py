@@ -120,8 +120,11 @@ def test_g1_homie_plus_deployment_extensions() -> None:
 
   # In-place locomotion sampling (pure strafe/turn corners).
   assert cfg.commands["twist"].inplace_prob == 1.0 / 3.0
-  # Foot contact-compliance DR (soft floors).
+  # Foot contact-compliance DR (soft floors): in-episode re-randomization at
+  # ~0.5 s average, per arXiv:2504.13619.
   assert cfg.events["foot_compliance"].params["ranges"][0] == (0.02, 0.1)
+  assert cfg.events["foot_compliance"].mode == "interval"
+  assert cfg.events["foot_compliance"].interval_range_s == (0.3, 0.7)
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(floor="unknown")
 

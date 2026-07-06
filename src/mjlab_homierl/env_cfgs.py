@@ -87,6 +87,8 @@ def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
   cfg.rewards = {}
   cfg.curriculum = {}
   cfg.events.pop("push_robot", None)
+  # Training-time robustness measure; play/eval runs on the nominal floor.
+  cfg.events.pop("foot_compliance", None)
   # The terminal-critic-obs recorder serves the HIM estimator during training;
   # it requires the critic group, which play strips.
   cfg.recorders.pop("terminal_critic_obs", None)
@@ -372,8 +374,12 @@ def unitree_g1_homie_env_cfg(
   cfg.events["base_com"].params["asset_cfg"].body_names = ("torso_link",)
   cfg.events["payload_mass"].params["asset_cfg"].body_names = ("torso_link",)
   if floor == "compliant":
+    # In-episode re-randomization (paper: "after every 0.5s on average") so
+    # the policy also experiences compliance TRANSITIONS (mat seams, stepping
+    # from mats onto hard floor), not just a fixed per-episode softness.
     cfg.events["foot_compliance"] = EventTermCfg(
-      mode="startup",
+      mode="interval",
+      interval_range_s=(0.3, 0.7),
       func=mdp.foot_compliance,
       params={
         "asset_cfg": SceneEntityCfg("robot", geom_names=foot_geoms),
