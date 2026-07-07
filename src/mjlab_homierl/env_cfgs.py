@@ -198,10 +198,17 @@ def unitree_g1_homie_env_cfg(
   inplace_prob: float = 0.0,
   torso_pitch: bool = False,
   floor: str = "rigid",
+  native: bool = False,
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
 
   Args:
+    native: Frozen OpenHomie-parity preset (living documentation of every
+      deliberate deviation in the default task). Reverts: torso payload DR to
+      OpenHomie's (-5, +10) kg, wrist payload DR to its (-0.1, +0.3) kg, and
+      drops the hip/knee ground-contact penalty (OpenHomie's
+      ``penalize_contacts_on`` config is dead code — no reward scale, no
+      reward function). Incompatible with every non-parity knob.
     waist: Waist-joint treatment in the upper-body disturbance.
       - ``"locked"`` (default): waist_roll/waist_pitch are held at the default
         pose (PD, never disturbed) and only waist_yaw joins the random
@@ -244,6 +251,15 @@ def unitree_g1_homie_env_cfg(
   """
   if gains not in ("deploy", "mjlab"):
     raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
+  if native and (
+    hands is not None
+    or waist != "locked"
+    or inplace_prob != 0.0
+    or torso_pitch
+    or floor != "rigid"
+    or gains != "deploy"
+  ):
+    raise ValueError("native=True pins OpenHomie parity; no other variants allowed.")
   cfg = make_homie_env_cfg()
 
   # Robot: mjlab asset-zoo G1 with the standing HOME keyframe as the default
@@ -501,6 +517,36 @@ def unitree_g1_homie_env_cfg(
     )
     # Leaning requires hip deviation to shift the CoM; lift the gate then.
     cfg.rewards["deviation_hip_joint"].params["pitch_command_name"] = "torso_pitch"
+
+    # v4 squat rework (2026-07-07): the v3 policy learned to KNEEL for deep
+    # height commands (100% at h <= 0.35 in headless probes) instead of the
+    # flat-foot crouch, which is kinematically feasible down to ~0.17 m.
+    # Three coupled causes, three fixes:
+    # 1. Step height commands create an unreachable error window whose
+    #    exp-tracking gradient rewards ballistic descent (crash onto knees)
+    #    -> slewed setpoint, per-env rate DR (0.25-0.75 m/s spans gentle to
+    #    brisk human squat descent; deploy picks any rate in the envelope).
+    height.max_rate_range = (0.25, 0.75)
+    # 2. Kneeling economics: knee rests beat crouch torque at -1.0 (the
+    #    penalty grew to -0.11/ep over v3 training while the base task stays
+    #    at ~0) -> -5.0 breaks even. OpenHomie has NO such penalty (its
+    #    penalize_contacts_on config is dead code) but also no lean command,
+    #    so kneeling was never discoverable there.
+    cfg.rewards["hip_knee_contact"].weight = -5.0
+    # 3. stand_still only guards the standing height (OpenHomie parity gate
+    #    0.775) so squat-mode shuffling is free -> extend the no-stepping
+    #    shaping to every commanded height (squat and stand are the same
+    #    stationary family; weight stays a soft -0.15 so protective steps
+    #    near the balance envelope remain affordable).
+    cfg.rewards["stand_still"].params["min_height"] = 0.0
+
+  # Frozen OpenHomie-parity preset: revert every deliberate deviation kept in
+  # the default task. The remaining diff between this preset and the default
+  # cfg IS the authoritative deviation ledger.
+  if native:
+    cfg.events["payload_mass"].params["ranges"] = (-5.0, 10.0)
+    cfg.events["hand_payload"].params["ranges"] = (-0.1, 0.3)
+    del cfg.rewards["hip_knee_contact"]
 
   cfg.viewer.body_name = "torso_link"
 

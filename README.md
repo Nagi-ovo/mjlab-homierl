@@ -99,6 +99,12 @@ checkpoints load interchangeably across them (and into the base task):
   real hand geometry.
 - `Mjlab-Homie-Unitree-G1-mjlab_gains` — ablation variant with mjlab's
   first-principles actuator gains (armature × natural frequency); sim-only.
+- `Mjlab-Homie-Unitree-G1-native` — frozen OpenHomie-parity preset. The diff
+  between this cfg and the default task is the authoritative ledger of our
+  deliberate deviations (torso payload DR narrowed to (-1, +5) kg, wrist
+  payload DR widened to (0, 1.5) kg, hip/knee ground-contact penalty added —
+  OpenHomie's `penalize_contacts_on` is dead code). Reference baseline; never
+  iterated on.
 
 HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
 
@@ -120,6 +126,15 @@ HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
   3. **Foot contact-compliance DR**: per-env `geom_solref` on the foot
      spheres, near-rigid to soft foam (after arXiv:2504.13619) — fixes the
      standing sway observed on EVA gym mats.
+  4. **Squat rework (v4)**: the height command is a slewed setpoint (per-env
+     rate DR 0.25–0.75 m/s) instead of OpenHomie's instantaneous step — a
+     position-type command step creates an unreachable error window whose
+     tracking gradient rewards ballistic descent (the v3 policy crash-squatted
+     onto its knees). Plus: hip/knee ground-contact penalty −5.0 (breaks the
+     kneeling economics), the `stand_still` no-stepping shaping extended to
+     all commanded heights (squat-mode shuffling was free), and the torso
+     pitch law keyed on moving/stationary (stand + lean = the
+     reach-over-a-table teleop pose).
   The exported ONNX metadata declares the 5-dim command
   (`one_step_obs_layout`, `pitch_command_joint`, `pitch_command_ranges`) so
   downstream plugins bootstrap without hardcoding. Play works the same as the

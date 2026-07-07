@@ -170,7 +170,10 @@ def run_real(
 
   policy.reset()
   cmd_state = rt.CommandState(policy, speed_scale=speed_scale)
-  height_step = 0.05 * control_dt / 0.5  # full step in 0.5 s of holding
+  # Height slews at 0.3 m/s while the button is held — inside the v4 trained
+  # rate envelope (0.25-0.75 m/s); anything slower degrades toward the
+  # heavily-trained steady hold, so the low side is safe too.
+  height_step = 0.3 * control_dt
   print("Policy running.")
   try:
     while remote.button[KeyMap.select] != 1:

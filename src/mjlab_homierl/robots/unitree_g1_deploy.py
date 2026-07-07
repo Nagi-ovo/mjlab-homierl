@@ -132,7 +132,13 @@ G1_DEPLOY_ARTICULATION = EntityArticulationInfoCfg(
       effort_limit=g1_constants.ACTUATOR_4010.effort_limit,
     ),
   ),
-  soft_joint_pos_limit_factor=0.9,
+  # OpenHomie parity: soft_dof_pos_limit = 0.975 (g1_29dof_config.py). The
+  # earlier 0.9 was unintentionally stricter and walled off the flat-foot deep
+  # squat: the balanced crouch needs knee ~2.75-2.84 rad vs a 0.9-soft cap of
+  # 2.73 (hard limit 2.88), so dof_pos_limits (-2.0) taxed exactly the poses a
+  # proper deep squat requires — one more thumb on the kneeling side of the
+  # scale (see the v4 squat rework note in env_cfgs.py).
+  soft_joint_pos_limit_factor=0.975,
 )
 
 

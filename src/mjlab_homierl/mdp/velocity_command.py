@@ -196,6 +196,16 @@ class RelativeHeightCommand(CommandTerm):
 
   Couples to the mode sampled by :class:`UniformVelocityCommand`: squat-mode
   envs draw a random height target; walk/stand envs get ``standing_height``.
+
+  With ``max_rate_range`` set, the exposed command is a SLEWED setpoint that
+  moves toward the sampled target at a per-env rate drawn from that range.
+  OpenHomie feeds the target as an instantaneous step, but height is a
+  position-type command: a step creates a physically unreachable error window
+  whose exp-tracking gradient rewards ballistic descent (the v3 policy
+  crash-squatted onto its knees). The slewed setpoint defines a well-executed
+  descent at every instant, the endpoint is unobservable to the policy (no
+  incentive to race ahead), and it matches deployment, where stick commands
+  ramp. ``None`` (default) keeps OpenHomie's step semantics.
   """
 
   cfg: RelativeHeightCommandCfg
@@ -214,6 +224,10 @@ class RelativeHeightCommand(CommandTerm):
     self.height_command = torch.full(
       (self.num_envs, 1), cfg.standing_height, device=self.device
     )
+    self._height_target = torch.full(
+      (self.num_envs,), cfg.standing_height, device=self.device
+    )
+    self._slew_rate = torch.zeros(self.num_envs, device=self.device)
     self.metrics["error_height"] = torch.zeros(self.num_envs, device=self.device)
 
   @property
@@ -240,16 +254,33 @@ class RelativeHeightCommand(CommandTerm):
     error = torch.abs(self.height_command[:, 0] - self._compute_relative_height())
     self.metrics["error_height"] += error / max_command_step
 
+  def reset(self, env_ids: torch.Tensor | slice | None) -> dict[str, float]:
+    # Episodes spawn at the default (standing) pose; re-anchor the slewed
+    # setpoint so a fresh episode never inherits the dying episode's height.
+    assert isinstance(env_ids, torch.Tensor)  # matches the base-class contract
+    self.height_command[env_ids, 0] = float(self.cfg.standing_height)
+    return super().reset(env_ids)
+
   def _resample_command(self, env_ids: torch.Tensor) -> None:
     is_squat = self._twist_mode()[env_ids] == MODE_SQUAT
-    self.height_command[env_ids, 0] = float(self.cfg.standing_height)
+    self._height_target[env_ids] = float(self.cfg.standing_height)
     squat_ids = env_ids[is_squat]
     if squat_ids.numel() > 0:
       r = torch.empty(len(squat_ids), device=self.device)
-      self.height_command[squat_ids, 0] = r.uniform_(*self.cfg.ranges.height)
+      self._height_target[squat_ids] = r.uniform_(*self.cfg.ranges.height)
+    if self.cfg.max_rate_range is None:
+      # OpenHomie parity: the command steps to the target instantly.
+      self.height_command[env_ids, 0] = self._height_target[env_ids]
+    else:
+      r = torch.empty(len(env_ids), device=self.device)
+      self._slew_rate[env_ids] = r.uniform_(*self.cfg.max_rate_range)
 
   def _update_command(self) -> None:
-    pass
+    if self.cfg.max_rate_range is None:
+      return
+    step = self._slew_rate * self._env.step_dt
+    delta = self._height_target - self.height_command[:, 0]
+    self.height_command[:, 0] += torch.clamp(delta, -step, step)
 
   # Visualization.
 
@@ -314,6 +345,13 @@ class RelativeHeightCommandCfg(CommandTermCfg):
 
   ranges: Ranges
 
+  max_rate_range: tuple[float, float] | None = None
+  """Per-env slew-rate range [m/s] for the exposed height setpoint, drawn at
+  each resample. ``None`` (default) = OpenHomie parity: the command steps to
+  the sampled target instantly. E.g. ``(0.25, 0.75)`` spans a gentle to a
+  brisk human squat descent; deployment picks any rate inside the trained
+  envelope without retraining."""
+
   @dataclass
   class VizCfg:
     target_sphere_radius: float = 0.03
@@ -329,13 +367,15 @@ class RelativeHeightCommandCfg(CommandTermCfg):
 class TorsoPitchCommand(CommandTerm):
   """HOMIE+ torso-pitch command: a waist_pitch joint-angle target (rad, +fwd).
 
-  Couples to the mode sampled by :class:`UniformVelocityCommand`:
+  Couples to the mode sampled by :class:`UniformVelocityCommand`, with the
+  pitch law keyed on moving vs stationary rather than the mode name:
 
-  - walk  envs: 0 with p = ``walk_zero_prob``, else U(``walk_range``) — covers
-    "look down / reach while walking";
-  - squat envs: 0 with p = ``squat_zero_prob``, else U(``squat_range``) —
-    squat + lean is the pick-from-floor work case;
-  - stand envs: always 0.
+  - walk  envs (moving): 0 with p = ``walk_zero_prob``, else U(``walk_range``)
+    — covers "look down / reach while walking";
+  - squat/stand envs (stationary): 0 with p = ``squat_zero_prob``, else
+    U(``squat_range``) — squat + lean is the pick-from-floor work case, and
+    stand + lean is the reach-over-a-table case (the most common teleop
+    manipulation pose; v3 covered it only via the shallow-squat corner).
 
   The command is a joint-space target so upstream IK/teleop can drive it
   directly, with no attitude-estimation loop (homie_plus_plan.md §2.1).
@@ -385,6 +425,8 @@ class TorsoPitchCommand(CommandTerm):
     for mode_id, zero_prob, rng in (
       (MODE_WALK, self.cfg.walk_zero_prob, self.cfg.walk_range),
       (MODE_SQUAT, self.cfg.squat_zero_prob, self.cfg.squat_range),
+      # Stationary law: stand shares the squat pitch distribution.
+      (MODE_STAND, self.cfg.squat_zero_prob, self.cfg.squat_range),
     ):
       ids = env_ids[mode == mode_id]
       if ids.numel() == 0:

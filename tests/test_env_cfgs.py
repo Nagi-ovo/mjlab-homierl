@@ -128,9 +128,18 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(floor="unknown")
 
+  # v4 squat rework: slewed height setpoint (rate DR), kneeling economics
+  # broken, and the no-stepping shaping extended to every commanded height.
+  assert cfg.commands["height"].max_rate_range == (0.25, 0.75)
+  assert cfg.rewards["hip_knee_contact"].weight == -5.0
+  assert cfg.rewards["stand_still"].params["min_height"] == 0.0
+
   # 5th command dim: torso_pitch term, coupled to the twist mode.
   assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)
   assert cfg.commands["torso_pitch"].resampling_time_range == (4.0, 4.0)
+  # Pitch law is moving/stationary: stand shares the squat distribution.
+  assert cfg.commands["torso_pitch"].squat_zero_prob == 0.5
+  assert cfg.commands["torso_pitch"].squat_range == (-0.2, 0.45)
   # Command-driven waist_pitch, zero policy dims; policy interface unchanged.
   assert isinstance(cfg.actions["torso_pitch"], mdp.TorsoPitchActionCfg)
   assert len(cfg.actions["joint_pos"].actuator_names) == 12
@@ -154,9 +163,48 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   assert len(base.observations["actor"].terms["him_obs"].noise.n_max) == 80
   assert base.commands["twist"].inplace_prob == 0.0
   assert "foot_compliance" not in base.events
+  assert base.commands["height"].max_rate_range is None
+  assert base.rewards["hip_knee_contact"].weight == -1.0
+  assert base.rewards["stand_still"].params["min_height"] == 0.775
 
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(torso_pitch=True, waist="free")
+
+
+def test_g1_native_preset_is_the_deviation_ledger() -> None:
+  # The diff between the native preset and the default task documents every
+  # deliberate deviation from OpenHomie. Frozen — never iterate on native.
+  native = unitree_g1_homie_env_cfg(native=True)
+  assert native.events["payload_mass"].params["ranges"] == (-5.0, 10.0)
+  assert native.events["hand_payload"].params["ranges"] == (-0.1, 0.3)
+  # OpenHomie's penalize_contacts_on is dead code: no reward scale, no
+  # _reward_collision function. Native therefore has no such penalty.
+  assert "hip_knee_contact" not in native.rewards
+  # Parity values shared with the default task.
+  assert native.commands["height"].max_rate_range is None
+  assert native.commands["twist"].inplace_prob == 0.0
+  assert native.rewards["stand_still"].params["min_height"] == 0.775
+  assert "foot_compliance" not in native.events
+  for kwargs in (
+    {"torso_pitch": True},
+    {"inplace_prob": 0.5},
+    {"floor": "compliant"},
+    {"hands": "dex3"},
+    {"waist": "free"},
+    {"gains": "mjlab"},
+  ):
+    with pytest.raises(ValueError):
+      unitree_g1_homie_env_cfg(native=True, **kwargs)
+
+
+def test_g1_soft_limit_factor_matches_openhomie() -> None:
+  # OpenHomie: soft_dof_pos_limit = 0.975. 0.9 walled off the flat-foot deep
+  # squat (knee needs ~2.75-2.84 rad; 0.9-soft cap is 2.73 of a 2.88 hard
+  # limit) and helped make kneeling the cheaper height strategy.
+  from mjlab_homierl.robots.unitree_g1_deploy import get_g1_deploy_robot_cfg
+
+  cfg = get_g1_deploy_robot_cfg()
+  assert cfg.articulation.soft_joint_pos_limit_factor == 0.975
 
 
 def test_g1_has_no_self_collision_penalty() -> None:
