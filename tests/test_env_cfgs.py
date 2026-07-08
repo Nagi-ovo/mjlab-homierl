@@ -135,6 +135,10 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   assert cfg.rewards["stand_still"].params["min_height"] == 0.0
   # v5: weight-shift bridge for the in-place command corner.
   assert cfg.rewards["feet_load_asymmetry"].weight == 0.5
+  # v6: sumo-squat fix — the feet/knee lateral band's "too wide" half is
+  # enforced at every commanded height (parity gates it at standing only).
+  assert cfg.rewards["feet_distance_lateral"].params["min_height"] == 0.0
+  assert cfg.rewards["knee_distance_lateral"].params["min_height"] == 0.0
 
   # 5th command dim: torso_pitch term, coupled to the twist mode.
   assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)
@@ -169,6 +173,7 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   assert base.rewards["hip_knee_contact"].weight == -1.0
   assert base.rewards["stand_still"].params["min_height"] == 0.775
   assert "feet_load_asymmetry" not in base.rewards
+  assert base.rewards["feet_distance_lateral"].params["min_height"] == 0.775
 
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(torso_pitch=True, waist="free")

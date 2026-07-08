@@ -550,6 +550,17 @@ def unitree_g1_homie_env_cfg(
       weight=0.5,
       params={"sensor_name": "feet_ground_contact", "command_name": "twist"},
     )
+    # v6 (2026-07-08): sumo-squat fix. OpenHomie enforces the "too wide"
+    # half of the [0.2, 0.35] m feet/knee lateral band only at standing
+    # height (legged_robot.py:1154), so squats splay to ~0.45-0.49 m
+    # (measured, max 0.75) — beyond what the +-15 deg ankle_roll can level,
+    # tipping the feet onto their inner edges (feet_ground_parallel is
+    # nearly roll-blind: the collision-sphere spread senses only +-7 mm at
+    # full roll). Enforce the band at every commanded height: human-style
+    # narrow squat, shank tilt stays within the ankle_roll envelope, soles
+    # flat. The "too close" half was always enforced (parity unchanged).
+    cfg.rewards["feet_distance_lateral"].params["min_height"] = 0.0
+    cfg.rewards["knee_distance_lateral"].params["min_height"] = 0.0
 
   # Frozen OpenHomie-parity preset: revert every deliberate deviation kept in
   # the default task. The remaining diff between this preset and the default
