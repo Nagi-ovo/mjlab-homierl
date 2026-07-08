@@ -133,6 +133,8 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   assert cfg.commands["height"].max_rate_range == (0.25, 0.75)
   assert cfg.rewards["hip_knee_contact"].weight == -5.0
   assert cfg.rewards["stand_still"].params["min_height"] == 0.0
+  # v5: weight-shift bridge for the in-place command corner.
+  assert cfg.rewards["feet_load_asymmetry"].weight == 0.5
 
   # 5th command dim: torso_pitch term, coupled to the twist mode.
   assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)
@@ -166,6 +168,7 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   assert base.commands["height"].max_rate_range is None
   assert base.rewards["hip_knee_contact"].weight == -1.0
   assert base.rewards["stand_still"].params["min_height"] == 0.775
+  assert "feet_load_asymmetry" not in base.rewards
 
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(torso_pitch=True, waist="free")

@@ -539,6 +539,17 @@ def unitree_g1_homie_env_cfg(
     #    stationary family; weight stays a soft -0.15 so protective steps
     #    near the balance envelope remain affordable).
     cfg.rewards["stand_still"].params["min_height"] = 0.0
+    # v5 (2026-07-08): in-place sampling alone never broke the pure-turn
+    # exploration trap (v3 AND v4 probe wz_act ~ 0 at 100% double support,
+    # despite no_fly's lift-a-foot gradient) — the valley is the WEIGHT SHIFT
+    # before the lift, which no existing term rewards. Bridge it with a
+    # smooth load-asymmetry shaping gated to the in-place command corner;
+    # see feet_load_asymmetry's docstring for the full failure analysis.
+    cfg.rewards["feet_load_asymmetry"] = RewardTermCfg(
+      func=mdp.feet_load_asymmetry,
+      weight=0.5,
+      params={"sensor_name": "feet_ground_contact", "command_name": "twist"},
+    )
 
   # Frozen OpenHomie-parity preset: revert every deliberate deviation kept in
   # the default task. The remaining diff between this preset and the default

@@ -473,6 +473,46 @@ def no_fly(
   return reward
 
 
+def feet_load_asymmetry(
+  env: ManagerBasedRlEnv,
+  sensor_name: str,
+  command_name: str = "twist",
+  vx_threshold: float = 0.1,
+  twist_threshold: float = 0.3,
+  force_threshold: float = 0.5,
+) -> torch.Tensor:
+  """Reward single-sided foot loading for IN-PLACE locomotion commands.
+
+  Bridges the weight-shift exploration valley that kills in-place turning:
+  from symmetric standing, lifting a foot without first moving the CoM over
+  the stance foot tips the robot, and the weight shift itself changes no
+  contact state, so neither ``no_fly`` (+ single support) nor twist tracking
+  provides a gradient along it — the v3/v4 policies stand at 100% double
+  support through every pure-turn command despite forfeiting ~2.6/step.
+  Load asymmetry |Fl - Fr| / (Fl + Fr) climbs SMOOTHLY from 0 (symmetric
+  stand) to 1 (single support), from where in-support rotation and stepping
+  become reachable by ordinary exploration. Walking bootstraps through
+  lean-and-catch and needs no such bridge, so the term is gated to the
+  in-place command corner (|vx_cmd| < ``vx_threshold``, sampled |vy|/|wz|
+  dominant axis >= ``twist_threshold``) and leaves the rest of the recipe
+  untouched.
+  """
+  sensor: ContactSensor = env.scene[sensor_name]
+  assert sensor.data.force is not None
+
+  fz = torch.abs(sensor.data.force[:, :, 2])
+  total = fz.sum(dim=1)
+  asym = (fz[:, 0] - fz[:, 1]).abs() / (total + 1.0)
+
+  command = env.command_manager.get_command(command_name)
+  assert command is not None
+  in_place = (command[:, 0].abs() < float(vx_threshold)) & (
+    torch.norm(command[:, 1:3], dim=1) >= float(twist_threshold)
+  )
+  grounded = total > float(force_threshold)
+  return asym * in_place.float() * grounded.float()
+
+
 def feet_clearance(
   env: ManagerBasedRlEnv,
   target_height: float,
