@@ -128,10 +128,11 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(floor="unknown")
 
-  # v4 squat rework: slewed height setpoint (rate DR), kneeling economics
-  # broken, and the no-stepping shaping extended to every commanded height.
-  assert cfg.commands["height"].max_rate_range == (0.25, 0.75)
-  assert cfg.rewards["hip_knee_contact"].weight == -5.0
+  # v4 squat rework: slewed height setpoint (rate DR; envelope softened in
+  # v7), kneeling economics broken, and the no-stepping shaping extended to
+  # every commanded height.
+  assert cfg.commands["height"].max_rate_range is not None
+  assert cfg.rewards["hip_knee_contact"].weight < -1.0
   assert cfg.rewards["stand_still"].params["min_height"] == 0.0
   # v5: weight-shift bridge for the in-place command corner.
   assert cfg.rewards["feet_load_asymmetry"].weight == 0.5
@@ -139,6 +140,13 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   # enforced at every commanded height (parity gates it at standing only).
   assert cfg.rewards["feet_distance_lateral"].params["min_height"] == 0.0
   assert cfg.rewards["knee_distance_lateral"].params["min_height"] == 0.0
+  # v7: human-form deep squat (anti toe-crouch package).
+  assert cfg.commands["height"].max_rate_range == (0.15, 0.45)
+  assert cfg.rewards["orientation"].params["low_scale"] == 0.3
+  assert cfg.rewards["feet_flat"].weight == -1.0
+  assert cfg.rewards["squat_pose_prior"].weight == 1.0
+  assert cfg.rewards["hip_knee_contact"].weight == -10.0
+  assert cfg.rewards["stand_still"].weight == -0.3
 
   # 5th command dim: torso_pitch term, coupled to the twist mode.
   assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)

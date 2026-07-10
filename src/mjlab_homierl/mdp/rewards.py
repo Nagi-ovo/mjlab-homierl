@@ -158,11 +158,27 @@ def ang_vel_xy_penalty(
 
 
 def orientation_penalty(
-  env: ManagerBasedRlEnv, asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG
+  env: ManagerBasedRlEnv,
+  asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG,
+  height_command_name: str | None = None,
+  min_height: float = 0.0,
+  low_scale: float = 1.0,
 ) -> torch.Tensor:
-  """Penalize base tilt (squared projected-gravity xy)."""
+  """Penalize base tilt (squared projected-gravity xy).
+
+  With ``height_command_name`` set, the penalty is scaled down to
+  ``low_scale`` while the commanded height is below ``min_height``: a deep
+  human squat needs anterior pelvis tilt (the chest-to-thigh fold lives at
+  the hip, not the +-30 deg waist), and the full ungated penalty pins the
+  pelvis upright, capping the whole-torso fold at the waist's range.
+  Defaults keep OpenHomie parity (ungated, full weight).
+  """
   asset: Entity = env.scene[asset_cfg.name]
-  return torch.sum(torch.square(asset.data.projected_gravity_b[:, :2]), dim=1)
+  cost = torch.sum(torch.square(asset.data.projected_gravity_b[:, :2]), dim=1)
+  if height_command_name is not None:
+    gate = _height_gate(env, height_command_name, min_height)
+    cost = cost * (float(low_scale) + (1.0 - float(low_scale)) * gate)
+  return cost
 
 
 ##
@@ -511,6 +527,86 @@ def feet_load_asymmetry(
   )
   grounded = total > float(force_threshold)
   return asym * in_place.float() * grounded.float()
+
+
+def feet_flat(
+  env: ManagerBasedRlEnv,
+  asset_cfg: SceneEntityCfg,
+  twist_command_name: str = "twist",
+  command_threshold: float = 0.1,
+) -> torch.Tensor:
+  """Penalize foot tilt from horizontal while stationary (kills toe-crouch).
+
+  Measures gravity in each foot body frame — sensitive to BOTH pitch
+  (heels-up toe-crouch) and roll (inner-edge contact), unlike the
+  collision-point z-variance form, which is nearly blind to either on the
+  G1's narrow sphere layout. Gated to twist ~ 0 so swing-leg tilt during
+  walking is untouched; ``asset_cfg.body_names`` should match the foot
+  (ankle_roll) links.
+  """
+  asset: Entity = env.scene[asset_cfg.name]
+  quats = asset.data.body_link_quat_w[:, asset_cfg.body_ids]
+  n, f = quats.shape[0], quats.shape[1]
+  g = torch.tensor((0.0, 0.0, -1.0), device=quats.device).expand(n * f, 3)
+  g_foot = quat_apply_inverse(quats.reshape(-1, 4), g).reshape(n, f, 3)
+  cost = torch.sum(torch.square(g_foot[..., :2]), dim=(1, 2))
+
+  command = env.command_manager.get_command(twist_command_name)
+  assert command is not None
+  stationary = torch.norm(command[:, :3], dim=1) < float(command_threshold)
+  return cost * stationary.float()
+
+
+def squat_pose_prior(
+  env: ManagerBasedRlEnv,
+  asset_cfg: SceneEntityCfg,
+  height_command_name: str = "height",
+  twist_command_name: str = "twist",
+  scale: float = 2.0,
+  fade_range: tuple[float, float] = (0.28, 0.62),
+  ankle_ref_min: float = -0.78,
+) -> torch.Tensor:
+  """One-frame reference: reward proximity to the flat-foot deep-squat pose.
+
+  Pure-reward G1 policies fall into toe-crouch / kneeling attractors for
+  deep height commands; the works that show human-form deep squats (AMO)
+  guide RL with trajectory-optimization reference libraries. This term is
+  the minimal version of that idea: a kinematically derived, balanced
+  (|com_dx| < 5 mm), flat-foot, knee-clear (0.25 m) squat family, linear in
+  the commanded height (scanned 2026-07-10, waist_pitch 0.25):
+
+    hip_pitch(h)   = -1.79 + 2.67 (h - 0.28)
+    knee(h)        =  2.64 - 3.36 (h - 0.28)
+    ankle_pitch(h) = -0.85 + 0.73 (h - 0.28), clamped >= ``ankle_ref_min``
+                     (the raw fit hugs the dorsiflexion soft limit).
+
+  Soft guidance only (exp form, moderate scale): the policy reconciles the
+  prior with the torso-pitch command and DR. Fades out linearly above the
+  deep range and gates to stationary envs, so walking and standing are
+  untouched. ``asset_cfg.joint_names`` must be, in order: left/right
+  hip_pitch, left/right knee, left/right ankle_pitch (preserve_order).
+  """
+  asset: Entity = env.scene[asset_cfg.name]
+  height_cmd = env.command_manager.get_command(height_command_name)
+  assert height_cmd is not None
+  h = height_cmd[:, 0]
+  d = h - 0.28
+  hip_ref = -1.79 + 2.67 * d
+  knee_ref = 2.64 - 3.36 * d
+  ankle_ref = torch.clamp(-0.85 + 0.73 * d, min=float(ankle_ref_min))
+  refs = torch.stack(
+    (hip_ref, hip_ref, knee_ref, knee_ref, ankle_ref, ankle_ref), dim=1
+  )
+  q = asset.data.joint_pos[:, asset_cfg.joint_ids]
+  err = torch.sum(torch.square(q - refs), dim=1)
+  reward = torch.exp(-float(scale) * err)
+
+  lo, hi = fade_range
+  fade = torch.clamp((hi - h) / (hi - lo), min=0.0, max=1.0)
+  command = env.command_manager.get_command(twist_command_name)
+  assert command is not None
+  stationary = torch.norm(command[:, :3], dim=1) < 0.1
+  return reward * fade * stationary.float()
 
 
 def feet_clearance(

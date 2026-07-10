@@ -562,6 +562,57 @@ def unitree_g1_homie_env_cfg(
     cfg.rewards["feet_distance_lateral"].params["min_height"] = 0.0
     cfg.rewards["knee_distance_lateral"].params["min_height"] = 0.0
 
+    # v7 (2026-07-10): human-form deep squat. v6 play showed the narrow
+    # squat converging to a TOE-CROUCH (heels up, shins near horizontal,
+    # knees hovering at 0.10 m — "kneeling without touching") with constant
+    # balance-stepping, and descent rates at the fast end of the envelope
+    # looked ballistic. Survey: no known pure-reward work achieves a
+    # heel-down deep squat on the G1; AMO does it by guiding RL with a
+    # traj-opt reference library. Five coupled changes:
+    # 1. Gentler descent envelope (0.75 m/s top was a fast drop).
+    height.max_rate_range = (0.15, 0.45)
+    # 2. Let the pelvis fold: the ungated orientation penalty pinned the
+    #    pelvis upright, capping the torso fold at the waist's 26 deg.
+    cfg.rewards["orientation"].params.update(
+      height_command_name="height", min_height=G1_STANDING_GATE, low_scale=0.3
+    )
+    # 3. Foot-attitude flatness (orientation-based; the point-z-variance
+    #    parity term is nearly blind to both toe-pitch and edge-roll here).
+    cfg.rewards["feet_flat"] = RewardTermCfg(
+      func=mdp.feet_flat,
+      weight=-1.0,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", body_names=(r".*_ankle_roll_link",)
+        ),
+        "twist_command_name": "twist",
+      },
+    )
+    # 4. One-frame pose prior toward the balanced flat-foot squat family
+    #    (see squat_pose_prior's docstring for the scanned reference).
+    cfg.rewards["squat_pose_prior"] = RewardTermCfg(
+      func=mdp.squat_pose_prior,
+      weight=1.0,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot",
+          joint_names=(
+            "left_hip_pitch_joint",
+            "right_hip_pitch_joint",
+            "left_knee_joint",
+            "right_knee_joint",
+            "left_ankle_pitch_joint",
+            "right_ankle_pitch_joint",
+          ),
+          preserve_order=True,
+        ),
+      },
+    )
+    # 5. Price out the remaining exploits: kneeling (44% of deep squats at
+    #    v6/30k despite -5) and squat balance-stepping.
+    cfg.rewards["hip_knee_contact"].weight = -10.0
+    cfg.rewards["stand_still"].weight = -0.3
+
   # Frozen OpenHomie-parity preset: revert every deliberate deviation kept in
   # the default task. The remaining diff between this preset and the default
   # cfg IS the authoritative deviation ledger.
