@@ -77,9 +77,10 @@ class HomieOnnxPolicy:
   convention is read from the ONNX ``metadata_props``.
   """
 
-  def __init__(self, onnx_path: str):
+  def __init__(self, onnx_path: str, control_dt: float = 0.02):
     import onnxruntime as ort
 
+    self.control_dt = float(control_dt)
     self.session = ort.InferenceSession(
       onnx_path, providers=["CPUExecutionProvider"]
     )
@@ -117,10 +118,12 @@ class HomieOnnxPolicy:
     )
     self.standing_height = float(m["standing_height"])
     self.pitch_range = (0.0, 0.0)
+    self._pitch_joint_id: int | None = None
     if self.has_pitch:
       pr = json.loads(m["pitch_command_ranges"])
       lows, highs = zip(pr["walk"], pr["squat"])
       self.pitch_range = (min(lows), max(highs))
+      self._pitch_joint_id = self.joint_names.index(m["pitch_command_joint"])
 
     expected = self.num_commands + 6 + 2 * len(self.joint_names) + len(
       self.action_joint_names
@@ -134,10 +137,14 @@ class HomieOnnxPolicy:
     self.action_ids = [self.joint_names.index(n) for n in self.action_joint_names]
     self.last_action = np.zeros(len(self.action_joint_names), dtype=np.float32)
     self.history: deque[np.ndarray] = deque(maxlen=self.history_length)
+    self._pitch_cmd = 0.0
+    self._waist_target_offset = 0.0
 
   def reset(self) -> None:
     self.last_action[:] = 0.0
     self.history.clear()
+    self._pitch_cmd = 0.0
+    self._waist_target_offset = 0.0
 
   def one_step_obs(
     self,
@@ -149,6 +156,8 @@ class HomieOnnxPolicy:
   ) -> np.ndarray:
     """Assemble one observation step. Joint arrays follow ``joint_names``."""
     cmd = command.astype(np.float32).copy()
+    if self.has_pitch:
+      self._pitch_cmd = float(cmd[4])
     cmd[0:2] *= self.scale_lin_vel
     cmd[2] *= self.scale_ang_vel  # height (cmd[3]) and pitch (cmd[4]) unscaled
     return np.concatenate(
@@ -178,6 +187,15 @@ class HomieOnnxPolicy:
     self.last_action = action.astype(np.float32)
     targets = self.default_pos.copy()
     targets[self.action_ids] += self.action_scale * action
+    if self._pitch_joint_id is not None:
+      # Training's TorsoPitchAction: the waist_pitch target slews toward
+      # default + pitch_cmd at 1.0 rad/s. Without this, a HOMIE+ policy on
+      # the real robot commands a lean in the observation that the waist
+      # never physically performs.
+      step = 1.0 * self.control_dt
+      delta = self._pitch_cmd - self._waist_target_offset
+      self._waist_target_offset += float(np.clip(delta, -step, step))
+      targets[self._pitch_joint_id] += self._waist_target_offset
     return targets
 
 
