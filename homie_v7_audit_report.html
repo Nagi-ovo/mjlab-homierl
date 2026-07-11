@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>HOMIE / HOMIE+ v7 实现审计报告</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #5b6773;
+      --paper: #f4f7f9;
+      --card: #ffffff;
+      --line: #d9e0e6;
+      --navy: #13304a;
+      --blue: #176b87;
+      --blue-soft: #eaf5f8;
+      --green: #16704a;
+      --green-soft: #e9f7f0;
+      --amber: #945d05;
+      --amber-soft: #fff5de;
+      --red: #aa2424;
+      --red-soft: #fff0ef;
+      --violet: #6941a5;
+      --violet-soft: #f3edfb;
+      --shadow: 0 8px 28px rgba(24, 42, 58, .08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(23, 107, 135, .10), transparent 31rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    code, .mono {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: .93em;
+    }
+    code {
+      padding: .1rem .32rem;
+      border: 1px solid #dfe7ec;
+      border-radius: 5px;
+      background: #f5f8fa;
+    }
+    pre {
+      margin: 1rem 0;
+      overflow: auto;
+      padding: 1rem 1.15rem;
+      color: #e7f4fa;
+      background: #112535;
+      border-radius: 12px;
+      line-height: 1.55;
+    }
+    pre code { padding: 0; border: 0; color: inherit; background: transparent; }
+
+    .hero {
+      padding: 3.4rem max(1.4rem, calc((100vw - 1320px) / 2)) 2.8rem;
+      color: #f7fbfd;
+      background: linear-gradient(120deg, #10283d 0%, #174e63 67%, #176b87 100%);
+      border-bottom: 5px solid #65bdc5;
+    }
+    .eyebrow {
+      margin: 0 0 .65rem;
+      color: #9ee1e5;
+      font-size: .82rem;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 950px;
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.7rem);
+      line-height: 1.12;
+      letter-spacing: -.035em;
+    }
+    .hero-lead {
+      max-width: 880px;
+      margin: 1.15rem 0 1.4rem;
+      color: #d9edf3;
+      font-size: 1.1rem;
+    }
+    .meta-row { display: flex; flex-wrap: wrap; gap: .55rem; }
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .38rem .7rem;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      color: #eefafd;
+      background: rgba(255,255,255,.08);
+      font-size: .84rem;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+    .side {
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+      padding: 1rem;
+      background: rgba(255,255,255,.88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .side strong { display: block; margin: 0 0 .65rem; color: var(--navy); }
+    .side a {
+      display: block;
+      padding: .35rem .48rem;
+      border-radius: 7px;
+      color: #415262;
+      text-decoration: none;
+      font-size: .9rem;
+    }
+    .side a:hover { color: var(--blue); background: var(--blue-soft); }
+    .side hr { margin: .8rem 0; border: 0; border-top: 1px solid var(--line); }
+    .side button, .filters button, .print-button {
+      border: 1px solid #bdd0d8;
+      border-radius: 8px;
+      padding: .43rem .68rem;
+      color: var(--navy);
+      background: #fff;
+      font: inherit;
+      font-size: .82rem;
+      cursor: pointer;
+    }
+    .side button:hover, .filters button:hover, .filters button.active,
+    .print-button:hover { border-color: var(--blue); color: #fff; background: var(--blue); }
+
+    main { min-width: 0; }
+    section { scroll-margin-top: 1rem; margin-bottom: 2.1rem; }
+    h2 {
+      margin: 0 0 1rem;
+      color: var(--navy);
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      letter-spacing: -.02em;
+    }
+    h3 { margin: 0 0 .65rem; color: var(--navy); font-size: 1.17rem; }
+    p { margin: .6rem 0 1rem; }
+    .section-intro { max-width: 850px; color: var(--muted); }
+
+    .card, .finding, .table-card, .callout {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card, .callout { padding: 1.25rem 1.35rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .stat { padding: 1.15rem 1.2rem; }
+    .stat .value { display: block; color: var(--navy); font-size: 1.75rem; font-weight: 850; line-height: 1.1; }
+    .stat .label { display: block; margin-top: .35rem; color: var(--muted); font-size: .88rem; }
+
+    .verdict {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: start;
+      margin-bottom: 1rem;
+      padding: 1.35rem;
+      border: 1px solid #efb3ad;
+      border-left: 6px solid var(--red);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #fff 0%, var(--red-soft) 100%);
+      box-shadow: var(--shadow);
+    }
+    .verdict-mark {
+      padding: .42rem .65rem;
+      color: #fff;
+      background: var(--red);
+      border-radius: 8px;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
+    .verdict h3 { color: #7c1d1d; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .22rem .52rem;
+      border-radius: 999px;
+      font-size: .74rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      white-space: nowrap;
+    }
+    .critical { color: #fff; background: var(--red); }
+    .high { color: #7c1d1d; background: #ffd9d5; }
+    .medium { color: #754800; background: #ffe9ad; }
+    .good { color: #09583a; background: #cef0de; }
+    .fact { color: #174f64; background: #d9f0f5; }
+    .risk { color: #563486; background: #eadcf8; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; }
+    .finding { margin: 0 0 1rem; overflow: hidden; }
+    .finding summary {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: .75rem;
+      align-items: center;
+      padding: 1rem 1.15rem;
+      cursor: pointer;
+      list-style: none;
+      background: #fff;
+    }
+    .finding summary::-webkit-details-marker { display: none; }
+    .finding summary::after { content: "+"; color: var(--muted); font-size: 1.25rem; }
+    .finding[open] summary::after { content: "−"; }
+    .finding[open] summary { border-bottom: 1px solid var(--line); }
+    .finding-title { color: var(--navy); font-weight: 820; line-height: 1.35; }
+    .finding-id { color: var(--muted); font: 700 .75rem/1.2 "SFMono-Regular", Consolas, monospace; }
+    .finding-body { padding: 1.1rem 1.25rem 1.25rem; }
+    .finding-body > :first-child { margin-top: 0; }
+    .finding-body > :last-child { margin-bottom: 0; }
+    .finding[data-severity="critical"] { border-left: 5px solid var(--red); }
+    .finding[data-severity="high"] { border-left: 5px solid #df6860; }
+    .finding[data-severity="medium"] { border-left: 5px solid #dea11f; }
+
+    .evidence {
+      margin: 1rem 0;
+      padding: .85rem 1rem;
+      border-left: 4px solid var(--blue);
+      background: var(--blue-soft);
+      border-radius: 0 10px 10px 0;
+    }
+    .evidence strong { color: #114f65; }
+    .impact {
+      margin: 1rem 0;
+      padding: .85rem 1rem;
+      border-left: 4px solid var(--red);
+      background: var(--red-soft);
+      border-radius: 0 10px 10px 0;
+    }
+    .recommend {
+      margin: 1rem 0;
+      padding: .85rem 1rem;
+      border-left: 4px solid var(--green);
+      background: var(--green-soft);
+      border-radius: 0 10px 10px 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .65rem;
+      margin: 1.15rem 0;
+    }
+    .flow-step {
+      position: relative;
+      min-height: 110px;
+      padding: .9rem;
+      border: 1px solid #cbd8de;
+      border-radius: 12px;
+      background: #f7fafb;
+      font-size: .86rem;
+    }
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 43%;
+      right: -.57rem;
+      z-index: 2;
+      color: var(--blue);
+      font-weight: 900;
+      background: var(--paper);
+    }
+    .flow-step strong { display: block; margin-bottom: .3rem; color: var(--navy); }
+    .flow-step.break { border: 2px solid var(--red); background: var(--red-soft); }
+
+    .table-card { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { padding: .72rem .82rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--navy); background: #eef4f6; font-size: .79rem; letter-spacing: .02em; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #f8fbfc; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .nowrap { white-space: nowrap; }
+
+    .timeline { position: relative; margin: 1rem 0 0; padding-left: 1.5rem; }
+    .timeline::before { content: ""; position: absolute; left: .42rem; top: .5rem; bottom: .4rem; width: 2px; background: #bdd2da; }
+    .time-item { position: relative; margin: 0 0 .85rem; padding: .8rem 1rem; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .time-item::before { content: ""; position: absolute; left: -1.42rem; top: 1.15rem; width: .72rem; height: .72rem; border: 3px solid var(--paper); border-radius: 50%; background: var(--blue); }
+    .time-item strong { color: var(--navy); }
+
+    ul, ol { padding-left: 1.35rem; }
+    li { margin: .35rem 0; }
+    .source-list { color: var(--muted); font-size: .84rem; }
+    .source-list a { overflow-wrap: anywhere; }
+    .note { color: var(--muted); font-size: .86rem; }
+    .hidden-by-filter { display: none !important; }
+    .checklist { counter-reset: priority; list-style: none; padding: 0; }
+    .checklist li {
+      counter-increment: priority;
+      position: relative;
+      margin: 0 0 .8rem;
+      padding: .9rem 1rem .9rem 3.2rem;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #fff;
+    }
+    .checklist li::before {
+      content: counter(priority);
+      position: absolute;
+      left: 1rem;
+      top: .88rem;
+      display: grid;
+      place-items: center;
+      width: 1.55rem;
+      height: 1.55rem;
+      color: #fff;
+      background: var(--navy);
+      border-radius: 50%;
+      font-size: .75rem;
+      font-weight: 800;
+    }
+    footer { padding: 1.5rem; color: #687682; text-align: center; font-size: .84rem; }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .side { position: static; max-height: none; }
+      .side nav { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr 1fr; }
+      .flow-step::after { display: none; }
+    }
+    @media (max-width: 680px) {
+      .hero { padding-top: 2.3rem; }
+      .shell { padding: 1.25rem .8rem 3rem; }
+      .grid-2, .flow { grid-template-columns: 1fr; }
+      .verdict { grid-template-columns: 1fr; }
+      .finding summary { grid-template-columns: auto 1fr auto; padding: .85rem; }
+      th, td { min-width: 120px; }
+    }
+    @media print {
+      :root { --paper: #fff; --shadow: none; }
+      body { background: #fff; font-size: 10pt; }
+      .hero { padding: 1.5rem; color: #111; background: #fff; border: 2px solid #222; }
+      .hero-lead, .eyebrow, .meta-pill { color: #222; }
+      .meta-pill { border-color: #aaa; }
+      .shell { display: block; max-width: none; padding: 1rem 0; }
+      .side, .filters, .print-button { display: none !important; }
+      section { break-inside: avoid; margin-bottom: 1rem; }
+      .finding { break-inside: avoid; box-shadow: none; }
+      .finding-body { display: block !important; }
+      details:not([open]) .finding-body { display: block !important; }
+      .finding summary::after { display: none; }
+      a { color: inherit; text-decoration: none; }
+      pre { color: #111; background: #f1f1f1; border: 1px solid #bbb; white-space: pre-wrap; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <p class="eyebrow">Read-only implementation audit · decision report</p>
+    <h1>HOMIE / HOMIE+ v7<br>实现、奖励与训练—部署对齐审计</h1>
+    <p class="hero-lead">
+      覆盖 G1、H1、挂手、增益、waist、native 与 HOMIE+ 全部注册变体；沿命令、观测、动作、奖励、
+      HIMPPO、checkpoint、ONNX、仿真验证及实机 LowCmd 链路逐层核对。
+    </p>
+    <div class="meta-row">
+      <span class="meta-pill">审计快照：2026-07-11 01:09 BST</span>
+      <span class="meta-pill">HEAD：<span class="mono">39e72d5</span></span>
+      <span class="meta-pill">源码配方：HOMIE+ v7</span>
+      <span class="meta-pill">结论：实机 NO-GO</span>
+      <span class="meta-pill">代码修改：0</span>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="side">
+      <strong>报告导航</strong>
+      <nav>
+        <a href="#executive">1. 执行摘要</a>
+        <a href="#goal">2. 目标与版本</a>
+        <a href="#variants">3. 变体矩阵</a>
+        <a href="#findings">4. 核心发现</a>
+        <a href="#reward">5. 奖励与 DR</a>
+        <a href="#training">6. v7 训练状态</a>
+        <a href="#validation">7. 验证结果</a>
+        <a href="#actions">8. 建议优先级</a>
+        <a href="#appendix">9. 附录</a>
+      </nav>
+      <hr>
+      <button class="print-button" type="button" onclick="window.print()">打印 / 导出 PDF</button>
+      <p class="note">报告为单文件、无外部依赖；筛选和折叠不影响打印。</p>
+    </aside>
+
+    <main>
+      <section id="executive">
+        <h2>1. 执行摘要</h2>
+        <div class="verdict">
+          <div class="verdict-mark">NO-GO</div>
+          <div>
+            <h3>当前 HOMIE+ 不应进入实机验收；v7 也不能视为已完成版本</h3>
+            <p>
+              最严重的问题不是调参，而是端到端语义断裂：训练与 MuJoCo 中的
+              <code>waist_pitch</code> 由环境直接执行，实机脚本却只把 pitch 命令写进策略观测，
+              最终仍把腰关节固定在默认位。策略被告知“前倾”，机器人实际被持续要求“直立”。
+            </p>
+            <p>
+              同时，HIMPPO 镜像增强把未执行的随机镜像 action 与原 transition 的 reward/next-state
+              配对，污染一半 rollout storage；域随机化、课程恢复、导出 metadata 与实机 fail-safe
+              也存在确定缺口。上述问题应先于继续比较 v7 reward recipe 处理。
+            </p>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card stat"><span class="value">10</span><span class="label">实际注册任务；旧文档只列 2–3 个</span></div>
+          <div class="card stat"><span class="value">50%</span><span class="label">启用 flip 时语义无效的镜像 transition 槽位</span></div>
+          <div class="card stat"><span class="value">14,111 / 30k</span><span class="label">审计快照时 v7 日志进度；最新 checkpoint 14,000</span></div>
+        </div>
+
+        <div class="grid-2" style="margin-top:1rem">
+          <div class="callout">
+            <h3><span class="badge good">健康部分</span></h3>
+            <ul>
+              <li>全部 10 个任务的 train/play 配置均能 CPU build、reset、zero-step，shape 与数值 finite。</li>
+              <li>G1 base / plus / H1 的 actor、critic、action shape 分别为 <code>480/83/12</code>、<code>486/84/12</code>、<code>348/61/10</code>。</li>
+              <li>当前 checkpoint 的 PyTorch 与 ONNX 网络输出对齐，最大误差约 <code>2.9e-6</code>。</li>
+              <li>terminal critic observation 已使用 pre-reset 值；actor-only play 初始化可工作。</li>
+              <li>速度/高度三模式概率、命令字典顺序、主要 contact reward 符号与 shape 正常。</li>
+            </ul>
+          </div>
+          <div class="callout">
+            <h3><span class="badge high">不可由现有测试排除</span></h3>
+            <ul>
+              <li>29 个回归测试全部通过，但主要是静态配置断言。</li>
+              <li>没有 command→actuator 实机契约测试、镜像 transition 语义测试、mass composition 测试。</li>
+              <li>没有 H1-with-hands metadata/runtime 测试，也没有课程 resume 测试。</li>
+              <li>没有深蹲固定命令的接触/局部最优 probe，更没有真实机器人安全验证。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="goal">
+        <h2>2. 目标、边界与 v1–v7 状态</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>基础 HOMIE</h3>
+            <p>
+              目标是复现 OpenHomie 的下肢 walk / squat / stand：策略只输出腿部动作，上身以平滑随机目标作为外部扰动，
+              训练下肢在不同上身姿态、负载与物理扰动下维持运动和高度。
+            </p>
+          </div>
+          <div class="card">
+            <h3>HOMIE+</h3>
+            <p>
+              G1 专用部署分支：增加第五维 <code>waist_pitch</code> 命令，以覆盖弯腰、低位取物和 BiGym/G1-Dex3
+              loco-manipulation；在此基础上加入 in-place、软地面与 v4–v7 深蹲修复。
+            </p>
+          </div>
+        </div>
+        <div class="evidence">
+          <strong>版本口径：</strong>“v7”只指 HOMIE+ recipe 谱系，不代表所有基础 G1/H1 变体都是 v7。
+          当前源码已到 v7；最后一个完成 30k 训练的 run 是 v6。v7 在审计时仍实时训练，不能写成“已验收 v7”。
+        </div>
+
+        <div class="timeline">
+          <div class="time-item"><strong>v1 · <code>f7e2cb1</code></strong> — 引入 5 维 torso pitch；run 停在约 2,239。</div>
+          <div class="time-item"><strong>v2 · <code>1eef886</code></strong> — 收窄 G1 torso payload；run 停在约 5,507。</div>
+          <div class="time-item"><strong>v3 · <code>b02e887</code></strong> — in-place 与 foot compliance；后续两次 compliance 修复；完整到 29,999。</div>
+          <div class="time-item"><strong>v4 · <code>b61225c</code></strong> — height slew、anti-kneel、native；重启 run 完整到 29,999。</div>
+          <div class="time-item"><strong>v5 · <code>fe58d08</code></strong> — load-asymmetry bridge；没有独立 v5 run，随 v6 累积。</div>
+          <div class="time-item"><strong>v6 · <code>6b9bf1b</code></strong> — 全高度 feet/knee lateral band；fresh run 完整到 29,999。</div>
+          <div class="time-item"><strong>v7 · <code>39e72d5</code></strong> — feet-flat、pose prior、pelvis unlock；快照日志 14,111，最新 checkpoint 14,000。</div>
+        </div>
+      </section>
+
+      <section id="variants">
+        <h2>3. 实际变体矩阵</h2>
+        <p class="section-intro">注册表共有 10 个任务。以下 shape 均已通过 1-env train/play 构建与一步运行核对。</p>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>任务 ID</th><th>Actor / Critic / Action</th><th>主要语义</th><th>审计提示</th></tr></thead>
+            <tbody>
+              <tr><td><code>Mjlab-Homie-Unitree-G1</code></td><td class="nowrap">480 / 83 / 12</td><td>deploy gains；锁 waist roll/pitch</td><td>基础 parity 谱系，未包含 v4–v7 深蹲防线</td></tr>
+              <tr><td><code>...-G1-native</code></td><td>480 / 83 / 12</td><td>回退 payload 与 contact 三项</td><td><span class="badge high">名称过度承诺 parity</span></td></tr>
+              <tr><td><code>...-G1-plus</code></td><td>486 / 84 / 12</td><td>5 维命令；policy-free torso action</td><td><span class="badge critical">实机 pitch 未执行</span></td></tr>
+              <tr><td><code>...-G1-free_waist</code></td><td>480 / 83 / 12</td><td>三腰参与上身扰动</td><td>接口与 base 相同，语义不同</td></tr>
+              <tr><td><code>...-G1-mjlab_gains</code></td><td>480 / 83 / 12</td><td>逐关节 action scale 消融</td><td>导出后 canonical runtime 无法解析 scale</td></tr>
+              <tr><td><code>...-G1-with_dex3</code></td><td>480 / 83 / 12</td><td>Dex3 惯性附件</td><td>不是 HOMIE+；缺少 plus+Dex3 注册项</td></tr>
+              <tr><td><code>...-G1-with_inspire</code></td><td>480 / 83 / 12</td><td>Inspire 惯性附件</td><td>不是 HOMIE+</td></tr>
+              <tr><td><code>...-H1</code></td><td>348 / 61 / 10</td><td>deploy gains</td><td>需重点排除 pelvis/torso 坐地解</td></tr>
+              <tr><td><code>...-H1-mjlab_gains</code></td><td>348 / 61 / 10</td><td>逐关节增益消融</td><td>同样存在 runtime scale 契约缺口</td></tr>
+              <tr><td><code>...-H1-with_hands</code></td><td>348 / 61 / 10</td><td>2F85；policy-free gripper</td><td><span class="badge high">metadata 自相矛盾</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="source-list">注册证据：<a href="src/mjlab_homierl/__init__.py">src/mjlab_homierl/__init__.py:14–117</a></p>
+      </section>
+
+      <section id="findings">
+        <h2>4. 核心发现</h2>
+        <p class="section-intro">
+          “事实”表示有明确代码链或运行实验；“风险”表示机制明确、但仍需 rollout/实机验证最终行为。严重度按目标阻断、训练污染、部署安全和影响范围评定。
+        </p>
+        <div class="filters" aria-label="发现筛选">
+          <button class="active" type="button" data-filter="all">全部</button>
+          <button type="button" data-filter="critical">Critical</button>
+          <button type="button" data-filter="high">High</button>
+          <button type="button" data-filter="medium">Medium</button>
+        </div>
+
+        <details class="finding" data-severity="critical" open>
+          <summary><span class="badge critical">Critical · 事实</span><span class="finding-title">HOMIE+ 实机不执行 torso pitch，核心能力在 sim→real 处断裂</span><span class="finding-id">F-01</span></summary>
+          <div class="finding-body">
+            <div class="flow" aria-label="HOMIE+ waist pitch 链路">
+              <div class="flow-step"><strong>训练环境</strong><code>TorsoPitchAction</code> 将目标设为 default + pitch command，并做 slew。</div>
+              <div class="flow-step"><strong>策略 / ONNX</strong>第五维命令进入观测；网络只输出 12 条腿。</div>
+              <div class="flow-step break"><strong>独立 runtime</strong>非策略关节全部复制 default，腰 pitch 没有重建。</div>
+              <div class="flow-step break"><strong>实机 LowCmd</strong>29 维目标全写入；腰与手臂持续 held at default。</div>
+            </div>
+            <p>
+              X/B 按键确实改变第 5 维观测，但 <code>policy.act()</code> 仅在 12 个 action joint 上叠加输出，
+              随后 <code>write_all_joints()</code> 把默认 <code>waist_pitch</code> 发给电机。因此这是确定的 command-to-actuator bug，不是策略表现不佳。
+            </p>
+            <div class="impact"><strong>影响：</strong>策略观察到的任务与机器人实际约束相互矛盾；HOMIE+ 的弯腰/低位取物目标在当前实机入口不可实现。</div>
+            <div class="evidence"><strong>为何 <code>--sim</code> 没抓到：</strong>仿真环境内部仍有零维 <code>TorsoPitchAction</code>，它替 runtime 直接驱动腰，正好掩盖实机缺口。</div>
+            <p class="source-list">
+              证据：<a href="src/mjlab_homierl/mdp/actions.py">mdp/actions.py:236–281</a> ·
+              <a href="src/mjlab_homierl/runtime.py">runtime.py:165–181</a> ·
+              <a href="src/mjlab_homierl/scripts/deploy_g1_homie.py">deploy_g1_homie.py:132–140, 190–200, 214–286</a>
+            </p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high" open>
+          <summary><span class="badge high">High · 事实</span><span class="finding-title">镜像增强将未执行的随机 action 与原 reward / next-state 配对</span><span class="finding-id">F-02</span></summary>
+          <div class="finding-body">
+            <p>真实 transition 与合法镜像应为：</p>
+            <pre><code>(s, a, r, s')  →  (M(s), M(a), r, M(s'))</code></pre>
+            <p>当前实现却在 <code>M(s)</code> 上独立采样 <code>a_sym ~ π(M(s))</code>，随后复制真实 action <code>a</code> 产生的 reward 与 next-state：</p>
+            <pre><code>(M(s), a_sym, r(a), M(s'(a)))</code></pre>
+            <p>
+              <code>a_sym</code> 从未在环境执行，PPO 的 log-prob、advantage、reward 与 dynamics 不属于同一条 transition。
+              <code>transitions_per_step=2</code>，所以这类样本占 storage 的 50%。末帧 GAE 还把原始 <code>V(s_T)</code> 广播给镜像 lane，而不是 <code>V(M(s_T))</code>。
+            </p>
+            <div class="evidence">
+              <strong>v7 model_13600，4096 个零观测：</strong>
+              <code>mean_abs=0.6251</code>，<code>RMS=0.8027</code>，<code>max=3.9903</code>，
+              与 <code>M(a)</code> 整条 allclose 的比例为 0；按 0.25 action scale，目标 RMS 错配约 <code>0.2007 rad</code>。
+            </div>
+            <div class="impact"><strong>影响：</strong>这是训练数据一致性错误，影响所有启用 <code>use_flip=True</code> 的任务与既有 checkpoint。它从 OpenHomie 参考实现继承而来，但“上游相同”只能说明复现来源，不能使 transition 合法。</div>
+            <p class="source-list">
+              证据：<a href="src/mjlab_homierl/rl/himppo/algorithm.py">algorithm.py:213–315</a> ·
+              <a href="src/mjlab_homierl/rl/himppo/storage.py">storage.py:46–51, 145–166</a> ·
+              <a href="../OpenHomie/HomieRL/rsl_rl/rsl_rl/algorithms/him_ppo.py">OpenHomie him_ppo.py:94–139</a>
+            </p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high" open>
+          <summary><span class="badge high">High · 事实</span><span class="finding-title">上身课程无法从 checkpoint 恢复，且 30k run 没训练到全幅目标</span><span class="finding-id">F-03</span></summary>
+          <div class="finding-body">
+            <p>
+              checkpoint 环境状态恢复了 <code>common_step_counter</code>，但 <code>UpperBodyPoseAction._curriculum_ratio</code>
+              是独立运行时 tensor，没有保存/恢复；resume 后必定回到 <code>initial_ratio=0</code>。历史日志中，原 run 约 step 6203 为 0.05，resume 在 step 6200 与 10079 均为 0。
+            </p>
+            <p>
+              即便 fresh training，最近完成的 v6 到 29,999 也只到 ratio 0.35，v7 在约 14k 时为 0.05；配置目标为 1.0。
+              OpenHomie 默认 100k iterations，而本仓库 runner 上限 30k。v6 末段 tracking success 仍低于 0.8 门槛，因此无法继续爬升。
+            </p>
+            <div class="impact"><strong>影响：</strong>“对任意连续变化上身姿态鲁棒”是 HOMIE 的核心目标，但现有完成 run 没覆盖完整课程；resume 还会静默改变训练分布。</div>
+            <div class="evidence">
+              <strong>额外语义 bug：</strong><code>ratio=0</code> 也不等于关闭运动。相同采样公式 100 万次蒙特卡洛：均值为关节范围的 2.50%，p99 15.2%，全部非零。
+              真实 G1 play 在 <code>HOMIE_PLAY_UPPER_RATIO=0</code> 下采样一次，15/15 上身 joint 目标非零，最大偏移 <code>0.447 rad</code>。
+              因此“play 默认 held at default”同样不成立。
+            </div>
+            <p class="source-list">
+              证据：<a href="src/mjlab_homierl/mdp/actions.py">actions.py:109–201</a> ·
+              <a href="src/mjlab_homierl/mdp/curriculums.py">curriculums.py:15–62</a> ·
+              <a href="src/mjlab_homierl/rl/runner.py">runner.py:119–150</a> ·
+              <a href="src/mjlab_homierl/rl_cfg.py">rl_cfg.py:61–69</a>
+            </p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high" open>
+          <summary><span class="badge high">High · 事实</span><span class="finding-title">质量 DR 物理不一致，且 link scale 被 payload 事件覆盖</span><span class="finding-id">F-04</span></summary>
+          <div class="finding-body">
+            <p>
+              <code>link_mass</code> 先对全身做 scale，<code>payload_mass</code>/<code>hand_payload</code> 后做 add。
+              mjlab 的 scale 与 add 都以 compile-time default 为 base，后执行的 add 会覆盖重叠 body 的前一次 scale，而非组合。
+              同时 <code>dr.body_mass</code> 明确只改质量、不改惯量；这不适合全身 density uncertainty，也与 OpenHomie 的 <code>recomputeInertia=True</code> 不对齐。
+            </p>
+            <div class="evidence">
+              <strong>定值控制实验：</strong>torso 默认质量 <code>7.818</code>，先设 link ×2、再 payload +1；
+              正确组合应为 <code>16.636</code>，实际为 <code>8.818</code>（default +1）。三轴 inertia 与 default 完全相同。
+              另一实验中 torso/左右 wrist 的 mass ratio 精确回到 1.0，而不重叠的 knee 保留随机 ratio <code>0.878103</code>。
+            </div>
+            <div class="impact"><strong>影响：</strong>所有任务的 sim2real 惯性分布错误；torso/hand 重叠部位实际没有代码注释所称的 link uncertainty 与 payload 联合分布。</div>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/homie_env_cfg.py">homie_env_cfg.py:251–269</a> · <a href="src/mjlab_homierl/env_cfgs.py">env_cfgs.py:273–308, 746–815</a></p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high">
+          <summary><span class="badge high">High · 事实</span><span class="finding-title">Encoder bias 没进入观测，注释所称的 calibration 模型并未实现</span><span class="finding-id">F-05</span></summary>
+          <div class="finding-body">
+            <p>
+              actor/critic 使用原始 <code>asset.data.joint_pos</code>，position target 却减去 bias。
+              这更接近隐式 target/torque offset，而不是“传感器读数与 target 一致偏移”的编码器零点误差。
+            </p>
+            <div class="evidence"><strong>运行实证：</strong><code>bias_max=0.04863</code>；观测与 raw q 最大差为 0，与 biased q 最大差为 0.04863。</div>
+            <div class="impact"><strong>影响：</strong>若目标是复刻 OpenHomie actuation injection，可以作为近似但应准确命名；若目标是 encoder robustness，则当前训练分布缺失。</div>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/homie_env_cfg.py">homie_env_cfg.py:230–239</a> · <a href="src/mjlab_homierl/mdp/observations.py">observations.py:59–66</a> · <a href="src/mjlab_homierl/mdp/actions.py">actions.py:76–79</a></p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high" open>
+          <summary><span class="badge high">High · 事实</span><span class="finding-title">v1–v7 checkpoint 语义可静默错配，导出 provenance 记录的是错误时点</span><span class="finding-id">F-06</span></summary>
+          <div class="finding-body">
+            <p>
+              v1–v7 共用同一 task ID 与 486 维 actor interface，但 command sampler、height step/slew、pitch 分布、slew range、奖励及 gate 多次改变。
+              当前 CLI 加载旧 v1–v6 checkpoint 时会直接实例化 v7 环境；shape 能通过，因此不会报错，却无法复现实验原语义。
+            </p>
+            <p>
+              checkpoint 本身没有训练 commit/recipe version。ONNX 的 <code>train_repo_commit</code> 又是在导出时读取当前 HEAD，
+              并非 checkpoint 的训练 commit；在 v7 HEAD 重导 v6，会被错误标成 v7。run 目录虽保存 <code>params/env.yaml</code> 与 git diff，可人工救援，但没有自动契约。
+            </p>
+            <div class="impact"><strong>影响：</strong>旧策略可在错误 command/reward semantics 下被播放、比较或交付，实验结论和部署 provenance 不可信。</div>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/rl/exporter.py">exporter.py:118–142</a> · <a href="src/mjlab_homierl/__init__.py">__init__.py:35–53</a></p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high" open>
+          <summary><span class="badge high">High · 事实</span><span class="finding-title">H1-with_hands 导出 metadata 与网络真实 layout 冲突</span><span class="finding-id">F-07</span></summary>
+          <div class="finding-body">
+            <p>
+              挂手模型有 37 个非 free joint，但 actor observation 只选固定的 19 个 <code>H1_ALL_JOINTS</code>。
+              exporter 正确算出单帧输入 58，却用 <code>len(robot.joint_names)=37</code> 描述 joint_pos/joint_vel，宣称单帧应为 94。
+            </p>
+            <pre><code>真实：4 command + 6 IMU + 2×19 joint + 10 action = 58
+metadata：4 + 6 + 2×37 + 10 = 94</code></pre>
+            <p>
+              base metadata 还出现 <code>joint_names/default_pos=37</code>，<code>stiffness/damping=21</code>；左右 Robotiq 内部 basename 重复，37 个名称仅 29 unique。
+              网络本体可正常导出为 348→10，但 metadata 无法安全驱动下游。
+            </p>
+            <div class="impact"><strong>影响：</strong>该变体的自动导出产物不可作为可靠控制契约；canonical runtime 会因 layout 校验失败或名称歧义拒绝/误映射。</div>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/env_cfgs.py">env_cfgs.py:636–669, 766–803</a> · <a href="src/mjlab_homierl/rl/exporter.py">exporter.py:197–228</a></p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high" open>
+          <summary><span class="badge high">High · 安全</span><span class="finding-title">实机循环缺少 stale-state watchdog、finite 检查与硬限幅</span><span class="finding-id">F-08</span></summary>
+          <div class="finding-body">
+            <p>当前 LowCmd 主循环没有以下保护：</p>
+            <ul>
+              <li>LowState 时间戳/接收间隔 watchdog；</li>
+              <li>sensor、observation、ONNX output 的 <code>isfinite</code> 检查；</li>
+              <li>policy action 与最终 joint target 的 hard limit / delta limit；</li>
+              <li>连续 loop overrun 或 inference timeout 保护。</li>
+            </ul>
+            <p>
+              DDS 状态冻结时，遥控器 SELECT 也冻结，循环仍会基于旧状态持续发送新命令；NaN/极端输出会直接写入 <code>mc.q</code>。
+              reward 中的软 penalty 不能替代部署边界检查。
+            </p>
+            <div class="impact"><strong>影响：</strong>这是独立于策略质量的实机安全阻断项。首次上机即使有吊架，也不应省略软件失效保护。</div>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/scripts/deploy_g1_homie.py">deploy_g1_homie.py:115–205</a> · <a href="src/mjlab_homierl/runtime.py">runtime.py:165–181</a></p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high">
+          <summary><span class="badge high">High · 对齐</span><span class="finding-title"><code>G1-native</code> 不是其注释承诺的完整 OpenHomie parity</span><span class="finding-id">F-09</span></summary>
+          <div class="finding-body">
+            <p>
+              native 被注册注释称为 frozen parity 与“authoritative deviation ledger”，但该分支只回退 torso payload、hand payload 与 hip/knee reward。
+              当前物理自碰撞仍启用；OpenHomie 的 G1 则禁用 self collision。代码自身记录默认姿态腕—髋 contact 约占 25–30% steps，删除 reward 并不会删除动力学接触。
+            </p>
+            <p>
+              另外仍有 deploy gain、29 vs 27 DOF observation、reset/link-mass/action-delay、MuJoCo contact model 等行为差异。
+              其中 action delay 在参考实现中虽计算 delayed action，但物理 loop 使用的仍是当前 action；本仓库 delay 实际生效。
+            </p>
+            <div class="impact"><strong>影响：</strong>native 最多可称“配置意图接近参考”，不能作为 executable parity 或三项权威差异清单。</div>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/__init__.py">__init__.py:23–33</a> · <a href="src/mjlab_homierl/env_cfgs.py">env_cfgs.py:488–496, 616–622</a></p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="high">
+          <summary><span class="badge high">High · 运维</span><span class="finding-title">关键实现仅存在本地：main 比 origin/main 超前 29 commits</span><span class="finding-id">F-10</span></summary>
+          <div class="finding-body">
+            <p>
+              远端停在 <code>990379d</code>；之后的 G1 hands、waist/native/plus、v3–v7、奖励修复和部署 runtime 均未推送。
+              这不是算法 bug，但构成复现、协作与成果丢失风险，尤其在 checkpoint provenance 已不足时会进一步放大。
+            </p>
+            <div class="evidence"><strong>只读核对：</strong><code>git rev-list --left-right --count origin/main...main</code> → <code>0 29</code>。</div>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="medium">
+          <summary><span class="badge medium">Medium · 事实</span><span class="finding-title">HOMIE+ <code>--sim</code> 的 bit-for-bit 检查固定假失败</span><span class="finding-id">F-11</span></summary>
+          <div class="finding-body">
+            <p>
+              <code>pin()</code> 写 <code>height.height_command</code>，却不同步私有 <code>_height_target</code>。环境每步先向旧 target slew 并生成 observation，脚本随后才再次 pin。
+              v6/v7 所有 phase 因此稳定出现 <code>obs_max_diff=8.61e-3</code>，远高于 <code>1e-4</code> 阈值；而直接 ONNX/PyTorch 对齐在 <code>1e-6</code> 量级。
+            </p>
+            <div class="impact"><strong>影响：</strong>认证工具一方面无法通过正确 runtime，另一方面又因环境内部 torso action 而漏掉 F-01，既有假阴性也有假阳性。</div>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/scripts/deploy_g1_homie.py">deploy_g1_homie.py:227–286</a> · <a href="src/mjlab_homierl/mdp/velocity_command.py">velocity_command.py:224–283</a></p>
+          </div>
+        </details>
+
+        <details class="finding" data-severity="medium">
+          <summary><span class="badge medium">Medium · 事实</span><span class="finding-title">其他确定契约/时序缺口</span><span class="finding-id">F-12</span></summary>
+          <div class="finding-body">
+            <ul>
+              <li><strong>mjlab_gains runtime：</strong>metadata 将逐关节 action scale 导出为 12 元 CSV，runtime 却调用 <code>float(...)</code>，确定抛 <code>ValueError</code>。</li>
+              <li><strong>push/reset 顺序：</strong>global push 每 4 s，episode 20 s；timeout 同步时 mjlab 先 reset 后 interval push，初始 <code>vx∈[-.5,.5]</code> 再叠加 <code>[-.5,.5]</code>，定值实验得到 raw qvel=1.0。参考实现中 reset 会覆盖该 push。</li>
+              <li><strong>legacy checkpoint：</strong>带 critic 的训练 runner 经上游 loader 处理旧 <code>model_state_dict</code> 后，HIMPPO 可能静默不读迁移出的 policy keys；actor-only play fallback 不受影响。</li>
+              <li><strong>command metrics：</strong>每步误差除以 4 s window steps，但只在 20 s episode reset 清零，因此日志约为 5×时间均值且随早停长度改变；名称“error”容易误读。</li>
+              <li><strong>play 不是 nominal：</strong>仍保留 friction U(0.1,3.0)、mass/COM/encoder、PD-gain DR 与随机 reset；同时保留大量 reward-only contact sensors。</li>
+            </ul>
+            <p class="source-list">证据：<a href="src/mjlab_homierl/runtime.py">runtime.py:89–103</a> · <a href="src/mjlab_homierl/homie_env_cfg.py">homie_env_cfg.py:171–208</a> · <a href="src/mjlab_homierl/rl/runner.py">runner.py:140–175</a> · <a href="src/mjlab_homierl/mdp/velocity_command.py">velocity_command.py:64–75, 252–255, 416–420</a></p>
+          </div>
+        </details>
+      </section>
+
+      <section id="reward">
+        <h2>5. 奖励、命令与变体特有风险</h2>
+        <p class="section-intro">
+          v7 的动机合理：针对 kneeling、sumo squat 与 toe-crouch 逐步加约束。但当前组合存在确定的 gate 不连续、覆盖空窗与未条件化先验；以下区分“代码确定”与“行为待验证”。
+        </p>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>项目</th><th>当前机制</th><th>判断</th><th>严重度</th></tr></thead>
+            <tbody>
+              <tr><td>Orientation ↔ pose prior</td><td><code>h&lt;0.775</code> 时 orientation 立即从 1.0 降为 0.3；pose prior 到 <code>h≥0.62</code> 已完全为 0；hip/ankle deviation 同时关闭。</td><td><code>[0.62,0.775)</code> 是明确的姿态约束空窗，下降 5 mm 即发生 70% 离散降权。应使用同一平滑区间交接。</td><td><span class="badge high">High risk</span></td></tr>
+              <tr><td>Pose prior 与 pitch</td><td>腿部 reference 由固定 <code>waist_pitch=0.25</code> 扫描拟合；实际 command 为 <code>[-0.2,0.45]</code>。</td><td>不同 torso pitch 下同一腿部参考不一定 CoM 平衡；宜用 <code>(height,pitch)</code> 二维先验。机制风险明确，最终影响需 A/B。</td><td><span class="badge medium">Medium</span></td></tr>
+              <tr><td>Feet load asymmetry</td><td>奖励 <code>|F_l-F_r|/(F_l+F_r)</code>，只按 in-place command 范数 gate，不含方向/相位。</td><td>可作为探索 bridge，但静态单侧压重也能持续收奖；需核对是否真正转化为转身/侧移。</td><td><span class="badge medium">Medium</span></td></tr>
+              <tr><td>In-place sampler</td><td>只把 <code>vx=0</code>，对 vy/wz 的 dominant axis 做最小幅值 clamp；另一轴连续采样。</td><td>精确 pure turn（vy=0）和 pure strafe（wz=0）概率仍为零，注释与测试声称的 exact corner 不成立。</td><td><span class="badge medium">Medium</span></td></tr>
+              <tr><td>Height slew 状态</td><td>从深蹲切 walk 时 twist 立即非零，height 最慢需约 3.33 s 回站高，占 4 s command window 的 83%。</td><td>产生“低姿行走”过渡分布；可能有意，也可能漏了 rise-before-walk，需产品目标裁决。</td><td><span class="badge risk">Design</span></td></tr>
+              <tr><td>Feet flat / stand still</td><td>stationary 时同时约束双脚水平，且全高度 stand_still 加倍到 -0.3。</td><td>能打击 toe-crouch，但也提高保护性迈步成本；应通过 fall/step 分模式指标验收。</td><td><span class="badge risk">Trade-off</span></td></tr>
+              <tr><td>Reward 时间缩放</td><td>manager 按 control dt 累积，正负号与大部分 OpenHomie 术语一致。</td><td>未发现普遍“忘乘 dt”问题；主要风险来自采样语义、gate 与不可控 joint，而非统一尺度。</td><td><span class="badge good">正常</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-2" style="margin-top:1rem">
+          <div class="card">
+            <h3>H1：存在未定价的坐地/躯干触地解</h3>
+            <p>
+              G1 有 pelvis/torso-ground termination；H1 sensors 只有 feet、self、hip/knee，后者又排除 pelvis/torso。
+              H1 深蹲目标最低 0.40 m，策略可保持 pelvis 近直立并让 pelvis/torso 接地，不触发 fell-over 或 hip/knee penalty。
+              再叠加 step height、squat 时 stand-still/too-wide gate 关闭，这是高风险局部最优，需固定 h=0.4 contact probe。
+            </p>
+          </div>
+          <div class="card">
+            <h3>H1-with_hands：不可观测 joint 进入 reward</h3>
+            <p>
+              actor/critic 只观察 19 个 H1 joint；新增 18 个 wrist/gripper joint 由被动动力学或 policy-free gripper goal 驱动。
+              但 <code>dof_acc</code> 与 <code>joint_power</code> 默认统计全部 joint，使下肢策略因不可观测、不可直接控制的手部运动被扣分。
+              强制闭合实验中额外 joint 贡献约 3.6% acc cost 与 0.35% power cost，属于 POMDP reward noise。
+            </p>
+          </div>
+          <div class="card">
+            <h3>H1-with_hands：资产接线待澄清</h3>
+            <p>
+              左右 wrist hinge 不在 H1 observation、upper action 或 gripper actuator action 中，实测会被动漂移；若预期自由腕，应文档化，若预期 PD hold，则是漏接。
+              mounting helper 还把 wrist body 与新 hand site 重复施加同一平移，site 比实际腕端多偏约 0.28 m；当前任务未使用该 site，但属于潜在资产 API bug。
+            </p>
+          </div>
+          <div class="card">
+            <h3>接口与目标缺口</h3>
+            <p>
+              计划要求 HOMIE+ 可与 Dex3 组合，但 registry 只有 base <code>with_dex3</code>/<code>with_inspire</code>（actor 480）与 plus（actor 486），
+              没有 <code>plus-with_dex3</code>。同时 G1/H1 同 family 变体共享 experiment namespace，shape 相同但 gain/native/hand 语义不同，容易 resume/导出混用。
+            </p>
+          </div>
+        </div>
+        <p class="source-list">
+          主要证据：<a href="src/mjlab_homierl/env_cfgs.py">env_cfgs.py:498–615, 636–815</a> ·
+          <a href="src/mjlab_homierl/mdp/rewards.py">rewards.py:160–217, 492–609</a> ·
+          <a href="src/mjlab_homierl/mdp/velocity_command.py">velocity_command.py:85–114, 264–283</a> ·
+          <a href="src/mjlab_homierl/robots/unitree_h1/h1_constants.py">h1_constants.py:114–147</a>
+        </p>
+      </section>
+
+      <section id="training">
+        <h2>6. v7 训练快照与可接受性</h2>
+        <div class="callout">
+          <h3>结论：当前 v7 是中间 checkpoint，不能据此判定最终 recipe 必败，也不能部署</h3>
+          <p>
+            审计快照 <code>2026-07-11 01:09 BST</code> 时日志为 <code>14111/30000</code>，最新文件为 <code>model_14000.pt</code>；训练仍在推进。
+            最新 ONNX 与 PyTorch 数值对齐，所以闭环退化不是导出数值误差。
+          </p>
+        </div>
+        <div class="table-card" style="margin-top:1rem">
+          <table>
+            <thead><tr><th>Probe</th><th class="num">v7 model_14000 vx_err</th><th class="num">v6 fresh final vx_err</th><th>解读</th></tr></thead>
+            <tbody>
+              <tr><td>stand</td><td class="num">0.094</td><td class="num">0.003</td><td>v7 静止仍有较大水平漂移</td></tr>
+              <tr><td>walk vx=0.6</td><td class="num"><strong>0.579</strong></td><td class="num">0.085</td><td>v7 实际约 0.021 m/s，当前几乎没有行走能力</td></tr>
+              <tr><td>squat h=0.5</td><td class="num">0.001</td><td class="num">0.277</td><td>v7 stationary squat 水平漂移明显改善</td></tr>
+              <tr><td>squat+lean</td><td class="num">0.000</td><td class="num">0.172</td><td>同上，但不能替代 gait 验收</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">
+          两组 <code>--sim</code> 都显示 FAIL，是因为 F-11 的固定 <code>obs_max_diff=8.61e-3</code>；上表只比较闭环 tracking。
+          v7 最近窗口还表现为 pose-prior 平均贡献较小、fall/hip-contact 较 v6 高，但训练未完成，报告只将其作为 reward 空窗的旁证，不作最终因果结论。
+        </p>
+        <div class="evidence">
+          <strong>验收指标缺口：</strong>command metric 当前按 4 s window 归一、却跨 20 s episode 累积。比如满长 episode 的
+          <code>torso_pitch/error_pitch=0.183</code> 约对应 timestep MAE 0.0366 rad，而不是 0.183 rad；早停又会改变倍数。
+          因此应新增稳态、按真实 step count 归一的分模式指标，再判断“&lt;0.05 rad”等目标。
+        </div>
+      </section>
+
+      <section id="validation">
+        <h2>7. 本次验证与证据边界</h2>
+        <div class="table-card">
+          <table>
+            <thead><tr><th>验证</th><th>结果</th><th>能证明什么</th><th>不能证明什么</th></tr></thead>
+            <tbody>
+              <tr><td>完整 package tests</td><td><span class="badge good">29 passed</span> 1 个 Robotiq attach warning</td><td>注册、静态 cfg、部分资产/RL 配置未回归</td><td>端到端部署、transition 语义、reward 局部最优</td></tr>
+              <tr><td>10 tasks × train/play smoke</td><td><span class="badge good">全部 finite</span></td><td>build/reset/shape/index/zero-step 无粗粒度崩溃</td><td>长 rollout、收敛、sim2real</td></tr>
+              <tr><td>质量定值实验</td><td><span class="badge high">覆盖与 inertia 缺口复现</span></td><td>F-04 是确定行为</td><td>修正后最优范围</td></tr>
+              <tr><td>Encoder bias probe</td><td><span class="badge high">obs 使用 raw q</span></td><td>F-05 语义确定</td><td>哪种 DR 更利于实机</td></tr>
+              <tr><td>镜像 action 数值 probe</td><td><span class="badge high">0% transition action 对齐</span></td><td>独立噪声不等于 M(a)</td><td>污染对最终性能的精确损失</td></tr>
+              <tr><td>ONNX vs PyTorch</td><td><span class="badge good">max ≈ 2.9e-6</span></td><td>网络导出数值本身正确</td><td>metadata、命令执行、实机安全</td></tr>
+              <tr><td>v6/v7 headless probe</td><td>v7 当前 gait regression</td><td>当前 checkpoint 不可验收</td><td>v7 30k 最终一定失败</td></tr>
+              <tr><td>真实机器人</td><td><span class="badge critical">未执行</span></td><td>本审计遵守只读/安全边界</td><td>硬件闭环、传感延迟、跌倒风险</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout" style="margin-top:1rem">
+          <h3>工作树约束</h3>
+          <p>
+            审计过程没有修改任何 Python、配置、文档或测试文件；仅创建本 HTML 报告。运行缓存位于既有忽略目录或 <code>/tmp</code>。
+            报告生成前 <code>git status --short</code> 为空。
+          </p>
+        </div>
+      </section>
+
+      <section id="actions">
+        <h2>8. 建议优先级（仅建议，未实施）</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3><span class="badge critical">P0 · 上机前</span></h3>
+            <ol class="checklist">
+              <li>让独立 runtime/实机 LowCmd 显式重建与仿真相同的 <code>waist_pitch=default+slewed command</code>，并加入 command→motor target 契约测试。</li>
+              <li>补齐 stale-state watchdog、finite 检查、joint/action hard limits、target delta limits 与 overrun fallback；吊架测试也以此为前置。</li>
+              <li>修正 <code>--sim</code> 的 height target 注入，并让验证器实际检查 runtime 生成的腰部 target，而非依赖环境内部 action。</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h3><span class="badge high">P1 · 重新训练前</span></h3>
+            <ol class="checklist">
+              <li>停止将独立采样 <code>a_sym</code> 当作真实 transition；选择合法 <code>M(a)</code> 数据增强，或只保留 symmetry loss，并修正末帧镜像 bootstrap。</li>
+              <li>用同步质量/惯量的 density DR；让 link scale 与 point payload 显式组合；明确 encoder bias 与 actuator offset 两种语义。</li>
+              <li>checkpoint 保存 recipe ID、训练 commit、完整 cfg hash 与 curriculum ratio；恢复时做强校验，旧 v1–v7 绑定各自 env snapshot。</li>
+              <li>把上身课程作为验收项：fresh/resume 均必须可达预定分布；处理 ratio=0 的“真正 off”语义，并评估 30k 预算是否足够。</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h3><span class="badge medium">P2 · v7 reward 验收</span></h3>
+            <ol class="checklist">
+              <li>平滑衔接 orientation 与 pose-prior gate；将 prior 条件化到 height+pitch；按 stand/walk/squat/lean 分桶记录稳态指标。</li>
+              <li>in-place 使用 pure-turn / pure-strafe / mixed categorical sampler；检查 load-asymmetry 是否被静态侧压利用。</li>
+              <li>给 H1 增加 pelvis/torso-ground 定价并做 h=0.4 probe；明确 H1 wrist 控制语义，限制手部不可控 joint reward。</li>
+              <li>v7 完成训练后与 v6 用固定 seed、相同物理 cfg 做 A/B；gait、蹲姿、跌倒、接触、上身课程五项必须同时过门。</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h3><span class="badge fact">P3 · 契约与卫生</span></h3>
+            <ol class="checklist">
+              <li>导出 observation 选择的 joint names，而非整机 joint names；支持 per-joint action scale；为 H1-with_hands metadata 加 round-trip 测试。</li>
+              <li>增加 plus-with-Dex3 注册/eval 路径；按 semantic variant 分离 experiment namespace。</li>
+              <li>更新 README、AGENTS、docs 与注册测试的 10-task 事实；修正 nominal play、pitch=0、upper ratio、native parity 等描述。</li>
+              <li>把本地 29 个 commits 纳入受控远端备份/评审流程，避免代码与 checkpoint provenance 同时丢失。</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="appendix">
+        <h2>9. 附录：文档漂移与审计入口</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>明显文档/测试漂移</h3>
+            <ul>
+              <li><code>AGENTS.md</code> 只列 3 个注册 ID；实际 10 个。</li>
+              <li><code>docs/index.rst</code> 仍写 “Two registered tasks”。</li>
+              <li>registration test 只断言 3 个 ID；RL cfg test 未覆盖 plus runner。</li>
+              <li>README 称 plus 有“三项扩展”却列四项，并缺少 v5–v7；“pitch=0 reproduces plain HOMIE”也不成立。</li>
+              <li>walkthrough 对 play upper ratio、self collision、payload range 与 terminal estimator 的描述已过期。</li>
+              <li>quickstart 仍指向不存在的 <code>src/mjlab/tasks/homie</code> 与旧函数。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>主要审计入口</h3>
+            <ul class="source-list">
+              <li><a href="README.md">README.md</a> / <a href="homie_plus_plan.md">homie_plus_plan.md</a></li>
+              <li><a href="src/mjlab_homierl/homie_env_cfg.py">homie_env_cfg.py</a> / <a href="src/mjlab_homierl/env_cfgs.py">env_cfgs.py</a></li>
+              <li><a href="src/mjlab_homierl/mdp/">mdp/ observations, actions, rewards, commands, curriculum</a></li>
+              <li><a href="src/mjlab_homierl/rl/himppo/">rl/himppo/</a> / <a href="src/mjlab_homierl/rl/runner.py">runner.py</a></li>
+              <li><a href="src/mjlab_homierl/rl/exporter.py">exporter.py</a> / <a href="src/mjlab_homierl/runtime.py">runtime.py</a></li>
+              <li><a href="src/mjlab_homierl/scripts/deploy_g1_homie.py">deploy_g1_homie.py</a></li>
+              <li><a href="logs/rsl_rl/g1_homie_plus_himppo/2026-07-10_17-40-48_g1-homie-plus-v7-humansquat-4096/">v7 run directory</a></li>
+              <li><a href="logs/rsl_rl/g1_homie_plus_himppo/2026-07-10_02-31-36_g1-homie-plus-v6-fresh-4096/">v6 fresh run directory</a></li>
+              <li><a href="../OpenHomie/HomieRL/">本地 OpenHomie 参考实现</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:1rem">
+          <h3>最终判断</h3>
+          <p>
+            当前仓库不是“整体不可用”：注册、shape、基础运行与网络导出数值都相当健康，v1–v7 也体现了针对真实失败模式的快速迭代。
+            但现在最需要处理的是跨层契约，而不是再加一轮 reward：实机 waist 未执行、镜像 transition 无效、课程/版本不可恢复、DR 物理错误和安全保护缺失，
+            都会让继续训练或单看 reward 曲线产生虚假的确定感。先修正这些地基，再对 v7 做完整、可复现的 A/B，结论才具备交付价值。
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    HOMIE / HOMIE+ v7 read-only audit · generated for internal review · no source code changed
+  </footer>
+
+  <script>
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const findings = document.querySelectorAll('.finding[data-severity]');
+    filterButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        filterButtons.forEach((b) => b.classList.remove('active'));
+        button.classList.add('active');
+        const selected = button.dataset.filter;
+        findings.forEach((item) => {
+          item.classList.toggle(
+            'hidden-by-filter', selected !== 'all' && item.dataset.severity !== selected
+          );
+        });
+      });
+    });
+
+    window.addEventListener('beforeprint', () => {
+      document.querySelectorAll('details.finding').forEach((item) => {
+        item.dataset.wasOpen = item.open ? '1' : '0';
+        item.open = true;
+      });
+    });
+    window.addEventListener('afterprint', () => {
+      document.querySelectorAll('details.finding').forEach((item) => {
+        item.open = item.dataset.wasOpen === '1';
+      });
+    });
+  </script>
+</body>
+</html>

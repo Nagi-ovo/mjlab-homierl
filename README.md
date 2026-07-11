@@ -232,6 +232,23 @@ SELECT exits to damping. `--sim` (in the training venv:
 `uv run --extra deploy ... --sim`) validates the deploy-side observation
 builder bit-for-bit against the mjlab plant before any hardware session.
 
+## Interactive sim teleop (keyboard, classic MuJoCo)
+
+```bash
+uv run python -m mjlab_homierl.scripts.teleop_sim_g1 --onnx <run>.onnx
+```
+
+Real-time keyboard teleop in a plain CPU MuJoCo window, driving the policy
+through the same `runtime.py` pipeline as the real robot and the BiGym
+plugin — physics independent of the training engine (sim2sim). WASD = vx/vy,
+Q/E = yaw, arrows = height, R/F = torso pitch (HOMIE+), Space = stop,
+Backspace = reset; Ctrl+drag shoves the robot. `--smoke` runs a 5 s headless
+self-test. Note for anyone building a classic-MuJoCo harness from the raw
+asset-zoo spec: it compiles with NO actuators, NO keyframe, and zero
+armature (mjlab injects all three at Entity build time), and the default
+Euler integrator is unstable at knee kp = 300 — this script re-injects all
+four (see `build_model`).
+
 ## Notes
 
 - The repository no longer vendors the `mjlab` framework itself.
