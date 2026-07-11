@@ -40,13 +40,14 @@ register_mjlab_task(
 # the dominant axis clamped >= 0.3 -- fixes the dead pure-strafe / pure-turn
 # corners found on hardware) and per-env foot contact-compliance DR
 # (arXiv:2504.13619; fixes standing sway on foam mats).
+# v8: in-place sampling dropped (inplace_prob=0) — four generations never
+# learned the pure turn and the unsatisfiable wz gradients taxed walking;
+# turning is done as walking arcs, like the original.
 register_mjlab_task(
   task_id="Mjlab-Homie-Unitree-G1-plus",
-  env_cfg=unitree_g1_homie_env_cfg(
-    torso_pitch=True, inplace_prob=1.0 / 3.0, floor="compliant"
-  ),
+  env_cfg=unitree_g1_homie_env_cfg(torso_pitch=True, floor="compliant"),
   play_env_cfg=unitree_g1_homie_env_cfg(
-    play=True, torso_pitch=True, inplace_prob=1.0 / 3.0, floor="compliant"
+    play=True, torso_pitch=True, floor="compliant"
   ),
   rl_cfg=unitree_g1_homie_plus_himppo_runner_cfg(),
   runner_cls=HomieHimOnPolicyRunner,

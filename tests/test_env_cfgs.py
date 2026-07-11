@@ -114,12 +114,12 @@ def test_g1_waist_variants() -> None:
 def test_g1_homie_plus_deployment_extensions() -> None:
   from mjlab_homierl import mdp
 
-  cfg = unitree_g1_homie_env_cfg(
-    torso_pitch=True, inplace_prob=1.0 / 3.0, floor="compliant"
-  )
+  cfg = unitree_g1_homie_env_cfg(torso_pitch=True, floor="compliant")
 
-  # In-place locomotion sampling (pure strafe/turn corners).
-  assert cfg.commands["twist"].inplace_prob == 1.0 / 3.0
+  # v8: in-place sampling and the weight-shift bridge are RETIRED (four
+  # generations never learned the pure turn; budget returned to walking).
+  assert cfg.commands["twist"].inplace_prob == 0.0
+  assert "feet_load_asymmetry" not in cfg.rewards
   # Foot contact-compliance DR (soft floors): in-episode re-randomization at
   # ~0.5 s average, per arXiv:2504.13619.
   assert cfg.events["foot_compliance"].params["ranges"][0] == (0.02, 0.1)
@@ -128,25 +128,35 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   with pytest.raises(ValueError):
     unitree_g1_homie_env_cfg(floor="unknown")
 
-  # v4 squat rework: slewed height setpoint (rate DR; envelope softened in
-  # v7), kneeling economics broken, and the no-stepping shaping extended to
-  # every commanded height.
-  assert cfg.commands["height"].max_rate_range is not None
-  assert cfg.rewards["hip_knee_contact"].weight < -1.0
-  assert cfg.rewards["stand_still"].params["min_height"] == 0.0
-  # v5: weight-shift bridge for the in-place command corner.
-  assert cfg.rewards["feet_load_asymmetry"].weight == 0.5
-  # v6: sumo-squat fix — the feet/knee lateral band's "too wide" half is
-  # enforced at every commanded height (parity gates it at standing only).
-  assert cfg.rewards["feet_distance_lateral"].params["min_height"] == 0.0
-  assert cfg.rewards["knee_distance_lateral"].params["min_height"] == 0.0
-  # v7: human-form deep squat (anti toe-crouch package).
+  # v4 squat rework core (kept): slewed height setpoint, anti-kneel at the
+  # v4 weight, no-stepping shaping at every commanded height (v4 weight).
   assert cfg.commands["height"].max_rate_range == (0.15, 0.45)
-  assert cfg.rewards["orientation"].params["low_scale"] == 0.3
+  assert cfg.rewards["hip_knee_contact"].weight == -5.0
+  assert cfg.rewards["stand_still"].params["min_height"] == 0.0
+  assert cfg.rewards["stand_still"].weight == -0.15
+
+  # v8 capacity bump lives on the PLUS runner cfg only.
+  from mjlab_homierl.rl_cfg import (
+    unitree_g1_homie_himppo_runner_cfg,
+    unitree_g1_homie_plus_himppo_runner_cfg,
+  )
+
+  plus_rl = unitree_g1_homie_plus_himppo_runner_cfg()
+  assert plus_rl.actor.hidden_dims == (1024, 512, 256)
+  assert plus_rl.critic.hidden_dims == (1024, 512, 256)
+  assert plus_rl.actor.estimator_hidden_dims == (512, 512)
+  base_rl = unitree_g1_homie_himppo_runner_cfg()
+  assert base_rl.actor.hidden_dims == (512, 256, 256)
+  assert base_rl.actor.estimator_hidden_dims == (256, 256)
+  # v8: the v6 all-heights stance band is retired (the measured original
+  # squats human-form without it; removal restores lateral margin).
+  assert cfg.rewards["feet_distance_lateral"].params["min_height"] == 0.775
+  assert cfg.rewards["knee_distance_lateral"].params["min_height"] == 0.775
+  # Kept from v7 (stationary-gated): pelvis unlock at 0.5, foot flatness,
+  # the one-frame squat pose prior.
+  assert cfg.rewards["orientation"].params["low_scale"] == 0.5
   assert cfg.rewards["feet_flat"].weight == -1.0
   assert cfg.rewards["squat_pose_prior"].weight == 1.0
-  assert cfg.rewards["hip_knee_contact"].weight == -10.0
-  assert cfg.rewards["stand_still"].weight == -0.3
 
   # 5th command dim: torso_pitch term, coupled to the twist mode.
   assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)

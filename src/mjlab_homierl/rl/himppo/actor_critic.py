@@ -34,6 +34,7 @@ class HIMActorCritic(nn.Module):
     init_noise_std: float = 1.0,
     dynamic_latent_dim: int = 32,
     terrain_latent_dim: int = 32,
+    estimator_hidden_dims: tuple[int, ...] = (256, 256),
     **_: Any,
   ) -> None:
     super().__init__()
@@ -75,6 +76,8 @@ class HIMActorCritic(nn.Module):
       num_one_step_obs=self.num_one_step_obs,
       num_height_points=0,
       latent_dim=self.dynamic_latent_dim,
+      enc_hidden_dims=tuple(estimator_hidden_dims),
+      tar_hidden_dims=tuple(estimator_hidden_dims),
     )
 
     # Optional terrain encoder if height points are present in actor obs.

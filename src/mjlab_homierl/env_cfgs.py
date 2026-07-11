@@ -539,45 +539,28 @@ def unitree_g1_homie_env_cfg(
     #    stationary family; weight stays a soft -0.15 so protective steps
     #    near the balance envelope remain affordable).
     cfg.rewards["stand_still"].params["min_height"] = 0.0
-    # v5 (2026-07-08): in-place sampling alone never broke the pure-turn
-    # exploration trap (v3 AND v4 probe wz_act ~ 0 at 100% double support,
-    # despite no_fly's lift-a-foot gradient) — the valley is the WEIGHT SHIFT
-    # before the lift, which no existing term rewards. Bridge it with a
-    # smooth load-asymmetry shaping gated to the in-place command corner;
-    # see feet_load_asymmetry's docstring for the full failure analysis.
-    cfg.rewards["feet_load_asymmetry"] = RewardTermCfg(
-      func=mdp.feet_load_asymmetry,
-      weight=0.5,
-      params={"sensor_name": "feet_ground_contact", "command_name": "twist"},
-    )
-    # v6 (2026-07-08): sumo-squat fix. OpenHomie enforces the "too wide"
-    # half of the [0.2, 0.35] m feet/knee lateral band only at standing
-    # height (legged_robot.py:1154), so squats splay to ~0.45-0.49 m
-    # (measured, max 0.75) — beyond what the +-15 deg ankle_roll can level,
-    # tipping the feet onto their inner edges (feet_ground_parallel is
-    # nearly roll-blind: the collision-sphere spread senses only +-7 mm at
-    # full roll). Enforce the band at every commanded height: human-style
-    # narrow squat, shank tilt stays within the ankle_roll envelope, soles
-    # flat. The "too close" half was always enforced (parity unchanged).
-    cfg.rewards["feet_distance_lateral"].params["min_height"] = 0.0
-    cfg.rewards["knee_distance_lateral"].params["min_height"] = 0.0
 
-    # v7 (2026-07-10): human-form deep squat. v6 play showed the narrow
-    # squat converging to a TOE-CROUCH (heels up, shins near horizontal,
-    # knees hovering at 0.10 m — "kneeling without touching") with constant
-    # balance-stepping, and descent rates at the fast end of the envelope
-    # looked ballistic. Survey: no known pure-reward work achieves a
-    # heel-down deep squat on the G1; AMO does it by guiding RL with a
-    # traj-opt reference library. Five coupled changes:
-    # 1. Gentler descent envelope (0.75 m/s top was a fast drop).
+    # v8 (2026-07-12): back to the v4 base the user picked, minus the
+    # experiments that didn't earn their keep. The measured original
+    # OpenHomie deploy policy squats human-form (stance 0.27 m, knees
+    # 0.25 m clear, soles flat) with NONE of the v5-v7 machinery — its
+    # differentiators are training length (100k vs our 30k) and
+    # training-time gains, so v8 bets on capacity + length instead of
+    # constraints. Removed vs v7: in-place sampling + weight-shift bridge
+    # (four generations never learned the turn; budget returned to
+    # locomotion), the v6 all-heights stance band (unneeded per the
+    # original; its removal restores lateral margin for arm-disturbance
+    # stability), knee -10 and stand_still -0.3 escalations (walking tax).
+    # Kept from v7 (stationary-gated, zero walking cost):
+    # 1. Gentle descent envelope.
     height.max_rate_range = (0.15, 0.45)
-    # 2. Let the pelvis fold: the ungated orientation penalty pinned the
-    #    pelvis upright, capping the torso fold at the waist's 26 deg.
+    # 2. Pelvis unlock while squatting — 0.5 rather than v7's 0.3: the
+    #    original leans only ~20 deg at depth with the penalty UNGATED,
+    #    and 0.3 produced a deeper head-down fold than wanted.
     cfg.rewards["orientation"].params.update(
-      height_command_name="height", min_height=G1_STANDING_GATE, low_scale=0.3
+      height_command_name="height", min_height=G1_STANDING_GATE, low_scale=0.5
     )
-    # 3. Foot-attitude flatness (orientation-based; the point-z-variance
-    #    parity term is nearly blind to both toe-pitch and edge-roll here).
+    # 3. Foot-attitude flatness (kills toe-crouch / edge contact cheaply).
     cfg.rewards["feet_flat"] = RewardTermCfg(
       func=mdp.feet_flat,
       weight=-1.0,
@@ -589,7 +572,7 @@ def unitree_g1_homie_env_cfg(
       },
     )
     # 4. One-frame pose prior toward the balanced flat-foot squat family
-    #    (see squat_pose_prior's docstring for the scanned reference).
+    #    (the answer card; delivered the form within 30k in v7).
     cfg.rewards["squat_pose_prior"] = RewardTermCfg(
       func=mdp.squat_pose_prior,
       weight=1.0,
@@ -608,10 +591,6 @@ def unitree_g1_homie_env_cfg(
         ),
       },
     )
-    # 5. Price out the remaining exploits: kneeling (44% of deep squats at
-    #    v6/30k despite -5) and squat balance-stepping.
-    cfg.rewards["hip_knee_contact"].weight = -10.0
-    cfg.rewards["stand_still"].weight = -0.3
 
   # Frozen OpenHomie-parity preset: revert every deliberate deviation kept in
   # the default task. The remaining diff between this preset and the default

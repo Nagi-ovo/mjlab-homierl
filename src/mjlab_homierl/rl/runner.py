@@ -84,6 +84,7 @@ class HomieHimOnPolicyRunner(MjlabOnPolicyRunner):
     init_noise_std = float(distribution_cfg.get("init_std", 1.0))
     dynamic_latent_dim = int(actor_cfg.pop("dynamic_latent_dim", 32))
     terrain_latent_dim = int(actor_cfg.pop("terrain_latent_dim", 32))
+    estimator_hidden_dims = tuple(actor_cfg.pop("estimator_hidden_dims", (256, 256)))
 
     policy = HIMActorCritic(
       obs,
@@ -101,6 +102,7 @@ class HomieHimOnPolicyRunner(MjlabOnPolicyRunner):
       init_noise_std=init_noise_std,
       dynamic_latent_dim=dynamic_latent_dim,
       terrain_latent_dim=terrain_latent_dim,
+      estimator_hidden_dims=estimator_hidden_dims,
     ).to(device)
     policy.eval()
     self.alg = _InferenceOnlyAlgorithm(policy)

@@ -20,6 +20,7 @@ class HomieHimActorCfg:
   )
   dynamic_latent_dim: int = 32
   terrain_latent_dim: int = 32
+  estimator_hidden_dims: tuple[int, ...] = (256, 256)
   class_name: str = "mjlab_homierl.rl.himppo.actor_critic.HIMActorCritic"
 
 
@@ -77,7 +78,15 @@ def unitree_g1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
 def unitree_g1_homie_plus_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
   # Separate experiment dir: HOMIE+ checkpoints (5-dim command, obs 486) are
   # interface-incompatible with the base task's.
-  return homie_himppo_runner_cfg("g1_homie_plus_himppo")
+  cfg = homie_himppo_runner_cfg("g1_homie_plus_himppo")
+  # v8: ~4x capacity (ASE-class). The v7 interference squeeze (squat
+  # discipline degrading walking at a fixed budget) is the textbook signal;
+  # the estimator is widened too — it is the 486->35 information bottleneck
+  # every DR identification flows through. Base/native keep parity sizes.
+  cfg.actor.hidden_dims = (1024, 512, 256)
+  cfg.critic.hidden_dims = (1024, 512, 256)
+  cfg.actor.estimator_hidden_dims = (512, 512)
+  return cfg
 
 
 def unitree_h1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
