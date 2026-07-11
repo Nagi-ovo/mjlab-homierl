@@ -262,6 +262,102 @@ class SonicBackend:
     )
 
 
+class _GearRanges:
+  """TeleopState-compatible command ranges for the gear-wbc policy."""
+
+  vx_range = (-1.0, 1.0)
+  vy_range = (-1.0, 1.0)
+  wz_range = (-1.0, 1.0)
+  height_range = (0.40, 0.80)
+  standing_height = 0.74
+  has_pitch = True
+  pitch_range = (-0.5, 0.5)
+
+
+class GearWbcBackend:
+  """GR00T-WBC / SONIC command-mode policy (vx, vy, wz + height + torso rpy).
+
+  Drives OUR classic-MuJoCo robot (same model as the HOMIE channels) through
+  the official frozen G1GearWbcPolicy (Balance+Walk ONNX pair). Controls the
+  15 leg+waist joints; arms stay held at the HOMIE default. Needs its own PD
+  table + armature (knee 200, waist 250, armature 0.01), applied on switch.
+  """
+
+  PD = {  # joint suffix pattern -> (kp, kd), from the official deploy config
+    "hip": (150.0, 2.0), "knee": (200.0, 4.0), "ankle": (40.0, 2.0),
+    "waist": (250.0, 5.0),
+  }
+
+  def __init__(self, repo_root: str):
+    import sys
+    from pathlib import Path
+
+    root = Path(repo_root)
+    if str(root) not in sys.path:
+      sys.path.insert(0, str(root))
+    from decoupled_wbc.control.policy.g1_gear_wbc_policy import G1GearWbcPolicy
+
+    class _Groups:
+      @staticmethod
+      def get_joint_group_indices(group):
+        return {"body": np.arange(29), "lower_body": np.arange(15)}[group]
+
+    cfg_path = (
+      root / "decoupled_wbc" / "sim2mujoco" / "resources" / "robots" / "g1"
+      / "g1_gear_wbc.yaml"
+    )
+    self.policy = G1GearWbcPolicy(
+      robot_model=_Groups(),
+      config=str(cfg_path),
+      model_path=(
+        "policy/GR00T-WholeBodyControl-Balance.onnx,"
+        "policy/GR00T-WholeBodyControl-Walk.onnx"
+      ),
+    )
+    self.policy.use_policy_action = True
+    self.policy.set_use_teleop_policy_cmd(True)
+    self.default_15 = np.asarray(
+      self.policy.config["default_angles"], dtype=np.float32
+    ).reshape(15)
+    self.ranges = _GearRanges()
+
+  def reset_policy(self) -> None:
+    self.policy.reset()
+    self.policy.use_policy_action = True
+    self.policy.set_use_teleop_policy_cmd(True)
+
+  def apply_physics(self, model, joint_names) -> None:
+    """Their PD + flat 0.01 armature on the 15 controlled joints."""
+    for i, jn in enumerate(joint_names[:15]):
+      kp = kd = None
+      for pat, (p, d) in self.PD.items():
+        if pat in jn:
+          kp, kd = p, d
+      model.actuator_gainprm[i, 0] = kp
+      model.actuator_biasprm[i, 1] = -kp
+      model.actuator_biasprm[i, 2] = -kd
+      jid = model.joint(jn).id
+      model.dof_armature[model.jnt_dofadr[jid]] = 0.01
+
+  def targets(self, model, data, qadr, dadr, cmd, height, pitch) -> np.ndarray:
+    self.policy.set_observation(
+      {
+        "q": data.qpos[qadr].astype(np.float32, copy=True),
+        "dq": data.qvel[dadr].astype(np.float32, copy=True),
+        "floating_base_pose": data.qpos[:7].astype(np.float32, copy=True),
+        "floating_base_vel": data.qvel[:6].astype(np.float32, copy=True),
+      }
+    )
+    result = self.policy.get_action(
+      arms_target_pose=None,
+      base_height_command=np.asarray([height], dtype=np.float32),
+      torso_orientation_rpy=np.asarray([0.0, pitch, 0.0], dtype=np.float32),
+      interpolated_navigate_cmd=np.asarray(cmd, dtype=np.float32),
+    )
+    t = np.asarray(result["body_action"][0], dtype=np.float32).reshape(15)
+    return t if np.all(np.isfinite(t)) else self.default_15.copy()
+
+
 class Shared:
   def __init__(self):
     self.lock = threading.Lock()
@@ -356,6 +452,12 @@ def main() -> None:
   parser.add_argument(
     "--sonic-root", default="/home/jz5725/Projects/GR00T-WholeBodyControl"
   )
+  parser.add_argument(
+    "--gear-wbc",
+    action="store_true",
+    help="add the GR00T-WBC/SONIC command-mode channel (vx/vy/wz + height + "
+    "torso pitch on our robot model)",
+  )
   parser.add_argument("--port", type=int, default=8642)
   parser.add_argument("--host", default="127.0.0.1")
   parser.add_argument("--smoke", action="store_true", help="headless self-test")
@@ -367,10 +469,17 @@ def main() -> None:
     name, _, path = spec_arg.partition("=")
     registry.append((name, rt.HomieOnnxPolicy(path, control_dt=control_dt)))
 
+  gear = GearWbcBackend(args.sonic_root) if args.gear_wbc else None
   sonic = SonicBackend(args.sonic_root) if args.sonic else None
   sonic_names = [f"SONIC·{m.split('__')[0]}" for m in args.sonic]
-  all_names = [n for n, _ in registry] + sonic_names
+  all_names = (
+    [n for n, _ in registry]
+    + (["SONIC-cmd·gear-wbc"] if gear else [])
+    + sonic_names
+  )
   n_homie = len(registry)
+  gear_idx = n_homie if gear else -1
+  sonic_base = n_homie + (1 if gear else 0)
 
   active = 0
   policy = registry[0][1]
@@ -381,6 +490,7 @@ def main() -> None:
   reset_robot(model, data, policy)
   policy.reset()
 
+  policy_joint_names = list(policy.joint_names)
   qadr = np.array([model.jnt_qposadr[model.joint(n).id] for n in policy.joint_names])
   dadr = np.array([model.jnt_dofadr[model.joint(n).id] for n in policy.joint_names])
 
@@ -392,19 +502,48 @@ def main() -> None:
 
   import PIL.Image
 
+  homie_armature = model.dof_armature.copy()
+
+  def kind_of(idx: int) -> str:
+    if idx < n_homie:
+      return "homie"
+    if idx == gear_idx:
+      return "gear"
+    return "sonic"
+
+  def gear_reset() -> None:
+    reset_robot(model, data, registry[0][1])  # arms/base from HOMIE defaults
+    for i in range(15):
+      adr = model.jnt_qposadr[model.joint(policy_joint_names[i]).id]
+      data.qpos[adr] = float(gear.default_15[i])
+    data.qpos[2] = 0.76
+    for aid in range(model.nu):
+      data.ctrl[aid] = data.qpos[model.jnt_qposadr[model.actuator_trnid[aid, 0]]]
+    mujoco.mj_forward(model, data)
+    gear.reset_policy()
+
   def switch(idx: int) -> None:
     nonlocal active, policy, state
     if not (0 <= idx < len(all_names)) or idx == active:
       return
-    if idx >= n_homie:  # SONIC channel
+    kind = kind_of(idx)
+    if kind == "sonic":
       active = idx
-      sonic.set_motion(args.sonic[idx - n_homie])
+      sonic.set_motion(args.sonic[idx - sonic_base])
+      print(f"\nswitched to {all_names[idx]}")
+      return
+    if kind == "gear":
+      active = idx
+      gear.apply_physics(model, policy_joint_names)
+      state = TeleopState(gear.ranges)
+      gear_reset()
       print(f"\nswitched to {all_names[idx]}")
       return
     active = idx
     policy = registry[idx][1]
-    # Same robot; re-apply this export's PD table (identical across our
-    # versions, but keep the contract honest).
+    # Same robot; re-apply this export's PD table + our armature (the gear
+    # channel overwrites both).
+    model.dof_armature[:] = homie_armature
     name_to_i = {n: i for i, n in enumerate(policy.joint_names)}
     for aid in range(model.nu):
       jn = model.joint(model.actuator_trnid[aid, 0]).name
@@ -430,42 +569,51 @@ def main() -> None:
 
   while t_end is None or time.time() < t_end:
     t0 = time.perf_counter()
-    on_sonic = active >= n_homie
+    kind = kind_of(active)
     for k in shared.pop_keys():
       if camera.handle(k if k.startswith("cam:") else k.lower()):
         continue
       if k.isdigit() and k != "0":
         switch(int(k) - 1)
-      elif on_sonic:
+      elif kind == "sonic":
         if k == "Backspace":
           sonic.reset()
       elif k.lower() in KEYMAP or k in KEYMAP:
         state.key(KEYMAP.get(k, KEYMAP.get(k.lower())))
-    on_sonic = active >= n_homie
+    kind = kind_of(active)
 
-    if on_sonic:
+    if kind == "sonic":
       sonic.control_step()
-      cur_model, cur_data = sonic.model, sonic.data
+      cur_data = sonic.data
       hud_top = sonic.hud()
     else:
       if state.reset_requested:
         state.reset_requested = False
         state.reset_commands()
-        reset_robot(model, data, policy)
-        policy.reset()
+        if kind == "gear":
+          gear_reset()
+        else:
+          reset_robot(model, data, policy)
+          policy.reset()
       state.slew(control_dt)
-      one = policy.one_step_obs(
-        state.command(),
-        data.qvel[3:6].astype(np.float32),
-        data.qpos[3:7].astype(np.float32),
-        data.qpos[qadr].astype(np.float32),
-        data.qvel[dadr].astype(np.float32),
-      )
-      targets = policy.act(one)
-      data.ctrl[:] = targets  # actuators created in policy.joint_names order
+      if kind == "gear":
+        t15 = gear.targets(
+          model, data, qadr, dadr,
+          [state.vx, state.vy, state.wz], state.height, state.pitch,
+        )
+        data.ctrl[:15] = t15  # legs+waist; arms hold their reset targets
+      else:
+        one = policy.one_step_obs(
+          state.command(),
+          data.qvel[3:6].astype(np.float32),
+          data.qpos[3:7].astype(np.float32),
+          data.qpos[qadr].astype(np.float32),
+          data.qvel[dadr].astype(np.float32),
+        )
+        data.ctrl[:] = policy.act(one)  # actuator order == joint_names order
       for _ in range(DECIMATION):
         mujoco.mj_step(model, data)
-      cur_model, cur_data = model, data
+      cur_data = data
       g = rt.gravity_orientation(data.qpos[3:7].astype(np.float32))
       tilt = float(np.degrees(np.arccos(np.clip(-g[2], -1, 1))))
       hud_top = (
@@ -476,7 +624,7 @@ def main() -> None:
 
     frame_tick += 1
     if frame_tick % 2 == 0:  # ~25 fps
-      if on_sonic:
+      if kind == "sonic":
         if sonic_renderer is None:
           sonic_renderer = mujoco.Renderer(sonic.model, height=480, width=640)
         rnd = sonic_renderer
