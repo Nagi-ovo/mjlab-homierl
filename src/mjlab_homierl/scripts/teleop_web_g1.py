@@ -358,6 +358,91 @@ class GearWbcBackend:
     return t if np.all(np.isfinite(t)) else self.default_15.copy()
 
 
+class _OpenHomieRanges:
+  vx_range = (-0.8, 1.2)
+  vy_range = (-0.5, 0.5)
+  wz_range = (-0.8, 0.8)
+  height_range = (0.24, 0.74)
+  standing_height = 0.74
+  has_pitch = False
+  pitch_range = (0.0, 0.0)
+
+
+class OpenHomieBackend:
+  """The ORIGINAL OpenHomie deploy.onnx (27-dof obs 76, 12 leg actions).
+
+  Ground-truth reference for 'what does the original actually do' questions
+  (e.g. squat stance form). Height command is the ABSOLUTE base height
+  (their convention), trained as step commands — no slew needed. Uses the
+  original TRAINING PD gains (hip 100, knee 150, ankle 40, waist 300),
+  matching their own MujocoDeploy sim2sim.
+  """
+
+  OBS_JOINTS = (
+    "left_hip_pitch_joint", "left_hip_roll_joint", "left_hip_yaw_joint",
+    "left_knee_joint", "left_ankle_pitch_joint", "left_ankle_roll_joint",
+    "right_hip_pitch_joint", "right_hip_roll_joint", "right_hip_yaw_joint",
+    "right_knee_joint", "right_ankle_pitch_joint", "right_ankle_roll_joint",
+    "waist_yaw_joint",
+    "left_shoulder_pitch_joint", "left_shoulder_roll_joint",
+    "left_shoulder_yaw_joint", "left_elbow_joint", "left_wrist_roll_joint",
+    "left_wrist_pitch_joint", "left_wrist_yaw_joint",
+    "right_shoulder_pitch_joint", "right_shoulder_roll_joint",
+    "right_shoulder_yaw_joint", "right_elbow_joint", "right_wrist_roll_joint",
+    "right_wrist_pitch_joint", "right_wrist_yaw_joint",
+  )
+  DEFAULTS = np.array(
+    [-0.1, 0, 0, 0.3, -0.2, 0, -0.1, 0, 0, 0.3, -0.2, 0] + [0.0] * 15,
+    dtype=np.float32,
+  )
+  PD = {"hip": (100.0, 2.0), "knee": (150.0, 4.0), "ankle": (40.0, 2.0),
+        "waist": (300.0, 5.0)}
+  CMD_SCALE = np.array([2.0, 2.0, 0.25, 1.0], dtype=np.float32)
+
+  def __init__(self, onnx_path: str):
+    import onnxruntime as ort
+
+    self.session = ort.InferenceSession(
+      onnx_path, providers=["CPUExecutionProvider"]
+    )
+    self.input_name = self.session.get_inputs()[0].name
+    self.ranges = _OpenHomieRanges()
+    self.last_action = np.zeros(12, dtype=np.float32)
+    self.history = np.zeros(76 * 6, dtype=np.float32)
+
+  def reset_policy(self) -> None:
+    self.last_action[:] = 0.0
+    self.history[:] = 0.0
+
+  def apply_physics(self, model, joint_names) -> None:
+    for i, jn in enumerate(joint_names[:15]):
+      for pat, (kp, kd) in self.PD.items():
+        if pat in jn:
+          model.actuator_gainprm[i, 0] = kp
+          model.actuator_biasprm[i, 1] = -kp
+          model.actuator_biasprm[i, 2] = -kd
+
+  def targets(self, model, data, obs_qadr, obs_dadr, cmd, height) -> np.ndarray:
+    obs = np.zeros(76, dtype=np.float32)
+    obs[0:4] = np.array([cmd[0], cmd[1], cmd[2], height],
+                        dtype=np.float32) * self.CMD_SCALE
+    obs[4:7] = data.qvel[3:6].astype(np.float32) * 0.5
+    obs[7:10] = rt.gravity_orientation(data.qpos[3:7].astype(np.float32))
+    q = data.qpos[obs_qadr].astype(np.float32)
+    dq = data.qvel[obs_dadr].astype(np.float32)
+    obs[10:37] = q - self.DEFAULTS
+    obs[37:64] = dq * 0.05
+    obs[64:76] = self.last_action
+    self.history[:-76] = self.history[76:]
+    self.history[-76:] = obs
+    action = self.session.run(
+      None, {self.input_name: self.history[None].astype(np.float32)}
+    )[0].reshape(-1)[:12]
+    if np.all(np.isfinite(action)):
+      self.last_action = action.astype(np.float32)
+    return self.DEFAULTS[:12] + 0.25 * self.last_action
+
+
 class Shared:
   def __init__(self):
     self.lock = threading.Lock()
@@ -458,6 +543,12 @@ def main() -> None:
     help="add the GR00T-WBC/SONIC command-mode channel (vx/vy/wz + height + "
     "torso pitch on our robot model)",
   )
+  parser.add_argument(
+    "--openhomie",
+    default=None,
+    metavar="DEPLOY_ONNX",
+    help="add the ORIGINAL OpenHomie deploy.onnx as a channel",
+  )
   parser.add_argument("--port", type=int, default=8642)
   parser.add_argument("--host", default="127.0.0.1")
   parser.add_argument("--smoke", action="store_true", help="headless self-test")
@@ -470,16 +561,19 @@ def main() -> None:
     registry.append((name, rt.HomieOnnxPolicy(path, control_dt=control_dt)))
 
   gear = GearWbcBackend(args.sonic_root) if args.gear_wbc else None
+  oh = OpenHomieBackend(args.openhomie) if args.openhomie else None
   sonic = SonicBackend(args.sonic_root) if args.sonic else None
   sonic_names = [f"SONIC·{m.split('__')[0]}" for m in args.sonic]
   all_names = (
     [n for n, _ in registry]
     + (["SONIC-cmd·gear-wbc"] if gear else [])
+    + (["OpenHomie-官方原版"] if oh else [])
     + sonic_names
   )
   n_homie = len(registry)
   gear_idx = n_homie if gear else -1
-  sonic_base = n_homie + (1 if gear else 0)
+  oh_idx = n_homie + (1 if gear else 0) if oh else -1
+  sonic_base = n_homie + (1 if gear else 0) + (1 if oh else 0)
 
   active = 0
   policy = registry[0][1]
@@ -504,12 +598,35 @@ def main() -> None:
 
   homie_armature = model.dof_armature.copy()
 
+  oh_qadr = oh_dadr = None
+  if oh is not None:
+    oh_qadr = np.array(
+      [model.jnt_qposadr[model.joint(n).id] for n in oh.OBS_JOINTS]
+    )
+    oh_dadr = np.array(
+      [model.jnt_dofadr[model.joint(n).id] for n in oh.OBS_JOINTS]
+    )
+
   def kind_of(idx: int) -> str:
     if idx < n_homie:
       return "homie"
     if idx == gear_idx:
       return "gear"
+    if idx == oh_idx:
+      return "openhomie"
     return "sonic"
+
+  def oh_reset() -> None:
+    reset_robot(model, data, registry[0][1])
+    for i, jn in enumerate(oh.OBS_JOINTS[:13]):  # legs + waist_yaw
+      data.qpos[model.jnt_qposadr[model.joint(jn).id]] = float(oh.DEFAULTS[i])
+    for jn in ("waist_roll_joint", "waist_pitch_joint"):
+      data.qpos[model.jnt_qposadr[model.joint(jn).id]] = 0.0
+    data.qpos[2] = 0.76
+    for aid in range(model.nu):
+      data.ctrl[aid] = data.qpos[model.jnt_qposadr[model.actuator_trnid[aid, 0]]]
+    mujoco.mj_forward(model, data)
+    oh.reset_policy()
 
   def gear_reset() -> None:
     reset_robot(model, data, registry[0][1])  # arms/base from HOMIE defaults
@@ -537,6 +654,14 @@ def main() -> None:
       gear.apply_physics(model, policy_joint_names)
       state = TeleopState(gear.ranges)
       gear_reset()
+      print(f"\nswitched to {all_names[idx]}")
+      return
+    if kind == "openhomie":
+      active = idx
+      model.dof_armature[:] = homie_armature
+      oh.apply_physics(model, policy_joint_names)
+      state = TeleopState(oh.ranges)
+      oh_reset()
       print(f"\nswitched to {all_names[idx]}")
       return
     active = idx
@@ -592,6 +717,8 @@ def main() -> None:
         state.reset_commands()
         if kind == "gear":
           gear_reset()
+        elif kind == "openhomie":
+          oh_reset()
         else:
           reset_robot(model, data, policy)
           policy.reset()
@@ -602,6 +729,14 @@ def main() -> None:
           [state.vx, state.vy, state.wz], state.height, state.pitch,
         )
         data.ctrl[:15] = t15  # legs+waist; arms hold their reset targets
+      elif kind == "openhomie":
+        # Original trained on STEP height commands: bypass the slew, feed
+        # the raw target (in-distribution for this policy).
+        t12 = oh.targets(
+          model, data, oh_qadr, oh_dadr,
+          [state.vx, state.vy, state.wz], state.height_target,
+        )
+        data.ctrl[:12] = t12  # legs; waist+arms hold their reset targets
       else:
         one = policy.one_step_obs(
           state.command(),
