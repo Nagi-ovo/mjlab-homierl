@@ -157,6 +157,111 @@ refresh();
 </script></body></html>"""
 
 
+class SonicBackend:
+  """GEAR-SONIC (GR00T-WBC) motion-tracking playback channel.
+
+  SONIC is a motion-tracking foundation policy — its input is a reference
+  motion stream, not a joystick, so WASD does not apply; Backspace restarts
+  the clip and playback loops. One backend instance shares the ONNX
+  sessions + MuJoCo model across all registered motions.
+  """
+
+  def __init__(self, repo_root: str):
+    import sys
+    from pathlib import Path
+
+    root = Path(repo_root)
+    src = root / "mujoco_inference" / "src"
+    if str(src) not in sys.path:
+      sys.path.insert(0, str(src))
+    from sonic_mujoco import runner as R  # noqa: N814
+
+    self.R = R
+    enc, dec = R.ensure_policy_files(
+      root / "gear_sonic_deploy" / "policy" / "release", download=False
+    )
+    self.encoder = R.SonicMujocoRunner._session(enc)
+    self.decoder = R.SonicMujocoRunner._session(dec)
+    self.enc_in = self.encoder.get_inputs()[0].name
+    self.dec_in = self.decoder.get_inputs()[0].name
+    self.motion_dir = root / "gear_sonic_deploy" / "reference" / "example"
+    self.model = mujoco.MjModel.from_xml_path(
+      str(root / "gear_sonic_deploy" / "g1" / "scene_29dof.xml")
+    )
+    self.model.opt.timestep = R.SonicMujocoRunner.sim_dt
+    self.data = mujoco.MjData(self.model)
+    self.motion_name = ""
+    self.motion = None
+
+  def set_motion(self, name: str) -> None:
+    self.motion_name = name
+    self.motion = self.R.Motion.load(self.motion_dir / name)
+    self.reset()
+
+  def reset(self) -> None:
+    import collections
+
+    R, model, data = self.R, self.model, self.data
+    mujoco.mj_resetData(model, data)
+    data.qpos[:3] = [0.0, 0.0, 0.80]
+    data.qpos[3:7] = [1.0, 0.0, 0.0, 0.0]
+    data.qpos[7:36] = R.DEFAULT_ANGLES
+    mujoco.mj_forward(model, data)
+    self.init_quat = data.qpos[3:7].copy()
+    self.anchor = data.qpos[:3].copy()
+    self.last_action = np.zeros(29, dtype=np.float64)
+    self.history = collections.deque(maxlen=10)
+    warm = round(1.0 / R.SonicMujocoRunner.sim_dt)
+    for step in range(warm):
+      if step % R.SonicMujocoRunner.control_decimation == 0:
+        self.history.append(R.SonicMujocoRunner._body_state(data, self.last_action))
+      R.SonicMujocoRunner._apply_pd(data, R.DEFAULT_ANGLES)
+      R.SonicMujocoRunner._apply_tether(model, data, self.anchor)
+      mujoco.mj_step(model, data)
+    self.frame = 0
+    self.elapsed = 0.0
+    self.target = R.DEFAULT_ANGLES.copy()
+
+  def control_step(self) -> None:
+    R, model, data = self.R, self.model, self.data
+    state = R.SonicMujocoRunner._body_state(data, self.last_action)
+    self.history.append(state)
+    enc_obs = self._enc_obs(state)
+    token = self.encoder.run(None, {self.enc_in: enc_obs})[0]
+    obs = R.SonicMujocoRunner._history_observation(token, self.history)
+    action = self.decoder.run(None, {self.dec_in: obs})[0][0]
+    if np.all(np.isfinite(action)):
+      self.last_action = action.astype(np.float64)
+      self.target = (
+        R.DEFAULT_ANGLES + R.ACTION_SCALE * self.last_action[R.ISAACLAB_TO_MUJOCO]
+      )
+    self.frame += 1
+    if self.frame >= len(self.motion.joint_pos):
+      self.reset()  # loop the clip
+      return
+    for _ in range(R.SonicMujocoRunner.control_decimation):
+      data.xfrc_applied[:] = 0.0
+      if self.elapsed < 0.5:
+        R.SonicMujocoRunner._apply_tether(model, data, self.anchor)
+      R.SonicMujocoRunner._apply_pd(data, self.target)
+      mujoco.mj_step(model, data)
+      self.elapsed += R.SonicMujocoRunner.sim_dt
+
+  def _enc_obs(self, state):
+    # _encoder_observation is an instance method upstream but never touches
+    # self; call it unbound (verified against runner.py).
+    return self.R.SonicMujocoRunner._encoder_observation(
+      None, self.motion, self.frame, state.base_quat, self.init_quat
+    )
+
+  def hud(self) -> str:
+    total = len(self.motion.joint_pos) if self.motion is not None else 0
+    return (
+      f"SONIC 参考动作 {self.motion_name}   frame {self.frame}/{total}\n"
+      f"base z {self.data.qpos[2]:.2f} m   (动作跟踪型:WASD 无效,退格重播,播完自动循环)"
+    )
+
+
 class Shared:
   def __init__(self):
     self.lock = threading.Lock()
@@ -240,6 +345,17 @@ def main() -> None:
     metavar="NAME=ONNX",
     help="repeatable; first one is active at start",
   )
+  parser.add_argument(
+    "--sonic",
+    action="append",
+    default=[],
+    metavar="MOTION",
+    help="repeatable GEAR-SONIC reference-motion channels (dir name under "
+    "gear_sonic_deploy/reference/example)",
+  )
+  parser.add_argument(
+    "--sonic-root", default="/home/jz5725/Projects/GR00T-WholeBodyControl"
+  )
   parser.add_argument("--port", type=int, default=8642)
   parser.add_argument("--host", default="127.0.0.1")
   parser.add_argument("--smoke", action="store_true", help="headless self-test")
@@ -250,6 +366,11 @@ def main() -> None:
   for spec_arg in args.policy:
     name, _, path = spec_arg.partition("=")
     registry.append((name, rt.HomieOnnxPolicy(path, control_dt=control_dt)))
+
+  sonic = SonicBackend(args.sonic_root) if args.sonic else None
+  sonic_names = [f"SONIC·{m.split('__')[0]}" for m in args.sonic]
+  all_names = [n for n, _ in registry] + sonic_names
+  n_homie = len(registry)
 
   active = 0
   policy = registry[0][1]
@@ -273,7 +394,12 @@ def main() -> None:
 
   def switch(idx: int) -> None:
     nonlocal active, policy, state
-    if not (0 <= idx < len(registry)) or idx == active:
+    if not (0 <= idx < len(all_names)) or idx == active:
+      return
+    if idx >= n_homie:  # SONIC channel
+      active = idx
+      sonic.set_motion(args.sonic[idx - n_homie])
+      print(f"\nswitched to {all_names[idx]}")
       return
     active = idx
     policy = registry[idx][1]
@@ -295,57 +421,78 @@ def main() -> None:
   frame_tick = 0
   t_end = time.time() + 6.0 if args.smoke else None
   if args.smoke:
-    shared.push_key("ArrowDown"); shared.push_key("2" if len(registry) > 1 else "w")
+    shared.push_key("ArrowDown")
+    if len(all_names) > 1:
+      shared.push_key(str(len(all_names)))  # switch to the LAST channel
 
   camera = CameraState()
+  sonic_renderer = None
 
   while t_end is None or time.time() < t_end:
     t0 = time.perf_counter()
+    on_sonic = active >= n_homie
     for k in shared.pop_keys():
       if camera.handle(k if k.startswith("cam:") else k.lower()):
         continue
       if k.isdigit() and k != "0":
         switch(int(k) - 1)
+      elif on_sonic:
+        if k == "Backspace":
+          sonic.reset()
       elif k.lower() in KEYMAP or k in KEYMAP:
         state.key(KEYMAP.get(k, KEYMAP.get(k.lower())))
-    if state.reset_requested:
-      state.reset_requested = False
-      state.reset_commands()
-      reset_robot(model, data, policy)
-      policy.reset()
+    on_sonic = active >= n_homie
 
-    state.slew(control_dt)
-    one = policy.one_step_obs(
-      state.command(),
-      data.qvel[3:6].astype(np.float32),
-      data.qpos[3:7].astype(np.float32),
-      data.qpos[qadr].astype(np.float32),
-      data.qvel[dadr].astype(np.float32),
-    )
-    targets = policy.act(one)
-    data.ctrl[:] = targets  # actuators created in policy.joint_names order
-    for _ in range(DECIMATION):
-      mujoco.mj_step(model, data)
+    if on_sonic:
+      sonic.control_step()
+      cur_model, cur_data = sonic.model, sonic.data
+      hud_top = sonic.hud()
+    else:
+      if state.reset_requested:
+        state.reset_requested = False
+        state.reset_commands()
+        reset_robot(model, data, policy)
+        policy.reset()
+      state.slew(control_dt)
+      one = policy.one_step_obs(
+        state.command(),
+        data.qvel[3:6].astype(np.float32),
+        data.qpos[3:7].astype(np.float32),
+        data.qpos[qadr].astype(np.float32),
+        data.qvel[dadr].astype(np.float32),
+      )
+      targets = policy.act(one)
+      data.ctrl[:] = targets  # actuators created in policy.joint_names order
+      for _ in range(DECIMATION):
+        mujoco.mj_step(model, data)
+      cur_model, cur_data = model, data
+      g = rt.gravity_orientation(data.qpos[3:7].astype(np.float32))
+      tilt = float(np.degrees(np.arccos(np.clip(-g[2], -1, 1))))
+      hud_top = (
+        f"policy {all_names[active]}   {state.status()}\n"
+        f"base z {data.qpos[2]:.2f} m   tilt {tilt:4.1f}°   "
+        f"{'⚠ 已倒,按退格复位' if tilt > 60 else ''}"
+      )
 
     frame_tick += 1
     if frame_tick % 2 == 0:  # ~25 fps
+      if on_sonic:
+        if sonic_renderer is None:
+          sonic_renderer = mujoco.Renderer(sonic.model, height=480, width=640)
+        rnd = sonic_renderer
+      else:
+        rnd = renderer
       cam = mujoco.MjvCamera()
-      camera.apply(cam, data)
-      renderer.update_scene(data, camera=cam)
+      camera.apply(cam, cur_data)
+      rnd.update_scene(cur_data, camera=cam)
       buf = io.BytesIO()
-      PIL.Image.fromarray(renderer.render()).save(buf, "JPEG", quality=75)
+      PIL.Image.fromarray(rnd.render()).save(buf, "JPEG", quality=75)
       with shared.lock:
         shared.jpeg = buf.getvalue()
-    g = rt.gravity_orientation(data.qpos[3:7].astype(np.float32))
-    tilt = float(np.degrees(np.arccos(np.clip(-g[2], -1, 1))))
     shared.status = {
-      "policies": [n for n, _ in registry],
+      "policies": all_names,
       "active": active,
-      "hud": (
-        f"policy {registry[active][0]}   {state.status()}\n"
-        f"base z {data.qpos[2]:.2f} m   tilt {tilt:4.1f}°   镜头 {camera.mode}   "
-        f"{'⚠ 已倒,按退格复位' if tilt > 60 else ''}"
-      ),
+      "hud": hud_top + f"   镜头 {camera.mode}",
     }
 
     leftover = control_dt - (time.perf_counter() - t0)
@@ -368,7 +515,7 @@ def main() -> None:
     print(
       f"smoke: page {len(page)}B, status active={status['active']} "
       f"policies={status['policies']}, latest frame {frame_len}B, "
-      f"height_target {state.height_target:.2f} (ArrowDown applied)"
+      f"hud={status['hud']!r}"
     )
 
 
