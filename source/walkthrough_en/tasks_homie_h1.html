@@ -40,19 +40,52 @@
 <strong>standing</strong>, and <strong>upper-body random disturbances</strong>. The implementation
 follows the OpenHomie reference (<code class="docutils literal notranslate"><span class="pre">HomieRL/legged_gym</span></code>): reward set, command
 sampling, and curriculum.</p>
-<p>Three task ids are provided:</p>
+<p>Main task ids:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1</span></code>: the OpenHomie robot (29 dof, 12 lower-body actions).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1</span></code>: the OpenHomie robot (29 dof, 12 lower-body
+actions). The waist defaults to <code class="docutils literal notranslate"><span class="pre">locked</span></code>: waist_roll/pitch are PD-held at
+the default pose and excluded from the upper-body disturbance, matching
+OpenHomie’s 27-dof URDF (which welds those two joints) and real-robot
+deployment.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1</span></code>: the H1 port (19 dof, 10 lower-body actions).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>: H1 with Robotiq 2F85 grippers
 (policy-free random gripper motion and randomized hand payload).</p></li>
+</ul>
+<p>G1 variants (identical observation/action interface; checkpoints load
+interchangeably):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-free_waist</span></code>: all three waist joints join the
+upper-body disturbance (a strict superset of the original distribution).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-with_dex3</span></code> / <code class="docutils literal notranslate"><span class="pre">-with_inspire</span></code>: Unitree Dex3 /
+Inspire RH56 hand models mounted as inertial attachments with a randomized
+held-object payload. The base task’s wrist-payload randomization covers
+these hand masses, so one checkpoint serves bare wrists and both hand
+models; these variants are primarily for play/eval with real hand geometry.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-mjlab_gains</span></code>: ablation with mjlab’s
+first-principles actuator gains; sim-only.</p></li>
+</ul>
+<p>HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-plus</span></code>: the deployment fork — three deliberate,
+hardware-motivated extensions over parity: (1) commanded torso pitch (5th
+command dim, <code class="docutils literal notranslate"><span class="pre">waist_pitch</span></code> joint-angle target up to 0.45 rad, command
+driven / policy-free, slew-limited 1 rad/s; one-step obs 80 → 81, actor
+486, separate lineage <code class="docutils literal notranslate"><span class="pre">g1_homie_plus_himppo</span></code>, pitch = 0 reproduces plain
+HOMIE); (2) in-place locomotion sampling (1/3 of walk resamples: vx = 0,
+sampled vy/wz kept with the dominant axis clamped ≥ 0.3 — the faithful
+sampler leaves pure strafe/turn at measure zero and probed policies stand
+through such commands); (3) per-env foot contact-compliance DR
+(<code class="docutils literal notranslate"><span class="pre">geom_solref</span></code> near-rigid to soft foam, after arXiv:2504.13619 — fixes
+standing sway on EVA gym mats). The exported ONNX metadata declares the
+5-dim command contract so downstream plugins bootstrap without
+hardcoding.</p></li>
 </ul>
 <p>The core idea: <strong>reduce the policy action space to the lower body, and treat
 the upper body (and optional grippers) as smooth, time-varying disturbances.</strong></p>
 <section id="task-registration">
 <h2>Task registration<a class="headerlink" href="#task-registration" title="Link to this heading">¶</a></h2>
 <p>Path: <code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/__init__.py</span></code></p>
-<p>Three task ids are registered via <code class="docutils literal notranslate"><span class="pre">mjlab.tasks.registry.register_mjlab_task</span></code>.
+<p>The task ids above are registered via <code class="docutils literal notranslate"><span class="pre">mjlab.tasks.registry.register_mjlab_task</span></code>.
 The play env is the same config with <code class="docutils literal notranslate"><span class="pre">play=True</span></code> (critic observations,
 rewards, and curriculum stripped; upper-body motion at full range).</p>
 </section>
@@ -115,7 +148,8 @@ ratio increases by 0.05.</p>
 <section id="domain-randomization">
 <h2>Domain randomization<a class="headerlink" href="#domain-randomization" title="Link to this heading">¶</a></h2>
 <p>All randomization uses mjlab-native <code class="docutils literal notranslate"><span class="pre">dr.*</span></code> events: PD gains ×[0.9, 1.1]
-(per reset), link masses ×[0.8, 1.2], torso payload +[-2, 5] kg, CoM offset,
+(per reset), link masses ×[0.8, 1.2], torso payload +[-1, +5] kg (see the env cfg
+comment for the survey behind this deviation), CoM offset,
 encoder bias, foot friction, a global horizontal push every 4 s
 (Δv ≤ 0.5 m/s), and randomized joint poses / root velocities at reset.
 OpenHomie’s per-step torque injection has no mjlab equivalent and is
@@ -129,9 +163,8 @@ estimator latent 32, prototype 64, sinkhorn contrastive loss) follow
 OpenHomie. The left/right mirror maps for symmetry augmentation are derived
 from joint names (<code class="docutils literal notranslate"><span class="pre">left_*</span></code>/<code class="docutils literal notranslate"><span class="pre">right_*</span></code> pairing; joints whose names contain
 <code class="docutils literal notranslate"><span class="pre">yaw</span></code>/<code class="docutils literal notranslate"><span class="pre">roll</span></code> flip sign), so G1 and H1 share one implementation.</p>
-<p>Known deviation: the estimator’s next-step critic observation at termination
-steps is the post-reset observation (mjlab computes observations after
-resets), whereas OpenHomie substitutes the pre-reset observation.</p>
+<p>Termination steps feed the estimator the pre-reset critic observation via a
+recorder term, matching OpenHomie’s runner behavior.</p>
 </section>
 </section>
 

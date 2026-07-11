@@ -38,19 +38,46 @@
 <p>Homie 是一个综合性任务，结合了 <strong>速度追踪 (Velocity)</strong>、<strong>蹲起 (Squat)</strong>、
 <strong>站立 (Stand)</strong> 以及 <strong>上身随机干扰</strong>。实现对齐 OpenHomie 参考实现
 （<code class="docutils literal notranslate"><span class="pre">HomieRL/legged_gym</span></code>）的奖励集、命令采样与课程机制。</p>
-<p>目前提供三个 task id：</p>
+<p>主要 task id：</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1</span></code>：标准版本（OpenHomie 原版机器人，29 dof，12 个下肢动作）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1</span></code>：标准版本（OpenHomie 原版机器人，29 dof，12 个下肢
+动作）。默认锁腰（waist_roll/pitch 由 PD 保持默认位姿、不参与上身扰动，对齐
+OpenHomie 焊死这两个关节的 27-dof URDF 与实机部署行为）。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1</span></code>：H1 移植（19 dof，10 个下肢动作）。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-H1-with_hands</span></code>：H1 额外挂载 Robotiq 2F85 夹爪
 （包含 policy-free 的夹爪随机动作与手部负载随机化）。</p></li>
+</ul>
+<p>G1 变体（观测/动作接口与标准版完全一致，checkpoint 可互相加载）：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-free_waist</span></code>：三个腰关节全部参与上身扰动
+（原版训练分布的严格超集）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-with_dex3</span></code> / <code class="docutils literal notranslate"><span class="pre">-with_inspire</span></code>：挂载 Unitree Dex3 /
+Inspire RH56 手模型（惯性附件 + 持物负载随机化）。基线任务的腕端负载随机化
+已覆盖这些手的质量，同一 checkpoint 裸腕/双手型通用；这两个变体主要用于
+带真实手几何的 play/评估。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-mjlab_gains</span></code>：mjlab 第一性原理增益的消融版本
+（仅仿真）。</p></li>
+</ul>
+<p>HOMIE+（接口分叉，checkpoint 与上述任务**不**互通）：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Mjlab-Homie-Unitree-G1-plus</span></code>：部署分支，在忠实配方之上叠加三个由实机
+发现驱动的扩展：(1) <strong>躯干俯仰命令</strong>——第 5 个命令维度携带 <code class="docutils literal notranslate"><span class="pre">waist_pitch</span></code>
+关节角目标（rad，正=前倾，walk/squat 模式采样至 0.45），关节由命令直驱
+（policy-free、1 rad/s 限速），策略保持 12 维下肢接口并学会前倾配平（弯腰
+捡物所缺的自由度）；单步观测 80 → 81（actor 486），独立训练谱系
+（<code class="docutils literal notranslate"><span class="pre">g1_homie_plus_himppo</span></code>），checkpoint 与基线不互通，pitch=0 即普通
+HOMIE 行为。(2) <strong>原地运动采样</strong>——walk 模式 1/3 的重采样置 vx=0、保留
+vy/wz（支配轴钳制 ≥0.3）；忠实采样器下纯横移/纯转向测度为零，实测策略
+遇此类命令 100% 双支撑站立。(3) <strong>脚部接触柔性 DR</strong>——每 env 随机化脚部
+geom_solref（近刚性到软泡沫，参照 arXiv:2504.13619），修复 EVA 拼接垫上
+的站立微晃。ONNX metadata 声明 5 维命令契约，下游插件零硬编码自举。</p></li>
 </ul>
 <p>核心设计思想：<strong>缩小策略的动作空间，将其集中在下肢控制上，而将上身（以及可选
 的夹爪）作为”随时间变化的平滑扰动”。</strong></p>
 <section id="id1">
 <h2>任务注册<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
 <p>路径：<code class="docutils literal notranslate"><span class="pre">src/mjlab_homierl/__init__.py</span></code></p>
-<p>通过 <code class="docutils literal notranslate"><span class="pre">mjlab.tasks.registry.register_mjlab_task</span></code> 注册三个 task id。
+<p>通过 <code class="docutils literal notranslate"><span class="pre">mjlab.tasks.registry.register_mjlab_task</span></code> 注册上述 task id。
 play env 是同一配置在 <code class="docutils literal notranslate"><span class="pre">play=True</span></code> 下的轻量化版本（剥离 critic 观测、
 奖励与课程，上身扰动幅度直接拉满）。</p>
 </section>
