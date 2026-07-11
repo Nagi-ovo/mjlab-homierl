@@ -53,6 +53,61 @@ KEYMAP = {
   "Backspace": 259,
 }
 
+
+class CameraState:
+  """Preset + free-adjust tracking camera. `chase` locks behind the robot's
+  heading (driving view); the others are world-fixed angles."""
+
+  PRESETS = ("chase", "iso", "side", "front", "top")
+  _ANGLES = {  # name -> (azimuth or None for heading-locked, elevation)
+    "chase": (None, -15),
+    "iso": (135, -18),
+    "side": (90, -10),
+    "front": (180, -10),
+    "top": (135, -70),
+  }
+
+  def __init__(self):
+    self.mode = "chase"
+    self.dist = 2.2
+    self.az_offset = 0.0  # free rotation on top of the preset
+
+  def handle(self, key: str) -> bool:
+    if key.startswith("cam:") and key[4:] in self.PRESETS:
+      self.mode = key[4:]
+      self.az_offset = 0.0
+      return True
+    if key == "c":
+      i = self.PRESETS.index(self.mode)
+      self.mode = self.PRESETS[(i + 1) % len(self.PRESETS)]
+      self.az_offset = 0.0
+      return True
+    if key == "[":
+      self.az_offset -= 15.0
+      return True
+    if key == "]":
+      self.az_offset += 15.0
+      return True
+    if key in ("-", "_"):
+      self.dist = min(5.0, self.dist * 1.2)
+      return True
+    if key in ("=", "+"):
+      self.dist = max(0.8, self.dist / 1.2)
+      return True
+    return False
+
+  def apply(self, cam: mujoco.MjvCamera, data: mujoco.MjData) -> None:
+    az, elev = self._ANGLES[self.mode]
+    if az is None:  # chase: behind the robot's heading
+      w, x, y, z = data.qpos[3:7]
+      yaw = np.degrees(np.arctan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)))
+      az = yaw + 180.0
+    lookat_z = 0.5 if self.mode != "top" else 0.1
+    cam.lookat[:] = [data.qpos[0], data.qpos[1], lookat_z]
+    cam.azimuth = az + self.az_offset
+    cam.elevation = elev
+    cam.distance = self.dist
+
 PAGE = """<!doctype html><html><head><meta charset="utf-8">
 <title>G1 teleop</title>
 <style>
@@ -66,9 +121,17 @@ PAGE = """<!doctype html><html><head><meta charset="utf-8">
 </style></head><body>
 <div class="row" id="policies"></div>
 <img id="view" src="/stream">
+<div class="row" id="cams">
+  <button onclick="send('cam:chase')">跟随</button>
+  <button onclick="send('cam:iso')">斜角</button>
+  <button onclick="send('cam:side')">侧面</button>
+  <button onclick="send('cam:front')">正面</button>
+  <button onclick="send('cam:top')">俯视</button>
+</div>
 <div id="hud">…</div>
 <div id="keys">W/S 前后 · A/D 横移 · Q/E 转向 · ↑/↓ 蹲起 · R/F 前倾/回正 ·
-空格 急停 · 0 指令复位 · 退格 机器人复位 · 数字键切 policy(点页面任意处取得键盘焦点)</div>
+空格 急停 · 0 指令复位 · 退格 机器人复位 · 数字键切 policy ·
+C 切镜头 · [ ] 旋转 · +/- 缩放(点页面任意处取得键盘焦点)</div>
 <script>
 const send=k=>fetch('/key',{method:'POST',body:JSON.stringify({key:k})});
 document.addEventListener('keydown',e=>{
@@ -234,9 +297,13 @@ def main() -> None:
   if args.smoke:
     shared.push_key("ArrowDown"); shared.push_key("2" if len(registry) > 1 else "w")
 
+  camera = CameraState()
+
   while t_end is None or time.time() < t_end:
     t0 = time.perf_counter()
     for k in shared.pop_keys():
+      if camera.handle(k if k.startswith("cam:") else k.lower()):
+        continue
       if k.isdigit() and k != "0":
         switch(int(k) - 1)
       elif k.lower() in KEYMAP or k in KEYMAP:
@@ -263,8 +330,7 @@ def main() -> None:
     frame_tick += 1
     if frame_tick % 2 == 0:  # ~25 fps
       cam = mujoco.MjvCamera()
-      cam.lookat[:] = [data.qpos[0], data.qpos[1], 0.5]
-      cam.azimuth, cam.elevation, cam.distance = 135, -18, 2.2
+      camera.apply(cam, data)
       renderer.update_scene(data, camera=cam)
       buf = io.BytesIO()
       PIL.Image.fromarray(renderer.render()).save(buf, "JPEG", quality=75)
@@ -277,7 +343,7 @@ def main() -> None:
       "active": active,
       "hud": (
         f"policy {registry[active][0]}   {state.status()}\n"
-        f"base z {data.qpos[2]:.2f} m   tilt {tilt:4.1f}°   "
+        f"base z {data.qpos[2]:.2f} m   tilt {tilt:4.1f}°   镜头 {camera.mode}   "
         f"{'⚠ 已倒,按退格复位' if tilt > 60 else ''}"
       ),
     }
