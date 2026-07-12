@@ -2,8 +2,10 @@
 
 The v8.1 speedups must not change the algorithm:
 - rollout act() batches the original+mirrored forward (same math, fewer calls);
-- the symmetry-loss references reuse mu_batch / value_batch instead of
-  recomputing them (bitwise identical);
+- the critic symmetry-loss reference reuses value_batch (bitwise identical:
+  the critic never reads the estimator). The ACTOR reference is recomputed
+  after the estimator step on purpose — reusing the pre-update mu_batch made
+  the symmetry loss chase a stale target and diverged (fastinfra, iter 1903);
 - the estimator trains on obs_batch alone (the storage already holds each
   transition's mirror, so the old cat(obs, flip(obs)) fed every sample twice).
 """
@@ -80,23 +82,72 @@ def test_flip_is_an_involution(alg: HIMPPO) -> None:
   assert torch.equal(alg._flip_critic_obs(alg._flip_critic_obs(c)), c)
 
 
-def test_sym_loss_references_are_bitwise_identical(alg: HIMPPO) -> None:
-  """update() now reuses mu_batch / value_batch for the symmetry-loss
-  references; assert reuse equals the recomputation the old code did."""
+def test_critic_sym_reference_survives_estimator_update(alg: HIMPPO) -> None:
+  """value_batch reuse is bitwise safe ACROSS the estimator update: the
+  critic does not read the estimator, so its output is unchanged."""
   policy = alg.policy
   obs = torch.randn(NUM_ENVS, ACTOR_OBS)
   critic_obs = torch.randn(NUM_ENVS, CRITIC_OBS)
+  next_critic_obs = torch.randn(NUM_ENVS, CRITIC_OBS)
+
+  value_batch = policy.evaluate_critic_obs(critic_obs).detach()
+  policy.update_estimator(obs, next_critic_obs, lr=1e-3)
+  with torch.no_grad():
+    recomputed_value = policy.evaluate_critic_obs(critic_obs)
+
+  assert torch.equal(value_batch, recomputed_value)
+
+
+def test_actor_mu_reuse_is_stale_after_estimator_update(alg: HIMPPO) -> None:
+  """Documents the fastinfra iter-1903 bug: the actor mean captured BEFORE
+  the estimator update is NOT the actor mean after it (the actor input embeds
+  estimator features), so mu_batch must not serve as the symmetry-loss
+  reference. A large estimator step makes the staleness unmistakable."""
+  policy = alg.policy
+  obs = torch.randn(NUM_ENVS, ACTOR_OBS)
+  next_critic_obs = torch.randn(NUM_ENVS, CRITIC_OBS)
 
   policy.act(obs)
   mu_batch = policy.action_mean.detach()
-  value_batch = policy.evaluate_critic_obs(critic_obs).detach()
-
+  policy.update_estimator(obs, next_critic_obs, lr=1.0)
   with torch.no_grad():
     recomputed_mu = policy.act_inference_actor_obs(obs)
-    recomputed_value = policy.evaluate_critic_obs(critic_obs)
 
-  assert torch.equal(mu_batch, recomputed_mu)
-  assert torch.equal(value_batch, recomputed_value)
+  assert not torch.allclose(mu_batch, recomputed_mu)
+
+
+def test_update_recomputes_actor_sym_reference(alg: HIMPPO) -> None:
+  """update() must call act_inference_actor_obs twice per minibatch with
+  use_flip: once on the flipped obs and once to recompute the reference after
+  the estimator step. The broken fastinfra version called it only once."""
+  torch.manual_seed(2)
+  for _ in range(4):
+    obs = _make_obs()
+    alg.act(obs)
+    alg.process_env_step(
+      obs,
+      rewards=torch.randn(NUM_ENVS),
+      dones=torch.zeros(NUM_ENVS, dtype=torch.uint8),
+      extras={},
+    )
+  alg.compute_returns(obs)
+
+  calls = 0
+  original = alg.policy.act_inference_actor_obs
+
+  def counting(obs_history: torch.Tensor) -> torch.Tensor:
+    nonlocal calls
+    calls += 1
+    return original(obs_history)
+
+  alg.policy.act_inference_actor_obs = counting  # type: ignore[method-assign]
+  try:
+    alg.update()
+  finally:
+    alg.policy.act_inference_actor_obs = original  # type: ignore[method-assign]
+
+  num_updates = alg.num_learning_epochs * alg.num_mini_batches
+  assert calls == 2 * num_updates
 
 
 def test_batched_act_matches_separate_forwards(alg: HIMPPO) -> None:

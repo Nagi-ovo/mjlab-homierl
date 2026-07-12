@@ -599,15 +599,19 @@ class HIMPPO:
       if self.use_flip:
         assert flipped_obs_batch is not None
         flipped_critic_obs_batch = self._flip_critic_obs(critic_obs_batch)
-        # The unflipped references were already computed this minibatch:
-        # mu_batch is the actor mean from policy.act(obs_batch) and
-        # value_batch the critic output on critic_obs_batch. Recomputing them
-        # (as OpenHomie does) yields bitwise-identical detached tensors.
+        # The actor reference must be RECOMPUTED here, not reused from
+        # mu_batch: the estimator optimizer stepped above, and the actor input
+        # embeds estimator features, so both symmetry-loss sides must see the
+        # post-update estimator weights (as the proven baseline did). Reusing
+        # the pre-update mu_batch makes the constraint chase a stale target
+        # and diverges once the adaptive LR spikes (fastinfra, iter 1903).
+        # value_batch reuse below IS bitwise safe: the critic does not read
+        # the estimator and its weights are unchanged within the minibatch.
         actor_sym_loss = self.symmetry_scale * torch.mean(
           torch.sum(
             torch.square(
               self.policy.act_inference_actor_obs(flipped_obs_batch)
-              - self._flip_actions(mu_batch)
+              - self._flip_actions(self.policy.act_inference_actor_obs(obs_batch))
             ),
             dim=-1,
           )
