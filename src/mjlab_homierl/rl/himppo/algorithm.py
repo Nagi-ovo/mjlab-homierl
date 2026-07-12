@@ -176,7 +176,17 @@ class HIMPPO:
 
     self.policy = policy.to(self.device)
     self.storage: HIMRolloutStorage | None = None
-    self.optimizer = optim.Adam(self.policy.parameters(), lr=self.learning_rate)
+    fused_adam = self.device.type == "cuda"
+    self.optimizer = optim.Adam(
+      self.policy.parameters(), lr=self.learning_rate, fused=fused_adam
+    )
+    if fused_adam:
+      # The estimator's own optimizer was built before the module moved to
+      # the GPU; rebuild it fused now that the parameters live on-device.
+      estimator = self.policy.estimator
+      estimator.optimizer = optim.Adam(
+        estimator.parameters(), lr=estimator.learning_rate, fused=True
+      )
     self.transition = HIMRolloutStorage.Transition()
     self.transition_sym = HIMRolloutStorage.Transition()
 
@@ -232,6 +242,39 @@ class HIMPPO:
     actor_obs = self.policy.get_actor_obs(obs).to(self.device)
     critic_obs = self.policy.get_critic_obs(obs).to(self.device)
 
+    if self.use_flip:
+      # Original and mirrored halves share one batched forward per network:
+      # identical math to two separate calls at half the kernel launches.
+      obs_sym = self._flip_actor_obs(actor_obs)
+      critic_obs_sym = self._flip_critic_obs(critic_obs)
+      n = actor_obs.shape[0]
+
+      actions_all = self.policy.act(torch.cat((actor_obs, obs_sym), dim=0)).detach()
+      values_all = self.policy.evaluate_critic_obs(
+        torch.cat((critic_obs, critic_obs_sym), dim=0)
+      ).detach()
+      log_prob_all = self.policy.get_actions_log_prob(actions_all).detach()
+      mean_all = self.policy.action_mean.detach()
+      sigma_all = self.policy.action_std.detach()
+
+      self.transition.actions = actions_all[:n]
+      self.transition.values = values_all[:n]
+      self.transition.actions_log_prob = log_prob_all[:n]
+      self.transition.action_mean = mean_all[:n]
+      self.transition.action_sigma = sigma_all[:n]
+      self.transition.observations = actor_obs
+      self.transition.critic_observations = critic_obs
+
+      self.transition_sym.actions = actions_all[n:]
+      self.transition_sym.values = values_all[n:]
+      self.transition_sym.actions_log_prob = log_prob_all[n:]
+      self.transition_sym.action_mean = mean_all[n:]
+      self.transition_sym.action_sigma = sigma_all[n:]
+      self.transition_sym.observations = obs_sym
+      self.transition_sym.critic_observations = critic_obs_sym
+
+      return self.transition.actions
+
     actions = self.policy.act(actor_obs).detach()
     values = self.policy.evaluate_critic_obs(critic_obs).detach()
     actions_log_prob = self.policy.get_actions_log_prob(actions).detach()
@@ -243,21 +286,6 @@ class HIMPPO:
     self.transition.action_sigma = self.policy.action_std.detach()
     self.transition.observations = actor_obs
     self.transition.critic_observations = critic_obs
-
-    if self.use_flip:
-      obs_sym = self._flip_actor_obs(actor_obs)
-      critic_obs_sym = self._flip_critic_obs(critic_obs)
-      actions_sym = self.policy.act(obs_sym).detach()
-      values_sym = self.policy.evaluate_critic_obs(critic_obs_sym).detach()
-      actions_log_prob_sym = self.policy.get_actions_log_prob(actions_sym).detach()
-
-      self.transition_sym.actions = actions_sym
-      self.transition_sym.values = values_sym
-      self.transition_sym.actions_log_prob = actions_log_prob_sym
-      self.transition_sym.action_mean = self.policy.action_mean.detach()
-      self.transition_sym.action_sigma = self.policy.action_std.detach()
-      self.transition_sym.observations = obs_sym
-      self.transition_sym.critic_observations = critic_obs_sym
 
     return actions
 
@@ -477,12 +505,15 @@ class HIMPPO:
   def update(self) -> dict[str, float]:  # noqa: C901
     assert self.storage is not None
 
-    mean_value_loss = 0.0
-    mean_surrogate_loss = 0.0
-    mean_estimation_loss = 0.0
-    mean_swap_loss = 0.0
-    mean_actor_sym_loss = 0.0
-    mean_critic_sym_loss = 0.0
+    # On-device accumulators: one GPU->CPU sync at the end of the update
+    # instead of one per loss per minibatch.
+    zero = torch.zeros((), device=self.device)
+    mean_value_loss = zero.clone()
+    mean_surrogate_loss = zero.clone()
+    mean_estimation_loss = zero.clone()
+    mean_swap_loss = zero.clone()
+    mean_actor_sym_loss = zero.clone()
+    mean_critic_sym_loss = zero.clone()
 
     generator = self.storage.mini_batch_generator(
       self.num_mini_batches, self.num_learning_epochs
@@ -525,21 +556,17 @@ class HIMPPO:
           for param_group in self.optimizer.param_groups:
             param_group["lr"] = self.learning_rate
 
-      # Estimator update (self-supervised env feature extraction).
+      # Estimator update (self-supervised env feature extraction). With
+      # use_flip the storage already holds each transition's mirror, so
+      # obs_batch is its own symmetry augmentation; concatenating a flipped
+      # copy (as OpenHomie does) trains on every sample twice per epoch for
+      # no information gain.
       flipped_obs_batch: torch.Tensor | None = None
       if self.use_flip:
         flipped_obs_batch = self._flip_actor_obs(obs_batch)
-        flipped_next_critic_obs_batch = self._flip_critic_obs(next_critic_obs_batch)
-        estimator_obs_batch = torch.cat((obs_batch, flipped_obs_batch), dim=0)
-        estimator_next_batch = torch.cat(
-          (next_critic_obs_batch, flipped_next_critic_obs_batch), dim=0
-        )
-      else:
-        estimator_obs_batch = obs_batch
-        estimator_next_batch = next_critic_obs_batch
 
       estimation_loss, swap_loss = self.policy.update_estimator(
-        estimator_obs_batch, estimator_next_batch, lr=self.learning_rate
+        obs_batch, next_critic_obs_batch, lr=self.learning_rate
       )
 
       ratio = torch.exp(
@@ -572,11 +599,15 @@ class HIMPPO:
       if self.use_flip:
         assert flipped_obs_batch is not None
         flipped_critic_obs_batch = self._flip_critic_obs(critic_obs_batch)
+        # The unflipped references were already computed this minibatch:
+        # mu_batch is the actor mean from policy.act(obs_batch) and
+        # value_batch the critic output on critic_obs_batch. Recomputing them
+        # (as OpenHomie does) yields bitwise-identical detached tensors.
         actor_sym_loss = self.symmetry_scale * torch.mean(
           torch.sum(
             torch.square(
               self.policy.act_inference_actor_obs(flipped_obs_batch)
-              - self._flip_actions(self.policy.act_inference_actor_obs(obs_batch))
+              - self._flip_actions(mu_batch)
             ),
             dim=-1,
           )
@@ -584,7 +615,7 @@ class HIMPPO:
         critic_sym_loss = self.symmetry_scale * torch.mean(
           torch.square(
             self.policy.evaluate_critic_obs(flipped_critic_obs_batch)
-            - self.policy.evaluate_critic_obs(critic_obs_batch).detach()
+            - value_batch.detach()
           )
         )
         loss = loss + actor_sym_loss + critic_sym_loss
@@ -594,34 +625,27 @@ class HIMPPO:
       nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
       self.optimizer.step()
 
-      mean_value_loss += float(value_loss.item())
-      mean_surrogate_loss += float(surrogate_loss.item())
-      mean_estimation_loss += float(estimation_loss)
-      mean_swap_loss += float(swap_loss)
+      mean_value_loss += value_loss.detach()
+      mean_surrogate_loss += surrogate_loss.detach()
+      mean_estimation_loss += estimation_loss
+      mean_swap_loss += swap_loss
       if self.use_flip:
-        mean_actor_sym_loss += float(actor_sym_loss.item())
-        mean_critic_sym_loss += float(critic_sym_loss.item())
+        mean_actor_sym_loss += actor_sym_loss.detach()
+        mean_critic_sym_loss += critic_sym_loss.detach()
 
     num_updates = self.num_learning_epochs * self.num_mini_batches
-    mean_value_loss /= num_updates
-    mean_surrogate_loss /= num_updates
-    mean_estimation_loss /= num_updates
-    mean_swap_loss /= num_updates
-    if self.use_flip:
-      mean_actor_sym_loss /= num_updates
-      mean_critic_sym_loss /= num_updates
 
     self.storage.clear()
 
     loss_dict: dict[str, float] = {
-      "value_function": mean_value_loss,
-      "surrogate": mean_surrogate_loss,
-      "estimation": mean_estimation_loss,
-      "swap": mean_swap_loss,
+      "value_function": float(mean_value_loss.item()) / num_updates,
+      "surrogate": float(mean_surrogate_loss.item()) / num_updates,
+      "estimation": float(mean_estimation_loss.item()) / num_updates,
+      "swap": float(mean_swap_loss.item()) / num_updates,
     }
     if self.use_flip:
-      loss_dict["actor_sym"] = mean_actor_sym_loss
-      loss_dict["critic_sym"] = mean_critic_sym_loss
+      loss_dict["actor_sym"] = float(mean_actor_sym_loss.item()) / num_updates
+      loss_dict["critic_sym"] = float(mean_critic_sym_loss.item()) / num_updates
     return loss_dict
 
   # Mirror transforms.
