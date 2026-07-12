@@ -218,7 +218,7 @@ class HIMActorCritic(nn.Module):
     next_critic_obs: torch.Tensor,
     *,
     lr: float | None = None,
-  ) -> tuple[torch.Tensor, torch.Tensor]:
+  ) -> tuple[float, float]:
     return self.estimator.update(
       obs_history[:, : self.actor_proprioceptive_obs_length],
       next_critic_obs[:, : self.critic_proprioceptive_obs_length],

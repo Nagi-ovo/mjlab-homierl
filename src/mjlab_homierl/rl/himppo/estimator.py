@@ -89,7 +89,7 @@ class HIMEstimator(nn.Module):
     obs_history: torch.Tensor,
     next_critic_obs: torch.Tensor,
     lr: float | None = None,
-  ) -> tuple[torch.Tensor, torch.Tensor]:
+  ) -> tuple[float, float]:
     if lr is not None:
       self.learning_rate = float(lr)
       for param_group in self.optimizer.param_groups:
@@ -131,9 +131,7 @@ class HIMEstimator(nn.Module):
     nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
     self.optimizer.step()
 
-    # Detached GPU tensors: callers accumulate on-device and sync once per
-    # update instead of forcing a GPU->CPU sync every minibatch.
-    return estimation_loss.detach(), swap_loss.detach()
+    return float(estimation_loss.item()), float(swap_loss.item())
 
 
 @torch.no_grad()
