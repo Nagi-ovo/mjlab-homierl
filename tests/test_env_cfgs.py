@@ -142,9 +142,9 @@ def test_g1_homie_plus_deployment_extensions() -> None:
   )
 
   plus_rl = unitree_g1_homie_plus_himppo_runner_cfg()
-  assert plus_rl.actor.hidden_dims == (1024, 512, 256)
-  assert plus_rl.critic.hidden_dims == (1024, 512, 256)
-  assert plus_rl.actor.estimator_hidden_dims == (512, 512)
+  assert plus_rl.actor.hidden_dims == (768, 384, 256)
+  assert plus_rl.critic.hidden_dims == (768, 384, 256)
+  assert plus_rl.actor.estimator_hidden_dims == (384, 384)
   base_rl = unitree_g1_homie_himppo_runner_cfg()
   assert base_rl.actor.hidden_dims == (512, 256, 256)
   assert base_rl.actor.estimator_hidden_dims == (256, 256)
