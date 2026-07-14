@@ -32,6 +32,15 @@ export PATH=$HOME/.local/bin:$PATH
 
 if [ ! -f "$PREFIX/lib/libddsc.so" ]; then
   git clone --depth 1 -b 0.10.2 https://github.com/eclipse-cyclonedds/cyclonedds "$BUILD/cyclonedds"
+  # 0.10.2's config tracing advances a pointer through res[256] but passes
+  # size 256 to every snprintf (do_print_uint32_bitset). With Ubuntu gcc's
+  # default _FORTIFY_SOURCE the build aborts at ChannelFactoryInitialize
+  # ("buffer overflow detected"). The 2026-07-06 build predates the fortify
+  # default and dodged it; any rebuild needs this patch (same shape as the
+  # upstream fix in later releases).
+  sed -i 's/snprintf (resp, 256,/snprintf (resp, (size_t) (res + sizeof (res) - resp),/g' \
+    "$BUILD/cyclonedds/src/core/ddsi/src/ddsi_config.c"
+  grep -q 'res + sizeof (res) - resp' "$BUILD/cyclonedds/src/core/ddsi/src/ddsi_config.c"
   cmake -S "$BUILD/cyclonedds" -B "$BUILD/build" \
     -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DENABLE_SSL=OFF -DENABLE_SECURITY=OFF
