@@ -32,21 +32,6 @@ interchangeably):
 - ``Mjlab-Homie-Unitree-G1-mjlab_gains``: ablation with mjlab's
   first-principles actuator gains; sim-only.
 
-HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
-
-- ``Mjlab-Homie-Unitree-G1-plus``: the deployment fork — three deliberate,
-  hardware-motivated extensions over parity: (1) commanded torso pitch (5th
-  command dim, ``waist_pitch`` joint-angle target up to 0.45 rad, command
-  driven / policy-free, slew-limited 1 rad/s; one-step obs 80 → 81, actor
-  486, separate lineage ``g1_homie_plus_himppo``, pitch = 0 reproduces plain
-  HOMIE); (2) in-place locomotion sampling (1/3 of walk resamples: vx = 0,
-  sampled vy/wz kept with the dominant axis clamped ≥ 0.3 — the faithful
-  sampler leaves pure strafe/turn at measure zero and probed policies stand
-  through such commands); (3) per-env foot contact-compliance DR
-  (``geom_solref`` near-rigid to soft foam, after arXiv:2504.13619 — fixes
-  standing sway on EVA gym mats). The exported ONNX metadata declares the
-  5-dim command contract so downstream plugins bootstrap without
-  hardcoding.
 
 The core idea: **reduce the policy action space to the lower body, and treat
 the upper body (and optional grippers) as smooth, time-varying disturbances.**
