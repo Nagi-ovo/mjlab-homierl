@@ -248,6 +248,12 @@ def run_sim(policy, task: str) -> int:
     twist.vel_command_b[:, 0] = vx
     twist.vel_command_b[:, 2] = wz
     height.height_command[:, 0] = h
+    # height_command is a setpoint slewing toward _height_target (v4+).
+    # Pinning only height_command leaves the term walking one slew-tick per
+    # step toward a stale randomly-sampled target (squat-mode reset draws)
+    # — a constant ~1e-2 obs offset that fails the bit-for-bit check. Pin
+    # the target too so the command holds exactly at h.
+    height._height_target[:] = h
     if pitch_term is not None:
       pitch_term.pitch_command[:, 0] = pitch
 
