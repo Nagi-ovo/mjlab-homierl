@@ -63,7 +63,11 @@ rt = _load_runtime()
 
 
 def run_real(
-  policy, net_iface: str, control_dt: float, speed_scale: float = 0.5
+  policy,
+  net_iface: str,
+  control_dt: float,
+  speed_scale: float = 0.5,
+  enable_pitch: bool = False,
 ) -> None:
   from unitree_sdk2py.core.channel import (
     ChannelFactoryInitialize,
@@ -190,8 +194,17 @@ def run_real(
       dh = height_step * (
         (remote.button[KeyMap.up] == 1) - (remote.button[KeyMap.down] == 1)
       )
-      dp = height_step * (
-        (remote.button[KeyMap.B] == 1) - (remote.button[KeyMap.X] == 1)
+      # Pitch is hard-gated OFF by default: this drives waist_pitch_joint at
+      # kp 300, and the lab G1 is a G1_29 lock_waist unit (waist roll/pitch
+      # mechanically fastened — xr_teleoperate/SETUP_GUIDE.md, verified with
+      # check_dof.py). Commanding pitch against the fastener stalls the motor
+      # at full torque. Pass --enable-pitch ONLY on a waist-unlocked robot
+      # (re-verify with check_dof.py first).
+      dp = (
+        height_step
+        * ((remote.button[KeyMap.B] == 1) - (remote.button[KeyMap.X] == 1))
+        if enable_pitch
+        else 0.0
       )
       command = cmd_state.vector(remote.lx, remote.ly, remote.rx, dh, dp)
 
@@ -315,6 +328,14 @@ def main() -> None:
   parser.add_argument("--task", default="Mjlab-Homie-Unitree-G1")
   parser.add_argument("--control-dt", type=float, default=0.02)
   parser.add_argument(
+    "--enable-pitch",
+    action="store_true",
+    help="Enable X/B torso-pitch commands. OFF by default: the lab G1 is a "
+    "G1_29 lock_waist unit and pitch drives waist_pitch_joint at kp 300 "
+    "against the mechanical fastener. Only pass this on a waist-unlocked "
+    "robot, after re-verifying with xr_teleoperate/check_dof.py.",
+  )
+  parser.add_argument(
     "--speed-scale",
     type=float,
     default=0.5,
@@ -335,7 +356,13 @@ def main() -> None:
     raise SystemExit(run_sim(policy, args.task))
   if not args.net:
     raise SystemExit("Provide --net <iface> for real deployment or --sim.")
-  run_real(policy, args.net, args.control_dt, speed_scale=args.speed_scale)
+  run_real(
+    policy,
+    args.net,
+    args.control_dt,
+    speed_scale=args.speed_scale,
+    enable_pitch=args.enable_pitch,
+  )
 
 
 if __name__ == "__main__":
