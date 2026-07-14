@@ -1,4 +1,4 @@
-"""Browser-based remote teleop for HOMIE/HOMIE+ ONNX policies.
+"""Browser-based remote teleop for HOMIE ONNX policies.
 
 Runs the classic-MuJoCo sim2sim harness (same runtime.py pipeline as the
 real robot / BiGym plugin) headless on the workstation and serves:
@@ -20,8 +20,9 @@ Remote viewing (from your laptop):
   ssh -L 8642:localhost:8642 <user>@<workstation>
   open http://localhost:8642
 
-Keys: W/S vx, A/D vy, Q/E yaw, Up/Down height, R/F torso pitch (HOMIE+),
-Space stop, 0 reset commands, Backspace reset robot, 1..9 switch policy.
+Keys: W/S vx, A/D vy, Q/E yaw, Up/Down height, R/F torso pitch (gear-wbc
+channel only), Space stop, 0 reset commands, Backspace reset robot,
+1..9 switch policy.
 """
 
 from __future__ import annotations
@@ -129,7 +130,8 @@ PAGE = """<!doctype html><html><head><meta charset="utf-8">
   <button onclick="send('cam:top')">俯视</button>
 </div>
 <div id="hud">…</div>
-<div id="keys">W/S 前后 · A/D 横移 · Q/E 转向 · ↑/↓ 蹲起 · R/F 前倾/回正 ·
+<div id="keys">W/S 前后 · A/D 横移 · Q/E 转向 · ↑/↓ 蹲起 ·
+R/F 前倾/回正(仅 gear-wbc 通道) ·
 空格 急停 · 0 指令复位 · 退格 机器人复位 · 数字键切 policy ·
 C 切镜头 · [ ] 旋转 · +/- 缩放(点页面任意处取得键盘焦点)</div>
 <script>
@@ -270,8 +272,44 @@ class _GearRanges:
   wz_range = (-1.0, 1.0)
   height_range = (0.40, 0.80)
   standing_height = 0.74
-  has_pitch = True
   pitch_range = (-0.5, 0.5)
+
+
+class GearTeleopState(TeleopState):
+  """TeleopState plus the gear channel's torso-pitch command (R/F keys).
+
+  The GR00T-WBC policy takes a torso-orientation rpy input of its own; this
+  is that channel's interface, separate from the 4-dim HOMIE command vector.
+  """
+
+  PITCH_RATE = 0.6  # rad/s
+
+  def __init__(self, ranges: _GearRanges):
+    super().__init__(ranges)
+    self.pitch_target = 0.0
+    self.pitch = 0.0
+
+  def reset_commands(self) -> None:
+    super().reset_commands()
+    self.pitch_target = 0.0
+
+  def slew(self, dt: float) -> None:
+    super().slew(dt)
+    dp = np.clip(
+      self.pitch_target - self.pitch, -self.PITCH_RATE * dt, self.PITCH_RATE * dt
+    )
+    self.pitch = float(self.pitch + dp)
+
+  def status(self) -> str:
+    return super().status() + f"  pitch {self.pitch_target:+.2f}"
+
+  def key(self, keycode: int) -> None:
+    if keycode in (ord("R"), ord("r"), ord("F"), ord("f")):
+      step = 0.05 if keycode in (ord("R"), ord("r")) else -0.05
+      self.pitch_target = float(np.clip(self.pitch_target + step, *self.p.pitch_range))
+      print(f"\r  {self.status()}   ", end="", flush=True)
+      return
+    super().key(keycode)
 
 
 class GearWbcBackend:
@@ -364,8 +402,6 @@ class _OpenHomieRanges:
   wz_range = (-0.8, 0.8)
   height_range = (0.24, 0.74)
   standing_height = 0.74
-  has_pitch = False
-  pitch_range = (0.0, 0.0)
 
 
 class OpenHomieBackend:
@@ -558,7 +594,7 @@ def main() -> None:
   registry: list[tuple[str, rt.HomieOnnxPolicy]] = []
   for spec_arg in args.policy:
     name, _, path = spec_arg.partition("=")
-    registry.append((name, rt.HomieOnnxPolicy(path, control_dt=control_dt)))
+    registry.append((name, rt.HomieOnnxPolicy(path)))
 
   gear = GearWbcBackend(args.sonic_root) if args.gear_wbc else None
   oh = OpenHomieBackend(args.openhomie) if args.openhomie else None
@@ -652,7 +688,7 @@ def main() -> None:
     if kind == "gear":
       active = idx
       gear.apply_physics(model, policy_joint_names)
-      state = TeleopState(gear.ranges)
+      state = GearTeleopState(gear.ranges)
       gear_reset()
       print(f"\nswitched to {all_names[idx]}")
       return

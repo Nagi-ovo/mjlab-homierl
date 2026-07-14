@@ -1,4 +1,4 @@
-"""Deploy a G1 HOMIE/HOMIE+ lower-body ONNX policy to the real robot.
+"""Deploy a G1 HOMIE lower-body ONNX policy to the real robot.
 
 All policy-specific conventions come from the ONNX metadata contract via
 ``mjlab_homierl.runtime`` (a standalone, mjlab-free module — the same file the
@@ -9,8 +9,7 @@ get policy targets, waist/arms are held at the default pose with the
 training-time gains (upper-body teleop integration can replace that block).
 
 Remote mapping: left stick = vx/vy, right stick x = yaw rate, dpad up/down =
-height command +-, X/B = torso pitch -/+ (HOMIE+ models only), SELECT = exit
-to damping mode.
+height command +-, SELECT = exit to damping mode.
 
 Usage:
   Real robot (env from scripts/setup_deploy_env.sh; robot in debug/low-level
@@ -67,7 +66,6 @@ def run_real(
   net_iface: str,
   control_dt: float,
   speed_scale: float = 0.5,
-  enable_pitch: bool = False,
 ) -> None:
   from unitree_sdk2py.core.channel import (
     ChannelFactoryInitialize,
@@ -174,9 +172,7 @@ def run_real(
 
   policy.reset()
   cmd_state = rt.CommandState(policy, speed_scale=speed_scale)
-  # Height slews at 0.3 m/s while the button is held — inside the v4 trained
-  # rate envelope (0.25-0.75 m/s); anything slower degrades toward the
-  # heavily-trained steady hold, so the low side is safe too.
+  # Height command ramps at 0.3 m/s while the dpad button is held.
   height_step = 0.3 * control_dt
   print("Policy running.")
   try:
@@ -194,19 +190,7 @@ def run_real(
       dh = height_step * (
         (remote.button[KeyMap.up] == 1) - (remote.button[KeyMap.down] == 1)
       )
-      # Pitch is hard-gated OFF by default: this drives waist_pitch_joint at
-      # kp 300, and the lab G1 is a G1_29 lock_waist unit (waist roll/pitch
-      # mechanically fastened — xr_teleoperate/SETUP_GUIDE.md, verified with
-      # check_dof.py). Commanding pitch against the fastener stalls the motor
-      # at full torque. Pass --enable-pitch ONLY on a waist-unlocked robot
-      # (re-verify with check_dof.py first).
-      dp = (
-        height_step
-        * ((remote.button[KeyMap.B] == 1) - (remote.button[KeyMap.X] == 1))
-        if enable_pitch
-        else 0.0
-      )
-      command = cmd_state.vector(remote.lx, remote.ly, remote.rx, dh, dp)
+      command = cmd_state.vector(remote.lx, remote.ly, remote.rx, dh)
 
       one_step = policy.one_step_obs(command, gyro, quat, q, dq)
       targets = policy.act(one_step)
@@ -249,45 +233,31 @@ def run_sim(policy, task: str) -> int:
   robot = env.scene["robot"]
   twist = env.command_manager.get_term("twist")
   height = env.command_manager.get_term("height")
-  pitch_term = None
-  if policy.has_pitch:
-    pitch_term = env.command_manager.get_term("torso_pitch")
 
   # Map metadata joint order onto the env's joint order.
   env_index = [list(robot.joint_names).index(n) for n in policy.joint_names]
 
-  def pin(vx, wz, h, pitch):
+  def pin(vx, wz, h):
     twist.vel_command_b[:] = 0.0
     twist.vel_command_b[:, 0] = vx
     twist.vel_command_b[:, 2] = wz
     height.height_command[:, 0] = h
-    # height_command is a setpoint slewing toward _height_target (v4+).
-    # Pinning only height_command leaves the term walking one slew-tick per
-    # step toward a stale randomly-sampled target (squat-mode reset draws)
-    # — a constant ~1e-2 obs offset that fails the bit-for-bit check. Pin
-    # the target too so the command holds exactly at h.
-    height._height_target[:] = h
-    if pitch_term is not None:
-      pitch_term.pitch_command[:, 0] = pitch
 
   policy.reset()
 
-  # (name, vx, wz, height, pitch, seconds)
-  phases = [("stand", 0.0, 0.0, policy.standing_height, 0.0, 3.0),
-            ("walk_0.6", 0.6, 0.0, policy.standing_height, 0.0, 4.0),
-            ("squat_0.5", 0.0, 0.0, 0.5, 0.0, 4.0)]
-  if policy.has_pitch:
-    phases.append(("squat_0.5+lean", 0.0, 0.0, 0.5, 0.3, 4.0))
+  # (name, vx, wz, height, seconds)
+  phases = [("stand", 0.0, 0.0, policy.standing_height, 3.0),
+            ("walk_0.6", 0.6, 0.0, policy.standing_height, 4.0),
+            ("squat_0.5", 0.0, 0.0, 0.5, 4.0)]
 
   failures = 0
-  for name, vx, wz, h, pitch, dur in phases:
-    pin(vx, wz, h, pitch)
+  for name, vx, wz, h, dur in phases:
+    pin(vx, wz, h)
     vx_log, h_log, obs_diff = [], [], 0.0
     n_steps = int(dur / env.step_dt)
     for i in range(n_steps):
-      cmd = [vx, 0.0, wz, h] + ([pitch] if policy.has_pitch else [])
       one_step = policy.one_step_obs(
-        np.array(cmd, dtype=np.float32),
+        np.array([vx, 0.0, wz, h], dtype=np.float32),
         robot.data.root_link_ang_vel_b[0].cpu().numpy(),
         robot.data.root_link_quat_w[0].cpu().numpy(),
         robot.data.joint_pos[0, env_index].cpu().numpy(),
@@ -302,7 +272,7 @@ def run_sim(policy, task: str) -> int:
         obs_diff = max(obs_diff, float(np.abs(mine - theirs).max()))
       action = torch.from_numpy(policy.last_action).unsqueeze(0)
       obs_dict, _, _, _, _ = env.step(action)
-      pin(vx, wz, h, pitch)
+      pin(vx, wz, h)
       vx_log.append(float(robot.data.root_link_lin_vel_b[0, 0]))
       h_log.append(float(height._compute_relative_height()[0]))
 
@@ -328,14 +298,6 @@ def main() -> None:
   parser.add_argument("--task", default="Mjlab-Homie-Unitree-G1")
   parser.add_argument("--control-dt", type=float, default=0.02)
   parser.add_argument(
-    "--enable-pitch",
-    action="store_true",
-    help="Enable X/B torso-pitch commands. OFF by default: the lab G1 is a "
-    "G1_29 lock_waist unit and pitch drives waist_pitch_joint at kp 300 "
-    "against the mechanical fastener. Only pass this on a waist-unlocked "
-    "robot, after re-verifying with xr_teleoperate/check_dof.py.",
-  )
-  parser.add_argument(
     "--speed-scale",
     type=float,
     default=0.5,
@@ -348,8 +310,7 @@ def main() -> None:
   policy = rt.HomieOnnxPolicy(args.onnx)
   print(
     f"Loaded {args.onnx}: {len(policy.joint_names)} joints, "
-    f"{len(policy.action_joint_names)} actions, {policy.num_commands}-dim command"
-    f"{' (with torso pitch)' if policy.has_pitch else ''}, "
+    f"{len(policy.action_joint_names)} actions, {policy.num_commands}-dim command, "
     f"history {policy.history_length} x {policy.num_one_step_obs}."
   )
   if args.sim:
@@ -361,7 +322,6 @@ def main() -> None:
     args.net,
     args.control_dt,
     speed_scale=args.speed_scale,
-    enable_pitch=args.enable_pitch,
   )
 
 

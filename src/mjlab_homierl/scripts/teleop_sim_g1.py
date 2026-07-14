@@ -1,4 +1,4 @@
-"""Interactive MuJoCo teleop for HOMIE/HOMIE+ ONNX policies (sim2sim).
+"""Interactive MuJoCo teleop for HOMIE ONNX policies (sim2sim).
 
 Drives the exported policy through the SAME runtime.py observation pipeline
 used by the real-robot deploy script and the BiGym plugin, inside plain
@@ -10,13 +10,11 @@ Keys (tap to adjust, values print to the terminal):
   A / D        vy +/- 0.1 (A = left)   0      reset all commands
   Q / E        wz +/- 0.1 (Q = CCW)    Backspace  reset robot pose
   Up / Down    height target +/- 0.05 m
-  R / F        torso pitch target +/- 0.05 rad (HOMIE+ policies only)
 Mouse: double-click a body, then Ctrl+drag to shove the robot (native
 MuJoCo perturbation) — handy for robustness poking.
 
-Height/pitch commands are slewed at the deployment rates (0.3 m/s /
-0.6 rad/s) before entering the observation, matching the BiGym backend and
-the v4+ training semantics (raw steps are OOD for those checkpoints).
+Height commands are slewed at the deployment rate (0.3 m/s) before entering
+the observation, matching the BiGym backend's button ramp.
 
 Usage:
   uv run python -m mjlab_homierl.scripts.teleop_sim_g1 --onnx <policy.onnx>
@@ -34,7 +32,6 @@ import numpy as np
 from mjlab_homierl import runtime as rt
 
 HEIGHT_RATE = 0.3  # m/s, matches the BiGym backend / deploy button rate
-PITCH_RATE = 0.6  # rad/s
 PHYSICS_DT = 0.005
 DECIMATION = 4  # 50 Hz policy
 
@@ -129,9 +126,7 @@ class TeleopState:
     self.vy = 0.0
     self.wz = 0.0
     self.height_target = policy.standing_height
-    self.pitch_target = 0.0
     self.height = self.height_target
-    self.pitch = 0.0
     self.reset_requested = False
 
   def zero_twist(self) -> None:
@@ -140,28 +135,19 @@ class TeleopState:
   def reset_commands(self) -> None:
     self.zero_twist()
     self.height_target = self.p.standing_height
-    self.pitch_target = 0.0
 
   def slew(self, dt: float) -> None:
     dh = np.clip(self.height_target - self.height, -HEIGHT_RATE * dt, HEIGHT_RATE * dt)
     self.height = float(self.height + dh)
-    dp = np.clip(self.pitch_target - self.pitch, -PITCH_RATE * dt, PITCH_RATE * dt)
-    self.pitch = float(self.pitch + dp)
 
   def command(self) -> np.ndarray:
-    cmd = [self.vx, self.vy, self.wz, self.height]
-    if self.p.has_pitch:
-      cmd.append(self.pitch)
-    return np.array(cmd, dtype=np.float32)
+    return np.array([self.vx, self.vy, self.wz, self.height], dtype=np.float32)
 
   def status(self) -> str:
-    s = (
+    return (
       f"vx {self.vx:+.2f}  vy {self.vy:+.2f}  wz {self.wz:+.2f}  "
       f"height {self.height_target:.2f}"
     )
-    if self.p.has_pitch:
-      s += f"  pitch {self.pitch_target:+.2f}"
-    return s
 
   def key(self, keycode: int) -> None:
     p = self.p
@@ -184,14 +170,6 @@ class TeleopState:
     elif keycode == 264:  # Down arrow
       self.height_target = float(
         np.clip(self.height_target - 0.05, p.height_range[0], p.height_range[1])
-      )
-    elif keycode in (ord("R"), ord("r")) and p.has_pitch:
-      self.pitch_target = float(
-        np.clip(self.pitch_target + 0.05, p.pitch_range[0], p.pitch_range[1])
-      )
-    elif keycode in (ord("F"), ord("f")) and p.has_pitch:
-      self.pitch_target = float(
-        np.clip(self.pitch_target - 0.05, p.pitch_range[0], p.pitch_range[1])
       )
     elif keycode == 32:  # Space
       self.zero_twist()
@@ -224,14 +202,14 @@ def reset_robot(
 
 def main() -> None:
   parser = argparse.ArgumentParser(description=__doc__)
-  parser.add_argument("--onnx", required=True, help="HOMIE/HOMIE+ ONNX policy")
+  parser.add_argument("--onnx", required=True, help="HOMIE ONNX policy")
   parser.add_argument(
     "--smoke", action="store_true", help="5 s headless self-test, no viewer"
   )
   args = parser.parse_args()
 
   control_dt = PHYSICS_DT * DECIMATION
-  policy = rt.HomieOnnxPolicy(args.onnx, control_dt=control_dt)
+  policy = rt.HomieOnnxPolicy(args.onnx)
   model = build_model(policy)
   data = mujoco.MjData(model)
 
@@ -251,8 +229,7 @@ def main() -> None:
   policy.reset()
 
   print(
-    f"Loaded {args.onnx}\n  {policy.num_commands}-dim command"
-    f"{' (torso pitch: R/F)' if policy.has_pitch else ''}, "
+    f"Loaded {args.onnx}\n  {policy.num_commands}-dim command, "
     f"height {policy.height_range}, one-step obs {policy.num_one_step_obs}"
   )
   print(f"  {state.status()}")
@@ -276,7 +253,6 @@ def main() -> None:
     for i in range(int(5.0 / control_dt)):
       if i == 50:
         state.height_target = 0.35
-        state.pitch_target = 0.3 if policy.has_pitch else 0.0
       control_step()
     g = rt.gravity_orientation(data.qpos[3:7].astype(np.float32))
     tilt = float(np.degrees(np.arccos(np.clip(-g[2], -1, 1))))

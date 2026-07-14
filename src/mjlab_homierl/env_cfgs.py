@@ -6,7 +6,6 @@ from mjlab.asset_zoo.robots.unitree_g1 import g1_constants
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs.mdp.actions import JointPositionActionCfg
 from mjlab.managers.event_manager import EventTermCfg
-from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.sensor import ContactMatch, ContactSensorCfg
@@ -87,8 +86,6 @@ def _apply_play_overrides(cfg: ManagerBasedRlEnvCfg) -> None:
   cfg.rewards = {}
   cfg.curriculum = {}
   cfg.events.pop("push_robot", None)
-  # Training-time robustness measure; play/eval runs on the nominal floor.
-  cfg.events.pop("foot_compliance", None)
   # The terminal-critic-obs recorder serves the HIM estimator during training;
   # it requires the critic group, which play strips.
   cfg.recorders.pop("terminal_critic_obs", None)
@@ -195,9 +192,6 @@ def unitree_g1_homie_env_cfg(
   gains: str = "deploy",
   hands: str | None = None,
   waist: str = "locked",
-  inplace_prob: float = 0.0,
-  torso_pitch: bool = False,
-  floor: str = "rigid",
   native: bool = False,
 ) -> ManagerBasedRlEnvCfg:
   """Create the Unitree G1 HOMIE task configuration.
@@ -231,34 +225,10 @@ def unitree_g1_homie_env_cfg(
       unchanged, so checkpoints remain compatible with the base task.
       - ``"dex3"``: Unitree Dex3 (~0.53 kg each; BiGym's G1 is G1-Dex3).
       - ``"inspire"``: Inspire RH56 (RH56DFX spec weight, 0.54 kg each).
-    inplace_prob: Fraction of walk-mode command resamples converted to
-      in-place locomotion (vx = 0, sampled vy/wz kept, dominant axis clamped
-      to >= 0.3). OpenHomie's joint vx/vy/wz sampling gives pure strafe and
-      pure rotation measure zero, so its policies gate stepping on |vx| and
-      stand through such commands (probes: vy_act = 0 and wz_act = 0 at 100%
-      double support). 0.0 (default) = exact OpenHomie parity.
-    floor: ``"rigid"`` (default, parity) or ``"compliant"`` — adds per-env
-      foot contact-compliance DR (geom_solref on the foot spheres, negative
-      stiffness/damping form) spanning near-rigid to soft gym-mat foam, per
-      arXiv:2504.13619. Motivated by observed standing sway on the lab's EVA
-      puzzle mats.
-    torso_pitch: HOMIE+ — add a commanded waist_pitch joint-angle target
-      (5th command dim; one-step obs 80 -> 81). waist_pitch is direct-driven
-      by the command (policy-free, rate-limited), a pitch-tracking reward is
-      added, and the hip-deviation gate is lifted while leaning. Requires
-      ``waist='locked'``. Checkpoints are NOT compatible with the base task
-      (interface fork, homie_plus_plan.md §2.6).
   """
   if gains not in ("deploy", "mjlab"):
     raise ValueError(f"Unknown gains variant '{gains}'. Use 'deploy' or 'mjlab'.")
-  if native and (
-    hands is not None
-    or waist != "locked"
-    or inplace_prob != 0.0
-    or torso_pitch
-    or floor != "rigid"
-    or gains != "deploy"
-  ):
+  if native and (hands is not None or waist != "locked" or gains != "deploy"):
     raise ValueError("native=True pins OpenHomie parity; no other variants allowed.")
   cfg = make_homie_env_cfg()
 
@@ -338,7 +308,6 @@ def unitree_g1_homie_env_cfg(
   cfg.observations = make_him_observations(
     joint_names=G1_ALL_JOINTS,
     num_actions=len(G1_LOWER_BODY_JOINTS),
-    pitch_command=torso_pitch,
   )
 
   # Actions.
@@ -375,7 +344,6 @@ def unitree_g1_homie_env_cfg(
   twist = cfg.commands["twist"]
   assert isinstance(twist, UniformVelocityCommandCfg)
   twist.viz.z_offset = 1.15
-  twist.inplace_prob = inplace_prob
   height = cfg.commands["height"]
   assert isinstance(height, RelativeHeightCommandCfg)
   height.foot_site_names = ("left_foot", "right_foot")
@@ -389,28 +357,6 @@ def unitree_g1_homie_env_cfg(
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = foot_geoms
   cfg.events["base_com"].params["asset_cfg"].body_names = ("torso_link",)
   cfg.events["payload_mass"].params["asset_cfg"].body_names = ("torso_link",)
-  if floor == "compliant":
-    # In-episode re-randomization (paper: "after every 0.5s on average") so
-    # the policy also experiences compliance TRANSITIONS (mat seams, stepping
-    # from mats onto hard floor), not just a fixed per-episode softness.
-    cfg.events["foot_compliance"] = EventTermCfg(
-      mode="interval",
-      interval_range_s=(0.3, 0.7),
-      func=mdp.foot_compliance,
-      params={
-        "asset_cfg": SceneEntityCfg("robot", geom_names=foot_geoms),
-        # Positive solref form (timeconst [s], dampratio): 0.02 = MuJoCo's
-        # rigid default, 0.1 = soft foam feel. Numerically safe by
-        # construction (timeconst >= 4x the 5 ms physics step); the negative
-        # stiffness/damping form NaN'd training when it sampled the
-        # high-stiffness/low-damping corner.
-        "ranges": {0: (0.02, 0.1), 1: (0.7, 1.5)},
-        # One floor softness per env, shared by all foot spheres.
-        "shared_random": True,
-      },
-    )
-  elif floor != "rigid":
-    raise ValueError(f"Unknown floor variant '{floor}'. Use 'rigid' or 'compliant'.")
   # Deliberate deviation from OpenHomie's (-5, +10): a 2026-07-06 survey found
   # that range to be an outlier (Unitree official & Holosoma G1 both use
   # (-1, +3); HumanPlus (-1, +1)). Our model also sums to 33.3 kg vs ~35 kg
@@ -494,103 +440,6 @@ def unitree_g1_homie_env_cfg(
   # anti-squat gradient that walled the 2026-07-03 run at ~0.67 m. Physical
   # self-contacts remain simulated; only the penalty is dropped.
   del cfg.rewards["self_collisions"]
-
-  # HOMIE+: commanded torso pitch (homie_plus_plan.md §2).
-  if torso_pitch:
-    if waist != "locked":
-      raise ValueError("torso_pitch=True requires waist='locked'.")
-    # Command must come after "twist" (mode coupling) — dict order gives that.
-    cfg.commands["torso_pitch"] = mdp.TorsoPitchCommandCfg(
-      entity_name="robot",
-      resampling_time_range=(4.0, 4.0),
-      debug_vis=False,
-    )
-    cfg.actions["torso_pitch"] = mdp.TorsoPitchActionCfg(entity_name="robot")
-    # Note: the plan's §2.4-1 orientation rework is unnecessary — the
-    # orientation penalty acts on the PELVIS (root) projected gravity, and the
-    # lean happens at the waist joint above it, so a commanded lean does not
-    # fight the penalty. Pelvis uprightness remains desirable in HOMIE+.
-    cfg.rewards["track_torso_pitch"] = RewardTermCfg(
-      func=mdp.track_torso_pitch,
-      weight=1.0,
-      params={"command_name": "torso_pitch", "scale": 8.0},
-    )
-    # Leaning requires hip deviation to shift the CoM; lift the gate then.
-    cfg.rewards["deviation_hip_joint"].params["pitch_command_name"] = "torso_pitch"
-
-    # v4 squat rework (2026-07-07): the v3 policy learned to KNEEL for deep
-    # height commands (100% at h <= 0.35 in headless probes) instead of the
-    # flat-foot crouch, which is kinematically feasible down to ~0.17 m.
-    # Three coupled causes, three fixes:
-    # 1. Step height commands create an unreachable error window whose
-    #    exp-tracking gradient rewards ballistic descent (crash onto knees)
-    #    -> slewed setpoint, per-env rate DR (0.25-0.75 m/s spans gentle to
-    #    brisk human squat descent; deploy picks any rate in the envelope).
-    height.max_rate_range = (0.25, 0.75)
-    # 2. Kneeling economics: knee rests beat crouch torque at -1.0 (the
-    #    penalty grew to -0.11/ep over v3 training while the base task stays
-    #    at ~0) -> -5.0 breaks even. OpenHomie has NO such penalty (its
-    #    penalize_contacts_on config is dead code) but also no lean command,
-    #    so kneeling was never discoverable there.
-    cfg.rewards["hip_knee_contact"].weight = -5.0
-    # 3. stand_still only guards the standing height (OpenHomie parity gate
-    #    0.775) so squat-mode shuffling is free -> extend the no-stepping
-    #    shaping to every commanded height (squat and stand are the same
-    #    stationary family; weight stays a soft -0.15 so protective steps
-    #    near the balance envelope remain affordable).
-    cfg.rewards["stand_still"].params["min_height"] = 0.0
-
-    # v8 (2026-07-12): back to the v4 base the user picked, minus the
-    # experiments that didn't earn their keep. The measured original
-    # OpenHomie deploy policy squats human-form (stance 0.27 m, knees
-    # 0.25 m clear, soles flat) with NONE of the v5-v7 machinery — its
-    # differentiators are training length (100k vs our 30k) and
-    # training-time gains, so v8 bets on capacity + length instead of
-    # constraints. Removed vs v7: in-place sampling + weight-shift bridge
-    # (four generations never learned the turn; budget returned to
-    # locomotion), the v6 all-heights stance band (unneeded per the
-    # original; its removal restores lateral margin for arm-disturbance
-    # stability), knee -10 and stand_still -0.3 escalations (walking tax).
-    # Kept from v7 (stationary-gated, zero walking cost):
-    # 1. Gentle descent envelope.
-    height.max_rate_range = (0.15, 0.45)
-    # 2. Pelvis unlock while squatting — 0.5 rather than v7's 0.3: the
-    #    original leans only ~20 deg at depth with the penalty UNGATED,
-    #    and 0.3 produced a deeper head-down fold than wanted.
-    cfg.rewards["orientation"].params.update(
-      height_command_name="height", min_height=G1_STANDING_GATE, low_scale=0.5
-    )
-    # 3. Foot-attitude flatness (kills toe-crouch / edge contact cheaply).
-    cfg.rewards["feet_flat"] = RewardTermCfg(
-      func=mdp.feet_flat,
-      weight=-1.0,
-      params={
-        "asset_cfg": SceneEntityCfg(
-          "robot", body_names=(r".*_ankle_roll_link",)
-        ),
-        "twist_command_name": "twist",
-      },
-    )
-    # 4. One-frame pose prior toward the balanced flat-foot squat family
-    #    (the answer card; delivered the form within 30k in v7).
-    cfg.rewards["squat_pose_prior"] = RewardTermCfg(
-      func=mdp.squat_pose_prior,
-      weight=1.0,
-      params={
-        "asset_cfg": SceneEntityCfg(
-          "robot",
-          joint_names=(
-            "left_hip_pitch_joint",
-            "right_hip_pitch_joint",
-            "left_knee_joint",
-            "right_knee_joint",
-            "left_ankle_pitch_joint",
-            "right_ankle_pitch_joint",
-          ),
-          preserve_order=True,
-        ),
-      },
-    )
 
   # Frozen OpenHomie-parity preset: revert every deliberate deviation kept in
   # the default task. The remaining diff between this preset and the default

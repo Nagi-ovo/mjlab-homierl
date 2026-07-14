@@ -75,23 +75,5 @@ def unitree_g1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
   return homie_himppo_runner_cfg("g1_homie_himppo")
 
 
-def unitree_g1_homie_plus_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
-  # Separate experiment dir: HOMIE+ checkpoints (5-dim command, obs 486) are
-  # interface-incompatible with the base task's.
-  cfg = homie_himppo_runner_cfg("g1_homie_plus_himppo")
-  # v8: ~2x capacity (1.8M params vs the 0.8M parity net). The v7 interference
-  # squeeze (squat discipline degrading walking at a fixed budget) argued for
-  # headroom, but big-net v8 learned no faster than v4 through 3.7k iters and
-  # OpenHomie's target form emerged at parity size + 100k iters — so capacity
-  # is insurance, not the bet; 2x buys the headroom at ~15% less per-iter cost
-  # than the original 3x. The estimator widens too — it is the 486->35
-  # information bottleneck every DR identification flows through. Base/native
-  # keep parity sizes.
-  cfg.actor.hidden_dims = (768, 384, 256)
-  cfg.critic.hidden_dims = (768, 384, 256)
-  cfg.actor.estimator_hidden_dims = (384, 384)
-  return cfg
-
-
 def unitree_h1_homie_himppo_runner_cfg() -> HomieHimOnPolicyRunnerCfg:
   return homie_himppo_runner_cfg("h1_homie_himppo")

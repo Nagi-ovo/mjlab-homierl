@@ -111,90 +111,20 @@ def test_g1_waist_variants() -> None:
     unitree_g1_homie_env_cfg(waist="unknown")
 
 
-def test_g1_homie_plus_deployment_extensions() -> None:
-  from mjlab_homierl import mdp
+def test_g1_base_task_matches_openhomie_interface() -> None:
+  base = unitree_g1_homie_env_cfg()
+  # One-step obs 80 = 4 commands + 6 + 2 * 29 joints + 12 actions.
+  assert len(base.observations["actor"].terms["him_obs"].noise.n_max) == 80
+  assert len(base.actions["joint_pos"].actuator_names) == 12
+  assert base.rewards["hip_knee_contact"].weight == -1.0
+  assert base.rewards["stand_still"].params["min_height"] == 0.775
+  assert base.rewards["feet_distance_lateral"].params["min_height"] == 0.775
 
-  cfg = unitree_g1_homie_env_cfg(torso_pitch=True, floor="compliant")
+  from mjlab_homierl.rl_cfg import unitree_g1_homie_himppo_runner_cfg
 
-  # v8: in-place sampling and the weight-shift bridge are RETIRED (four
-  # generations never learned the pure turn; budget returned to walking).
-  assert cfg.commands["twist"].inplace_prob == 0.0
-  assert "feet_load_asymmetry" not in cfg.rewards
-  # Foot contact-compliance DR (soft floors): in-episode re-randomization at
-  # ~0.5 s average, per arXiv:2504.13619.
-  assert cfg.events["foot_compliance"].params["ranges"][0] == (0.02, 0.1)
-  assert cfg.events["foot_compliance"].mode == "interval"
-  assert cfg.events["foot_compliance"].interval_range_s == (0.3, 0.7)
-  with pytest.raises(ValueError):
-    unitree_g1_homie_env_cfg(floor="unknown")
-
-  # v4 squat rework core (kept): slewed height setpoint, anti-kneel at the
-  # v4 weight, no-stepping shaping at every commanded height (v4 weight).
-  assert cfg.commands["height"].max_rate_range == (0.15, 0.45)
-  assert cfg.rewards["hip_knee_contact"].weight == -5.0
-  assert cfg.rewards["stand_still"].params["min_height"] == 0.0
-  assert cfg.rewards["stand_still"].weight == -0.15
-
-  # v8 capacity bump lives on the PLUS runner cfg only.
-  from mjlab_homierl.rl_cfg import (
-    unitree_g1_homie_himppo_runner_cfg,
-    unitree_g1_homie_plus_himppo_runner_cfg,
-  )
-
-  plus_rl = unitree_g1_homie_plus_himppo_runner_cfg()
-  assert plus_rl.actor.hidden_dims == (768, 384, 256)
-  assert plus_rl.critic.hidden_dims == (768, 384, 256)
-  assert plus_rl.actor.estimator_hidden_dims == (384, 384)
   base_rl = unitree_g1_homie_himppo_runner_cfg()
   assert base_rl.actor.hidden_dims == (512, 256, 256)
   assert base_rl.actor.estimator_hidden_dims == (256, 256)
-  # v8: the v6 all-heights stance band is retired (the measured original
-  # squats human-form without it; removal restores lateral margin).
-  assert cfg.rewards["feet_distance_lateral"].params["min_height"] == 0.775
-  assert cfg.rewards["knee_distance_lateral"].params["min_height"] == 0.775
-  # Kept from v7 (stationary-gated): pelvis unlock at 0.5, foot flatness,
-  # the one-frame squat pose prior.
-  assert cfg.rewards["orientation"].params["low_scale"] == 0.5
-  assert cfg.rewards["feet_flat"].weight == -1.0
-  assert cfg.rewards["squat_pose_prior"].weight == 1.0
-
-  # 5th command dim: torso_pitch term, coupled to the twist mode.
-  assert isinstance(cfg.commands["torso_pitch"], mdp.TorsoPitchCommandCfg)
-  assert cfg.commands["torso_pitch"].resampling_time_range == (4.0, 4.0)
-  # Pitch law is moving/stationary: stand shares the squat distribution.
-  assert cfg.commands["torso_pitch"].squat_zero_prob == 0.5
-  assert cfg.commands["torso_pitch"].squat_range == (-0.2, 0.45)
-  # Command-driven waist_pitch, zero policy dims; policy interface unchanged.
-  assert isinstance(cfg.actions["torso_pitch"], mdp.TorsoPitchActionCfg)
-  assert len(cfg.actions["joint_pos"].actuator_names) == 12
-  # waist_pitch must not also be in the random disturbance set.
-  assert "waist_pitch_joint" not in cfg.actions["upper_body_pose"].joint_names
-  # Rewards: pitch tracking added, hip-deviation gate lifted while leaning.
-  assert "track_torso_pitch" in cfg.rewards
-  assert (
-    cfg.rewards["deviation_hip_joint"].params["pitch_command_name"] == "torso_pitch"
-  )
-  # Observation command segment is 5-dim (one-step 81 = 5 + 6 + 2*29 + 12).
-  actor_term = cfg.observations["actor"].terms["him_obs"]
-  assert actor_term.params["pitch_command_name"] == "torso_pitch"
-  assert len(actor_term.noise.n_max) == 81
-
-  # Base task is untouched (4-dim command, parity sampler, rigid floor).
-  base = unitree_g1_homie_env_cfg()
-  assert "torso_pitch" not in base.commands
-  assert "torso_pitch" not in base.actions
-  assert "track_torso_pitch" not in base.rewards
-  assert len(base.observations["actor"].terms["him_obs"].noise.n_max) == 80
-  assert base.commands["twist"].inplace_prob == 0.0
-  assert "foot_compliance" not in base.events
-  assert base.commands["height"].max_rate_range is None
-  assert base.rewards["hip_knee_contact"].weight == -1.0
-  assert base.rewards["stand_still"].params["min_height"] == 0.775
-  assert "feet_load_asymmetry" not in base.rewards
-  assert base.rewards["feet_distance_lateral"].params["min_height"] == 0.775
-
-  with pytest.raises(ValueError):
-    unitree_g1_homie_env_cfg(torso_pitch=True, waist="free")
 
 
 def test_g1_native_preset_is_the_deviation_ledger() -> None:
@@ -207,14 +137,8 @@ def test_g1_native_preset_is_the_deviation_ledger() -> None:
   # _reward_collision function. Native therefore has no such penalty.
   assert "hip_knee_contact" not in native.rewards
   # Parity values shared with the default task.
-  assert native.commands["height"].max_rate_range is None
-  assert native.commands["twist"].inplace_prob == 0.0
   assert native.rewards["stand_still"].params["min_height"] == 0.775
-  assert "foot_compliance" not in native.events
   for kwargs in (
-    {"torso_pitch": True},
-    {"inplace_prob": 0.5},
-    {"floor": "compliant"},
     {"hands": "dex3"},
     {"waist": "free"},
     {"gains": "mjlab"},

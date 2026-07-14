@@ -73,9 +73,9 @@ def _build_mirror_maps(
   """Mirror maps for the HIM one-step observation layout.
 
   Layout: [commands(C), ang_vel(3), gravity(3), dof_pos(N), dof_vel(N),
-  actions(A)] with an optional base_lin_vel(3) tail on the critic. C is 4
-  (vx, vy, wz, height) for HOMIE or 5 (+ torso_pitch, mirror-symmetric) for
-  HOMIE+, inferred from the observation dim.
+  actions(A)] with an optional base_lin_vel(3) tail on the critic. C is
+  inferred from the observation dim: 4 (vx, vy, wz, height) for HOMIE; 5 is
+  tolerated for forks that append one extra mirror-symmetric command.
   """
   num_dofs = len(obs_joint_names)
   num_actions = len(action_joint_names)
@@ -99,8 +99,8 @@ def _build_mirror_maps(
     src = torch.arange(one_step_dim, device=device, dtype=torch.long)
     sign = torch.ones(one_step_dim, device=device, dtype=torch.float32)
 
-    # Commands: [x, y, yaw, height(, pitch)] -> y and yaw flip; height and
-    # torso pitch are mirror-symmetric.
+    # Commands: [x, y, yaw, height, ...] -> y and yaw flip; height and any
+    # extra command channels are mirror-symmetric.
     sign[1] = -1.0
     sign[2] = -1.0
     # Angular velocity: roll and yaw rates flip.

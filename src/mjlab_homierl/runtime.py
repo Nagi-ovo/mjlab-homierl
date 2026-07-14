@@ -1,4 +1,4 @@
-"""Standalone HOMIE/HOMIE+ ONNX runtime: the consumer side of the metadata
+"""Standalone HOMIE ONNX runtime: the consumer side of the metadata
 contract.
 
 This module is deliberately dependency-light — stdlib + numpy + onnxruntime
@@ -73,14 +73,13 @@ def gravity_orientation(quat_wxyz: np.ndarray) -> np.ndarray:
 class HomieOnnxPolicy:
   """ONNX session + the metadata-driven observation builder.
 
-  Works for both 4-dim-command HOMIE and 5-dim-command HOMIE+ exports; every
+  Works for 4-dim-command (vx, vy, wz, height) HOMIE exports; every
   convention is read from the ONNX ``metadata_props``.
   """
 
-  def __init__(self, onnx_path: str, control_dt: float = 0.02):
+  def __init__(self, onnx_path: str):
     import onnxruntime as ort
 
-    self.control_dt = float(control_dt)
     self.session = ort.InferenceSession(
       onnx_path, providers=["CPUExecutionProvider"]
     )
@@ -104,7 +103,12 @@ class HomieOnnxPolicy:
     self.num_one_step_obs = int(m["num_one_step_obs"])
     layout = json.loads(m["one_step_obs_layout"])
     self.num_commands = int(layout["command"])
-    self.has_pitch = self.num_commands >= 5
+    if self.num_commands != 4:
+      raise ValueError(
+        f"This runtime supports 4-dim (vx, vy, wz, height) commands only; "
+        f"the loaded ONNX declares {self.num_commands}. 5-command HOMIE+ "
+        "policies are served by the homie-plus branch of mjlab-homierl."
+      )
     self.scale_lin_vel = float(m["obs_scale_lin_vel"])
     self.scale_ang_vel = float(m["obs_scale_ang_vel"])
     self.scale_dof_pos = float(m["obs_scale_dof_pos"])
@@ -117,13 +121,6 @@ class HomieOnnxPolicy:
       float(v) for v in m["height_command_range"].split(",")
     )
     self.standing_height = float(m["standing_height"])
-    self.pitch_range = (0.0, 0.0)
-    self._pitch_joint_id: int | None = None
-    if self.has_pitch:
-      pr = json.loads(m["pitch_command_ranges"])
-      lows, highs = zip(pr["walk"], pr["squat"])
-      self.pitch_range = (min(lows), max(highs))
-      self._pitch_joint_id = self.joint_names.index(m["pitch_command_joint"])
 
     expected = self.num_commands + 6 + 2 * len(self.joint_names) + len(
       self.action_joint_names
@@ -137,14 +134,10 @@ class HomieOnnxPolicy:
     self.action_ids = [self.joint_names.index(n) for n in self.action_joint_names]
     self.last_action = np.zeros(len(self.action_joint_names), dtype=np.float32)
     self.history: deque[np.ndarray] = deque(maxlen=self.history_length)
-    self._pitch_cmd = 0.0
-    self._waist_target_offset = 0.0
 
   def reset(self) -> None:
     self.last_action[:] = 0.0
     self.history.clear()
-    self._pitch_cmd = 0.0
-    self._waist_target_offset = 0.0
 
   def one_step_obs(
     self,
@@ -156,10 +149,8 @@ class HomieOnnxPolicy:
   ) -> np.ndarray:
     """Assemble one observation step. Joint arrays follow ``joint_names``."""
     cmd = command.astype(np.float32).copy()
-    if self.has_pitch:
-      self._pitch_cmd = float(cmd[4])
     cmd[0:2] *= self.scale_lin_vel
-    cmd[2] *= self.scale_ang_vel  # height (cmd[3]) and pitch (cmd[4]) unscaled
+    cmd[2] *= self.scale_ang_vel  # height (cmd[3]) unscaled
     return np.concatenate(
       [
         cmd,
@@ -187,21 +178,12 @@ class HomieOnnxPolicy:
     self.last_action = action.astype(np.float32)
     targets = self.default_pos.copy()
     targets[self.action_ids] += self.action_scale * action
-    if self._pitch_joint_id is not None:
-      # Training's TorsoPitchAction: the waist_pitch target slews toward
-      # default + pitch_cmd at 1.0 rad/s. Without this, a HOMIE+ policy on
-      # the real robot commands a lean in the observation that the waist
-      # never physically performs.
-      step = 1.0 * self.control_dt
-      delta = self._pitch_cmd - self._waist_target_offset
-      self._waist_target_offset += float(np.clip(delta, -step, step))
-      targets[self._pitch_joint_id] += self._waist_target_offset
     return targets
 
 
 class CommandState:
-  """Joystick-driven (vx, vy, wz, height[, pitch]) command with slewed
-  height/pitch channels, scaled to the policy's training ranges.
+  """Joystick-driven (vx, vy, wz, height) command with a slewed height
+  channel, scaled to the policy's training ranges.
 
   ``speed_scale`` caps full stick deflection at that fraction of the training
   twist range (1.0 = full range; teleop wants ~0.4-0.6). ``deadzone`` zeroes
@@ -218,12 +200,11 @@ class CommandState:
     self.speed_scale = float(speed_scale)
     self.deadzone = float(deadzone)
     self.height = policy.standing_height
-    self.pitch = 0.0
 
   def _stick(self, v: float) -> float:
     return 0.0 if abs(v) < self.deadzone else float(v)
 
-  def vector(self, lx, ly, rx, height_step=0.0, pitch_step=0.0) -> np.ndarray:
+  def vector(self, lx, ly, rx, height_step=0.0) -> np.ndarray:
     p = self.p
     lx, ly, rx = self._stick(lx), self._stick(ly), self._stick(rx)
     s = self.speed_scale
@@ -233,10 +214,4 @@ class CommandState:
     self.height = float(
       np.clip(self.height + height_step, p.height_range[0], p.height_range[1])
     )
-    cmd = [vx, vy, wz, self.height]
-    if p.has_pitch:
-      self.pitch = float(
-        np.clip(self.pitch + pitch_step, p.pitch_range[0], p.pitch_range[1])
-      )
-      cmd.append(self.pitch)
-    return np.array(cmd, dtype=np.float32)
+    return np.array([vx, vy, wz, self.height], dtype=np.float32)

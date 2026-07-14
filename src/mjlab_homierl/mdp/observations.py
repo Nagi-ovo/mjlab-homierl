@@ -30,13 +30,8 @@ def him_actor_one_step_obs(
   height_command_name: str,
   joint_asset_cfg: SceneEntityCfg,
   obs_scales: dict[str, float],
-  pitch_command_name: str | None = None,
 ) -> torch.Tensor:
-  """One-step actor observation for HOMIE HIM-PPO.
-
-  With ``pitch_command_name`` set (HOMIE+), the command segment grows from
-  (vx, vy, wz, h) to (vx, vy, wz, h, pitch) — 4 to 5 dims, unscaled pitch.
-  """
+  """One-step actor observation for HOMIE HIM-PPO."""
   asset: Entity = env.scene[joint_asset_cfg.name]
 
   twist = env.command_manager.get_command(command_name)
@@ -46,12 +41,7 @@ def him_actor_one_step_obs(
   twist_scaled = twist.detach().clone()
   twist_scaled[:, 0:2] *= float(obs_scales["lin_vel"])
   twist_scaled[:, 2] *= float(obs_scales["ang_vel"])
-  parts = [twist_scaled[:, :3], height[:, 0:1]]
-  if pitch_command_name is not None:
-    pitch = env.command_manager.get_command(pitch_command_name)
-    assert pitch is not None
-    parts.append(pitch[:, 0:1])
-  commands = torch.cat(parts, dim=-1)
+  commands = torch.cat((twist_scaled[:, :3], height[:, 0:1]), dim=-1)
 
   ang_vel = asset.data.root_link_ang_vel_b * float(obs_scales["ang_vel"])
   gravity = asset.data.projected_gravity_b
@@ -72,7 +62,6 @@ def him_critic_one_step_obs(
   height_command_name: str,
   joint_asset_cfg: SceneEntityCfg,
   obs_scales: dict[str, float],
-  pitch_command_name: str | None = None,
 ) -> torch.Tensor:
   """One-step critic observation: actor observation + base linear velocity."""
   actor_obs = him_actor_one_step_obs(
@@ -81,7 +70,6 @@ def him_critic_one_step_obs(
     height_command_name=height_command_name,
     joint_asset_cfg=joint_asset_cfg,
     obs_scales=obs_scales,
-    pitch_command_name=pitch_command_name,
   )
   asset: Entity = env.scene[joint_asset_cfg.name]
   base_lin_vel = asset.data.root_link_lin_vel_b * float(obs_scales["lin_vel"])

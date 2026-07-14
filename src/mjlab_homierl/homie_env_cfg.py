@@ -39,20 +39,18 @@ NOISE_SCALES = {"dof_pos": 0.02, "dof_vel": 2.0, "ang_vel": 0.5, "gravity": 0.05
 def make_him_observations(
   joint_names: tuple[str, ...],
   num_actions: int,
-  pitch_command: bool = False,
 ) -> dict[str, ObservationGroupCfg]:
   """Build HIM actor/critic observation groups for a robot's joint layout.
 
   Actor: 6-step history of the one-step observation, with additive uniform
-  noise. Critic: single noiseless step plus base linear velocity. With
-  ``pitch_command`` (HOMIE+), the command segment is 5-dim instead of 4.
+  noise. Critic: single noiseless step plus base linear velocity.
   """
   joint_asset_cfg = SceneEntityCfg(
     "robot", joint_names=joint_names, preserve_order=True
   )
 
   num_dofs = len(joint_names)
-  num_commands = 5 if pitch_command else 4
+  num_commands = 4
   one_step_dim = num_commands + 6 + 2 * num_dofs + num_actions
   cmd_end = num_commands
   noise_vec = torch.zeros(one_step_dim, dtype=torch.float32)
@@ -74,8 +72,6 @@ def make_him_observations(
     "joint_asset_cfg": joint_asset_cfg,
     "obs_scales": OBS_SCALES,
   }
-  if pitch_command:
-    common_params["pitch_command_name"] = "torso_pitch"
 
   return {
     "actor": ObservationGroupCfg(

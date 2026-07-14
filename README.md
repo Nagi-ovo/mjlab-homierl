@@ -27,6 +27,21 @@ Intentional deviations from OpenHomie are:
 - The HIM estimator's next-step critic observation at termination steps is the
   post-reset observation (mjlab computes observations after resets).
 
+## Which task/checkpoint is the HOMIE reproduction?
+
+- **Task**: `Mjlab-Homie-Unitree-G1` (deployment-grade PD gains, sim2real
+  path). `Mjlab-Homie-Unitree-G1-native` is the frozen strict-parity preset —
+  the diff between the two configs is the complete, auditable ledger of our
+  deliberate deviations.
+- **Pretrained checkpoints**: [Hugging Face — Nagi-ovo/HOMIERL-loco](https://huggingface.co/Nagi-ovo/HOMIERL-loco).
+- **Height convention**: our height command is pelvis-to-**sole** (standing
+  0.78 m, range 0.28–0.78). OpenHomie's numbers are pelvis-to-**ankle**
+  (standing 0.74, range 0.24–0.74). Same physical pose and identical 0.50 m
+  travel — subtract ~0.04 m when comparing to OpenHomie figures.
+- Deployment-oriented research forks (e.g. commanded torso pitch) are
+  developed on separate branches and intentionally kept off `main` so this
+  branch stays a faithful reproduction.
+
 ## Structure
 
 ```text
@@ -106,41 +121,6 @@ checkpoints load interchangeably across them (and into the base task):
   OpenHomie's `penalize_contacts_on` is dead code). Reference baseline; never
   iterated on.
 
-HOMIE+ (interface fork — checkpoints do NOT interchange with the tasks above):
-
-- `Mjlab-Homie-Unitree-G1-plus` — the deployment fork; three deliberate
-  extensions over OpenHomie parity, each motivated by hardware findings:
-  1. **Commanded torso pitch**: a 5th command dim carries a `waist_pitch`
-     joint-angle target (rad, + = lean forward, sampled in walk/squat modes
-     up to 0.45 rad). The joint is command-driven (policy-free, slew-limited
-     at 1 rad/s); the policy keeps the 12-dim leg interface and learns to
-     balance the lean — the missing DoF for pick-from-floor work. One-step
-     observation grows 80 → 81 (actor input 486): separate training lineage
-     (`g1_homie_plus_himppo`), checkpoints do not interchange with the base
-     task. Commanding pitch = 0 reproduces plain HOMIE behavior.
-  2. **In-place locomotion sampling**: 1/3 of walk-mode resamples set
-     `vx = 0` and keep the sampled `vy`/`wz` (dominant axis clamped ≥ 0.3).
-     The faithful sampler leaves pure strafe and pure rotation at measure
-     zero — probed policies stand at 100% double support through such
-     commands.
-  3. **Foot contact-compliance DR**: per-env `geom_solref` on the foot
-     spheres, near-rigid to soft foam (after arXiv:2504.13619) — fixes the
-     standing sway observed on EVA gym mats.
-  4. **Squat rework (v4)**: the height command is a slewed setpoint (per-env
-     rate DR 0.25–0.75 m/s) instead of OpenHomie's instantaneous step — a
-     position-type command step creates an unreachable error window whose
-     tracking gradient rewards ballistic descent (the v3 policy crash-squatted
-     onto its knees). Plus: hip/knee ground-contact penalty −5.0 (breaks the
-     kneeling economics), the `stand_still` no-stepping shaping extended to
-     all commanded heights (squat-mode shuffling was free), and the torso
-     pitch law keyed on moving/stationary (stand + lean = the
-     reach-over-a-table teleop pose).
-  The exported ONNX metadata declares the 5-dim command
-  (`one_step_obs_layout`, `pitch_command_joint`, `pitch_command_ranges`) so
-  downstream plugins bootstrap without hardcoding. Play works the same as the
-  base task:
-  `uv run play Mjlab-Homie-Unitree-G1-plus --checkpoint-file ... --viewer viser`.
-
 - `Mjlab-Homie-Unitree-H1` — trains with Unitree's official RL-stack PD gains
   (unitree_rl_gym `h1_config.py`; see `robots/unitree_h1_deploy.py`) and the
   uniform 0.25 action scale.
@@ -209,8 +189,7 @@ HOMIE_PLAY_UPPER_RATIO=1.0 uv run play Mjlab-Homie-Unitree-G1 --checkpoint-file 
 
 `src/mjlab_homierl/scripts/deploy_g1_homie.py` runs an exported policy ONNX on
 the real robot over DDS, reading every convention (joint order, PD gains,
-obs layout, command ranges, optional torso-pitch channel) from the ONNX
-metadata. The real path needs only `numpy + onnxruntime + unitree_sdk2py` —
+obs layout, command ranges) from the ONNX metadata. The real path needs only `numpy + onnxruntime + unitree_sdk2py` —
 no mjlab/torch on the robot-side machine. One-time environment setup (builds
 cyclonedds 0.10.2 and works around three upstream packaging defects — see the
 script header):
@@ -227,8 +206,7 @@ Then (robot in debug/low-level mode, harnessed):
 ```
 
 START moves to the default pose, A starts the policy, sticks drive vx/vy/wz,
-dpad up/down slews the height command, X/B slews torso pitch (HOMIE+ models),
-SELECT exits to damping. `--sim` (in the training venv:
+dpad up/down slews the height command, SELECT exits to damping. `--sim` (in the training venv:
 `uv run --extra deploy ... --sim`) validates the deploy-side observation
 builder bit-for-bit against the mjlab plant before any hardware session.
 
@@ -241,7 +219,7 @@ uv run python -m mjlab_homierl.scripts.teleop_sim_g1 --onnx <run>.onnx
 Real-time keyboard teleop in a plain CPU MuJoCo window, driving the policy
 through the same `runtime.py` pipeline as the real robot and the BiGym
 plugin — physics independent of the training engine (sim2sim). WASD = vx/vy,
-Q/E = yaw, arrows = height, R/F = torso pitch (HOMIE+), Space = stop,
+Q/E = yaw, arrows = height, Space = stop,
 Backspace = reset; Ctrl+drag shoves the robot. `--smoke` runs a 5 s headless
 self-test. Note for anyone building a classic-MuJoCo harness from the raw
 asset-zoo spec: it compiles with NO actuators, NO keyframe, and zero
